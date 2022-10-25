@@ -1,0 +1,3 @@
+
+*.secrets*
+Scripts/zshenv/env.zsh
