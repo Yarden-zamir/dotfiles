@@ -1,3 +1,7 @@
+function mkcd() {
+    mkdir -p "$@" && cd "$_"
+}
+
 function sde-cluster-pods() {
     kubectl get pods
 }
