@@ -30,4 +30,3 @@ function gh_add_runner(){
         -v /tmp/github-runner-your-repo:/tmp/github-runner-data-app-design-systest \
         myoung34/github-runner:latest
 }
-# gh_add_runner qlik-trial/data-app-design-systest kcw-0 $GH_RUNNERGEN_TOKEN default potato,tomato,chair
