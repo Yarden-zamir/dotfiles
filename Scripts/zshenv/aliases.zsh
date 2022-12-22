@@ -27,3 +27,5 @@ alias cd......="cd ../../../../.."
 
 alias open.="open ."
 alias open-here="open ."
+
+alias y=yay
