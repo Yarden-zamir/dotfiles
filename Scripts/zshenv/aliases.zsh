@@ -29,3 +29,11 @@ alias open.="open ."
 alias open-here="open ."
 
 alias y=yay
+
+alias install="brew install"
+
+# alias @="xargs -L1"
+alias for-each="xargs -L1"
+# alias mkdir="mkdir --parents"
+
+#creates a folder and navigates to it
