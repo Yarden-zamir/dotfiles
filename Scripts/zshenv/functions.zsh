@@ -15,4 +15,3 @@ function create-nav-shortcuts() {   # creates shortcuts for all directories in $
     for dir in *; do if [[ -d $dir ]]; then
         alias $nav_simbol$dir="cd $nav_base/$dir;"
     fi; done
-}
