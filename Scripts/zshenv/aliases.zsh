@@ -32,7 +32,7 @@ alias y=yay
 
 alias install="brew install"
 
-# alias @="xargs -L1"
+alias @="xargs -L1"
 alias for-each="xargs -L1"
 # alias mkdir="mkdir --parents"
 
