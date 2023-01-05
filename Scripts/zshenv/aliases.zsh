@@ -15,6 +15,9 @@ alias secrets="cat ~/Scripts/zshenv/env.secrets.zsh | fzf | sed 's/.*=//'"
 alias copy="pbcopy"
 alias paste="pbpaste"
 
+alias code-here="code ."
+alias code.="code ."
+
 alias edit="code"
 alias edit.="code ."
 alias edit-here="code ."
@@ -25,6 +28,9 @@ alias cd....="cd ../../.."
 alias cd.....="cd ../../../.."
 alias cd......="cd ../../../../.."
 
+alias cd/="cd /"
+alias cd~="cd ~"
+
 alias open.="open ."
 alias open-here="open ."
 
@@ -34,6 +40,6 @@ alias install="brew install"
 
 alias @="xargs -L1"
 alias for-each="xargs -L1"
-# alias mkdir="mkdir --parents"
 
-#creates a folder and navigates to it
+alias ll='ls -a'
+alias count='wc -l'
