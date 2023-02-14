@@ -1,7 +1,7 @@
 
 alias kube=kubectl
-alias snow-pass-change="python ~/GitHub/Snowflake-password-helper./change_password_to.py"
-alias snow-pass-request="python ~/GitHub/Snowflake-password-helper./request_password.py"
+alias snow-pass-change="python3 ~/GitHub/Snowflake-password-helper./change_password_to.py"
+alias snow-pass-request="python3 ~/GitHub/Snowflake-password-helper./request_password.py"
 
 alias m=make
 
@@ -38,8 +38,14 @@ alias y=yay
 
 alias install="brew install"
 
-alias @="xargs -L1"
-alias for-each="xargs -L1"
+alias @="xargs -L1 -P0"
+alias @L1="xargs -L1 -P0"
+alias @n1="xargs -n1 -P0"
 
-alias ll='ls -a'
+
+alias for-each="xargs -L1 -P0"
+
 alias count='wc -l'
+alias ll='ls -l'
+
+alias set_shell="chsh -s"
