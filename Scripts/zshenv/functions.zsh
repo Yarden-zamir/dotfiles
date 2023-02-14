@@ -16,3 +16,23 @@ function create-nav-shortcuts() {   # creates shortcuts for all directories in $
         alias $nav_simbol$dir="cd $nav_base/$dir;"
     fi; done
 }
+
+function set-shell(){
+    chsh -s $(which $1)
+}
+
+function p(){  #executes python code
+    prefix_code="import sys
+from sys import stdin
+"
+    # echo $prefix_code $1 
+    python3 -c $prefix_code$1
+    # python3 -c $prefix_code $1
+
+}
+
+function a(){ #opens an app fzf style
+    cd /Applications
+    app=$(ls | fzf)
+    open $app
+}
