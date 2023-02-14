@@ -47,3 +47,21 @@ function gh_issue(){               #usage: gh_issue {title} {body} {repo x/y}
     gh issue create --title "$*" --body ""
 }
 alias todo="gh_issue"
+
+function clone(){                   #usage: clone {repo x/y}
+    repo = ${1:-$MY_SERVICE}
+    folder = ${2:-$(echo $repo | cut -d'/' -f2)}
+    gh repo clone $1 
+}
+
+function gh_clear_notifications(){
+    gh api /notifications \
+    | jq -r '.[] | select(.reason == "review_requested") | select(.repository.owner.login == "qlik-trial") | .id' \
+    | xargs -P0 -I{} gh api /notifications/threads/{} -X PATCH -f "read=true"
+}
+
+function gh_notifications(){
+    gh_clear_notifications
+    gh api /notifications | jq '. | length' | grep -v -w 0 && \
+    open "https://github.com/notifications?query=is%3Aunread" || echo "No notifications"
+}
