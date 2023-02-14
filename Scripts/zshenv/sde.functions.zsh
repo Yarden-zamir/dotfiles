@@ -43,3 +43,12 @@ function sde-system-test(){
     #  -f AZURE_SYNAPSE="Azure_Synapse_Analytics" -f AZURE_DATA_LAKE_STORAGE="Azure_Data_Lake_Storage"
     gh workflow view personalSystemTest.yaml --web --repo qlik-trial/data-app-design-systest
 }
+
+function sde-refresh-argo(){
+    trigram=${1:-${USERNAME:$USER}}
+    echo refreshing argocd applications for $trigram
+    curl --silent "https://argocd.$trigram.pte.qlikdev.com/api/v1/applications?fields=%2Citems.spec" \
+    | json_pp | grep '"path" : "qcs/sde/' | cut -c 34- | rev | cut -c 3- | rev | xargs -P 100 -I % -L1 \
+    curl --silent "https://argocd.$trigram.pte.qlikdev.com/api/v1/applications/%?sync=normal&appNamespace=argocd" > /dev/null && \
+    echo done refreshing argocd applications for $trigram
+}
