@@ -38,7 +38,7 @@ function gh_release(){              #usage: gh_release {version vx.y} {repo x/y}
 function gh_increment_version(){    #gives you the next incremental version of your github project
     service=${1:-${MY_SERVICE}}
     current_version=$(gh release view --json tagName --jq '.tagName' --repo $service | head)
-    current_version=${current_version#?} #removed the v from the start of the tag
+    current_version=${current_version#?} #remove the v from the start of the tag
     new_version=$(echo $current_version | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}')
     echo $new_version
 }
