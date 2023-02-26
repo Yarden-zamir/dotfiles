@@ -48,7 +48,7 @@ function sde-refresh-argo(){
     trigram=${1:-${USERNAME:$USER}}
     echo refreshing argocd applications for $trigram
     curl --silent "https://argocd.$trigram.pte.qlikdev.com/api/v1/applications?fields=%2Citems.spec" \
-    | json_pp | grep '"path" : "qcs/sde/' | cut -c 34- | rev | cut -c 3- | rev | xargs -P 100 -I % -L1 \
+    | json_pp | grep '"path" : "qcs/sde/' | cut -c 34- | rev | cut -c 3- | rev | xargs -P 100 -I % \
     curl --silent "https://argocd.$trigram.pte.qlikdev.com/api/v1/applications/%?sync=normal&appNamespace=argocd" > /dev/null && \
     echo done refreshing argocd applications for $trigram
 }
