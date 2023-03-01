@@ -3,6 +3,7 @@ function sde-cluster-pods() {
 }
 function sde-cluster-pull() {
     trigram=${1:-${USERNAME:$USER}}
+    mkdir -p ~/kubeconfigs
     scp rddev@${trigram}.pte.qlikdev.com:/home/rddev/.kube/config ~/kubeconfigs/${trigram}-kubeconfig
 }
 
