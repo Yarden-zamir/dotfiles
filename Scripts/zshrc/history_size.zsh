@@ -1,4 +1,0 @@
-export HISTSIZE=999999999
-export SAVEHIST=$HISTSIZE
-setopt EXTENDED_HISTORY
-HISTFILE=~/.zsh_history
