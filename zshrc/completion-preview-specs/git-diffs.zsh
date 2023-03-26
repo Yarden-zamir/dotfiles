@@ -1,2 +1,9 @@
-# :fzf-tab:complete:git-(add|diff|restore):*
-bat $realpath --diff-context 3 --style=changes,header-filesize,header-filename --color=always
+# :fzf-tab:complete:git-(add|diff|restore|cherry-pick):argument-rest
+case $group in
+'tree file')
+  less ${realpath#--*=}
+  ;;
+*)
+  git diff $word | delta
+  ;;
+esac
