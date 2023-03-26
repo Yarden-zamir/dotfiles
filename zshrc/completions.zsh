@@ -14,7 +14,7 @@ zstyle ':completion:*:descriptions' format '[%d]' # set descriptions format to e
 
 zstyle ':fzf-tab:complete:*' fzf-min-height 20
 
-zstyle ':fzf-tab:sources' config-directory "$DOTFILES/zshrc/completion-specs"
+zstyle ':fzf-tab:sources' config-directory "$DOTFILES/zshrc/completion-preview-specs"
 gh_source Freed-Wu/fzf-tab-source/fzf-tab-source.plugin.zsh
 
 
