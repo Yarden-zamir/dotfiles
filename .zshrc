@@ -4,6 +4,7 @@ folders=(
   "$DOTFILES/zshrc/init"
   "$DOTFILES/zshrc/post-init")
 for folder in $folders; do
+  (echo $folder/*) &> /dev/null && \
   for file in $folder/*; do
     source "$file"
   done
