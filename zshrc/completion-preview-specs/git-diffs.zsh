@@ -1,6 +1,9 @@
 # :fzf-tab:complete:git-(add|diff|restore|cherry-pick):argument-rest
 case $group in
-'tree file')
+'[untracked file]')
+  bat $word --color=always --style full
+  ;;
+'[tree file]')
   less ${realpath#--*=}
   ;;
 *)
