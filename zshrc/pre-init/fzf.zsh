@@ -3,11 +3,16 @@
 
 export FZF_DEFAULT_OPTS=" \
     --bind 'bs:backward-delete-char/eof' \
-    --bind 'ctrl-a:select-all' \
     --bind 'ctrl-p:toggle-preview' \
+    --bind 'alt-p:toggle-preview' \
+    --bind 'ctrl-y:execute-silent(echo -n {} | pbcopy)' \
     --bind 'alt-up:half-page-up' \
     --bind 'alt-down:half-page-down' \
-    --bind 'alt-d:replace-query' \
+    --bind 'tab:replace-query' \
+    --bind 'ctrl-a:toggle-all' \
+    --bind 'alt-space:toggle+down' \
+    --bind 'ctrl-space:toggle+down' \
+    --bind 'alt-enter:toggle+down' \
     --height=100% \
     --multi  \
     --no-separator \
@@ -24,8 +29,7 @@ export FZF_DEFAULT_OPTS=" \
     --no-scrollbar"
 
 export FZF_CTRL_T_OPTS=" \
-    --hscroll-off 100 \
-    --bind 'ctrl-o:execute(code {})' \
+    --bind 'ctrl-o:become(code {})' \
     --preview '\
         ([ -d {} ] && et --dirs-first --icons --sort=name --scale=0 --level=4 {}) ||\
         bat --terminal-width \$(expr \$(tput cols) / 2 - 7) --wrap=character --color=always --style=header {}'"
@@ -44,15 +48,11 @@ export FZF_CTRL_R_OPTS="
 export PATH="$PATH:/opt/homebrew/bin"
 export FZF_DEFAULT_COMMAND='fd --strip-cwd-prefix'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-bindkey '^f' fzf-file-widget
 
-fzf_file_or_folder_to_editor() {
+fzf-file-or-folder-to-editor() {
     editor=${EDITOR:-code}
     choice="$(eval $FZF_DEFAULT_COMMAND | eval fzf $FZF_CTRL_T_OPTS |tr '\n' ' ')" && [[ ! -z $choice ]] &&\
     $editor $choice
 }
 
-zle -N fzf_file_or_folder_to_editor fzf_file_or_folder_to_editor
-bindkey '^o' fzf_file_or_folder_to_editor
-
-# bindkey '^[[C' accept-search
+zle -N fzf-file-or-folder-to-editor fzf-file-or-folder-to-editor

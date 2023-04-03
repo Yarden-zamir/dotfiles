@@ -8,5 +8,3 @@ export HISTORY_SUBSTRING_SEARCH_ENSURE_UNIQUE="true"
 export HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND="true"
 export HISTORY_SUBSTRING_SEARCH_PREFIXED=1
 gh_source zsh-users/zsh-history-substring-search/zsh-history-substring-search.zsh
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
