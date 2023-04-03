@@ -1,6 +1,8 @@
+
 # https://github.com/koekeishiya/skhd/issues/1 < keys
 # f1 : open -a "Iterm" "/Users/kcw/Desktop/file_search.sh"
 
+# insert : skhd --key "ctrl - tilde"
 # yabai
 # focus window
 alt + cmd - left : yabai -m window --focus west
@@ -9,10 +11,11 @@ alt + cmd - up : yabai -m window --focus north
 alt + cmd - right : yabai -m window --focus east
 
 # swap managed window
-alt + cmd + ctrl - left : yabai -m window --swap west
+# https://github.com/koekeishiya/yabai/issues/526#
+alt + cmd + ctrl - left : yabai -m window --swap west || yabai -m window --display west; yabai -m display --focus west
+alt + cmd + ctrl - right : yabai -m window --swap east || yabai -m window --display east; yabai -m display --focus east
 alt + cmd + ctrl - down : yabai -m window --swap south
 alt + cmd + ctrl - up : yabai -m window --swap north
-alt + cmd + ctrl - right : yabai -m window --swap east
 
 # resize window
 ctrl + cmd - left : yabai -m window west --resize right:-50:0 2> /dev/null || yabai -m window --resize right:-50:0
@@ -25,8 +28,8 @@ ctrl + cmd - right : yabai -m window east --resize left:50:0 2> /dev/null || yab
 # shift + alt - p : yabai -m window --display previous; yabai -m display --focus previous
 
 # toggle window fullscreen zoom
-alt + cmd - return : yabai -m window --toggle zoom-fullscreen
-
+ctrl + cmd - return : yabai -m window --toggle zoom-fullscreen
+alt + cmd - return : yabai -m window --toggle zoom-parent
 
 # float / unfloat window and center on screen
 shift + cmd + alt - return : yabai -m window --toggle float;\
