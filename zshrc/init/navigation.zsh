@@ -6,7 +6,7 @@ $HOME/Downloads
 "
 for folder in $INDEX_FOLDERS; do
     all_items+="$folder\n"
-    all_items+="$(find $folder -type d -maxdepth 1 -mindepth 1 -printf "%p\n")\n"
+    all_items+="$(find $folder -maxdepth 1 -mindepth 1 -type d -printf "%p\n")\n"
 done
 
 
