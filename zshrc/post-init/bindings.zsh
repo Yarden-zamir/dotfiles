@@ -13,3 +13,5 @@ type -p fzf &>/dev/null && {
     type - p rg &>/dev/null && \
         bindkey '^[ ' ripgrep_search #alt+space
 }
+# Use fzf with syntax highlighted history
+bindkey '^R' fzf-history-syntax-highlighted-widget

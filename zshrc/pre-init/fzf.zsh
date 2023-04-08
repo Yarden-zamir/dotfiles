@@ -1,6 +1,6 @@
 # config for fzf
+gh_source junegunn/fzf '[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh || {}/install'
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
 export FZF_DEFAULT_OPTS=" \
     --bind 'bs:backward-delete-char/eof' \
     --bind 'ctrl-p:toggle-preview' \
@@ -37,13 +37,8 @@ export FZF_CTRL_T_OPTS=" \
 export FZF_ALT_C_OPTS="
     $FZF_CTRL_T_OPTS
     "
-export FZF_CTRL_R_OPTS="
-    --preview 'x={} && x=\${x:7} && echo \$x&& explain \$x' \
-    --scheme history
-    --with-nth=2..
-    --history-size=1000000
-    --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'"
-
+export FZF_CTRL_R_OPTS=" \
+    --preview 'echo {} | bat -pl zsh --color=always && explain {}'"
 
 export PATH="$PATH:/opt/homebrew/bin"
 export FZF_DEFAULT_COMMAND='fd --strip-cwd-prefix'
