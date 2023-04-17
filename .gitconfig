@@ -1,0 +1,10 @@
+[user]
+	name = Yarden Zamir
+	email = dev@yarden-zamir.com
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[core]
+	excludesfile = ~/Github/dotfiles/global.gitignore
