@@ -49,7 +49,7 @@ function gh_issue(){               #usage: gh_issue {title} {body} {repo x/y}
 alias todo="gh_issue"
 
 function clone(){                   #usage: clone {repo x/y}
-    repo = ${1:-$MY_SERVICE}
+    repo = ${1}
     folder = ${2:-$(echo $repo | cut -d'/' -f2)}
     gh repo clone $1 
 }
