@@ -1,5 +1,4 @@
 alias copy="pbcopy"
-alias paste="pbpaste"
 
 alias dotform="dotnet format"
 
