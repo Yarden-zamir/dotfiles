@@ -31,7 +31,7 @@ export FZF_DEFAULT_OPTS=" \
 export FZF_CTRL_T_OPTS=" \
     --bind 'ctrl-o:become(code {})' \
     --preview '\
-        ([ -d {} ] && et --dirs-first --icons --sort=name --scale=0 --level=4 {}) ||\
+        ([ -d {} ] && erd --dirs-first --icons --sort=name --level=4 --force-color --human --suppress-size {}) ||\
         bat --terminal-width \$(expr \$(tput cols) / 2 - 7) --wrap=character --color=always --style=header {}'"
     # --preview '[ -d {} ] && et --dirs-first --icons --sort=name --scale=0 --level=4 {} || bat --terminal-width \$(expr \$(tput cols) / 2 - 7) --wrap=character --color=always --style=header --line-range :300 {}'"
 export FZF_ALT_C_OPTS="
