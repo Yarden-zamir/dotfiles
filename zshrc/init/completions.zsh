@@ -4,6 +4,7 @@ gh_source Aloxaf/fzf-tab/fzf-tab.plugin.zsh
 zstyle ':fzf-tab:*' switch-group ',' '.'
 zstyle ':fzf-tab:*' prefix ''
 zstyle ':fzf-tab:*' continuous-trigger 'tab'
+zstyle ':fzf-tab:*' single-group color header
 # zstyle ':fzf-tab:*' continuous-trigger 'right' # not needed because of `right:replace-query`
 
 zstyle ':completion:*' fzf-search-display true
