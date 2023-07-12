@@ -1,0 +1,8 @@
+--dir-order=first
+--icons 
+--sort=name 
+--level=4 
+--color force 
+--layout=inverted 
+--human 
+--suppress-size
