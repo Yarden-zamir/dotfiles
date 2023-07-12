@@ -12,8 +12,10 @@ alt + cmd - right : yabai -m window --focus east
 
 # swap managed window
 # https://github.com/koekeishiya/yabai/issues/526#
-alt + cmd + ctrl - left : yabai -m window --swap west || yabai -m window --display west; yabai -m display --focus west
-alt + cmd + ctrl - right : yabai -m window --swap east || yabai -m window --display east; yabai -m display --focus east
+alt + cmd + ctrl - left : yabai -m window --swap west
+# || yabai -m window --display west; yabai -m display --focus west
+alt + cmd + ctrl - right : yabai -m window --swap east
+# || yabai -m window --display east; yabai -m display --focus east
 alt + cmd + ctrl - down : yabai -m window --swap south
 alt + cmd + ctrl - up : yabai -m window --swap north
 
@@ -34,13 +36,3 @@ alt + cmd - return : yabai -m window --toggle zoom-parent
 # float / unfloat window and center on screen
 shift + cmd + alt - return : yabai -m window --toggle float;\
           yabai -m window --grid 4:4:1:1:2:2
-
-# balance size of windows
-shift + alt - 0 : yabai -m space --balance
-
-
-# create desktop, move window and follow focus - uses jq for parsing json (brew install jq)
-# shift + alt - n : yabai -m space --create && \
-#                    index="$(yabai -m query --spaces --display | jq 'map(select(."native-fullscreen" == 0))[-1].index')" && \
-#                    yabai -m window --space "${index}" && \
-#                    yabai -m space --focus "${index}"
