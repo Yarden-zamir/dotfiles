@@ -21,5 +21,12 @@ gh_source yarden-zamir/fzf-tab-source/fzf-tab-source.plugin.zsh
 
 
 
+# ZSH_AUTOSUGGEST_STRATEGY=(AI history completion)
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 gh_source zsh-users/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# ngrok
+# To install shell completions, add this to your profile:
+if command -v ngrok &>/dev/null; then
+    eval "$(ngrok completion)"
+fi
