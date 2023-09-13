@@ -15,3 +15,15 @@ type -p fzf &>/dev/null && {
 }
 # Use fzf with syntax highlighted history
 bindkey '^R' fzf-history-syntax-highlighted-widget
+
+function nuc(){
+ python nuc.py search "" | fzf \
+    --disabled \
+    --preview 'bat -pl md --color always ~/Github/me/{} 2> /dev/null || echo ...' \
+    --preview-window 'up,60%,border-bottom,+{2}+3/3,~3' \
+    --bind "change:reload:direnv exec ~/Desktop python ~/Desktop/nuc.py search {q} --min-score 0.2" \
+    --bind "ctrl-r:unbind(change,ctrl-f)+change-prompt(2. fzf> )+enable-search+rebind(ctrl-r)+transform-query(echo {q} > /tmp/rg-fzf-r; cat /tmp/rg-fzf-f)" | xargs -I{} nvim ~/Github/me/{}
+}
+
+zle -N nuc
+bindkey '^n' nuc
