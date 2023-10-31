@@ -6,8 +6,9 @@ function gh_remove_runner(){
 
     gh api \
     --method DELETE \
+    --paginate \
     -H "Accept: application/vnd.github+json" \
-    /repos/$repo/actions/runners/$id
+    /repos/$repo/actions/runners/$id 
 }
 
 function gh_add_runner(){
@@ -55,7 +56,7 @@ function clone(){                   #usage: clone {repo x/y}
 }
 
 function gh_clear_notifications(){
-    gh api /notifications \
+    gh api /notifications --paginate \
     | jq -r '.[] | select(.reason == "review_requested") | select(.repository.owner.login == "qlik-trial") | .id' \
     | xargs -P0 -I{} gh api /notifications/threads/{} -X PATCH -f "read=true"
 }
