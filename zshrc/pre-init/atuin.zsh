@@ -1,0 +1,1 @@
+export FPATH=$FPATH:$HOME/atuin/completions
