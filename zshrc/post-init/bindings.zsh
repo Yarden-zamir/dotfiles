@@ -7,14 +7,18 @@ gh_source --require zsh-users/zsh-history-substring-search && {
 type -p fzf &>/dev/null && {
     bindkey '^a' browse_apps
     bindkey '^@' navigate #ctrl+space / ctrl+@
+    bindkey '^l' navigate #ctrl+space / ctrl+@
     bindkey '^o' fzf-file-or-folder-to-editor
     bindkey '^z' fzf-cd-widget
     bindkey '^f' fzf-file-widget
     type - p rg &>/dev/null && \
         bindkey '^[ ' ripgrep_search #alt+space
 }
+# ctrl + enter to open in vscode
+bindkey '^j' open-with
+bindkey '^k' open-with-code
 # Use fzf with syntax highlighted history
-bindkey '^R' fzf-history-syntax-highlighted-widget
+# bindkey '^R' fzf-history-syntax-highlighted-widget
 
 function nuc(){
  python nuc.py search "" | fzf \
@@ -27,3 +31,6 @@ function nuc(){
 
 zle -N nuc
 bindkey '^n' nuc
+
+
+eval "$(atuin init zsh --disable-up-arrow)"
