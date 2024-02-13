@@ -7,4 +7,9 @@
 	process = git-lfs filter-process
 	required = true
 [core]
-	excludesfile = ~/Github/dotfiles/global.gitignore
+	excludesfile = /Users/kcw/Github/dotfiles/global.gitignore
+[difftool "sourcetree"]
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path = 
+[mergetool "sourcetree"]
+	trustExitCode = true
