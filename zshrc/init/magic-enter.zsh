@@ -11,4 +11,4 @@ function magic-enter-cmd {
     fi
     echo $cmd
 }
-gh_source zshzoo/magic-enter/magic-enter.plugin.zsh
+# gh_source zshzoo/magic-enter/magic-enter.plugin.zsh
