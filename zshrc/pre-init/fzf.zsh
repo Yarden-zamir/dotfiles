@@ -26,6 +26,7 @@ export FZF_DEFAULT_OPTS=" \
     --color=label:italic \
     --border-label-pos='1000:top' \
     --reverse  \
+    -i \
     --no-scrollbar"
 
 export FZF_CTRL_T_OPTS=" \
