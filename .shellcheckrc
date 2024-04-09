@@ -1,0 +1,5 @@
+# Ignore SC2148: Tips depend on target shell and yours is unknown. Add a shebang.
+# Add other ignored warnings here, if needed.
+
+# Ignore SC2148
+disable=SC2148
