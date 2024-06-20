@@ -2,3 +2,4 @@ zshenv
 zshrc
 completions
 .DS_Store
+.mise.toml
