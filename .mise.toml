@@ -1,0 +1,24 @@
+[tools]
+
+
+[env]
+
+[tasks.stow]
+run = "stow . --target=$HOME"
+
+[tasks."stow:adopt"]
+run = "stow . --target=$HOME --adopt"
+
+[tasks."sleep:10"]
+run = "sleep 10"
+
+[tasks."sleep:4"]
+run = "sleep 4"
+depends = ["sleep:5"]
+
+[tasks."sleep:5"]
+run = "sleep 5"
+
+[tasks."sleep:all"]
+run = "echo not tired"
+depends = ["sleep:10", "sleep:4", "sleep:5"]

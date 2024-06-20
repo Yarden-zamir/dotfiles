@@ -1,0 +1,6 @@
+[tools]
+usage = "0.2.0"
+dotnet = "latest"
+
+[settings]
+experimental = true
