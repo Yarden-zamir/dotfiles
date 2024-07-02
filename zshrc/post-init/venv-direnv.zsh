@@ -3,4 +3,7 @@ type -p direnv &>/dev/null && {
         [[ -f .envrc ]] || echo '#! /bin/sh \nlayout python python3' > .envrc
         direnv allow
     }
+    function direnv-venv {
+        venv-direnv
+    }
 }
