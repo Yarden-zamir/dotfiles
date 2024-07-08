@@ -6,3 +6,5 @@ export NUGET_USER=$EMAIL
 export HOMEBREW_NO_ENV_HINTS=true
 
 export RUNNER_ALLOW_RUNASROOT=1
+
+export EDITOR=nvim
