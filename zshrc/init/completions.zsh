@@ -10,11 +10,12 @@ zstyle ':fzf-tab:*' single-group color header
 zstyle ':completion:*' fzf-search-display true
 zstyle ':completion:*' insert-tab false
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS} # set list-colors to enable filename colorizing
-
+# make comletion case insensitive
 zstyle ':completion:*:git-checkout:*' sort false # disable sort when completing `git checkout`
 zstyle ':completion:*:descriptions' format '[%d]' # set descriptions format to enable group support
 
-zstyle ':fzf-tab:complete:*' fzf-min-height 30
+zstyle ':fzf-tab:complete:*' fzf-min-height 30  
+
 
 # zstyle ':fzf-tab:sources' config-directory "$DOTFILES/zshrc/completion-preview-specs"
 gh_source yarden-zamir/fzf-tab-source/fzf-tab-source.plugin.zsh
