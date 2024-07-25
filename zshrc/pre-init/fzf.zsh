@@ -34,7 +34,7 @@ export FZF_CTRL_T_OPTS=" \
     --preview '\
         ([ -d {} ] && erd {} 2> /dev/null || erd {} --hidden --no-git) ||\
         bat --terminal-width \$(expr \$(tput cols) / 2 - 7) --wrap=character --color=always --style=header {}'"
-    # --preview '[ -d {} ] && et --dirs-first --icons --sort=name --scale=0 --level=4 {} || bat --terminal-width \$(expr \$(tput cols) / 2 - 7) --wrap=character --color=always --style=header --line-range :300 {}'"
+# --preview '[ -d {} ] && et --dirs-first --icons --sort=name --scale=0 --level=4 {} || bat --terminal-width \$(expr \$(tput cols) / 2 - 7) --wrap=character --color=always --style=header --line-range :300 {}'"
 export FZF_ALT_C_OPTS="
     $FZF_CTRL_T_OPTS
     "
@@ -47,8 +47,8 @@ export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
 fzf-file-or-folder-to-editor() {
     editor=${EDITOR:-code}
-    choice="$(eval $FZF_DEFAULT_COMMAND | eval fzf $FZF_CTRL_T_OPTS |tr '\n' ' ')" && [[ ! -z $choice ]] &&\
-    $editor $choice
+    choice="$(eval "$FZF_DEFAULT_COMMAND" | eval fzf "$FZF_CTRL_T_OPTS" | tr '\n' ' ')" && [[ ! -z $choice ]] &&
+        $editor "$choice"
 }
 
 zle -N fzf-file-or-folder-to-editor fzf-file-or-folder-to-editor
