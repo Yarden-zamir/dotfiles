@@ -1,4 +1,4 @@
-OPEN_WITH_PROGRAMS=(code open github rider github-online)
+OPEN_WITH_PROGRAMS=(code open github rider github-online github-online-main)
 open-with() {
     # open current folder with a program selected with fzf
     local program
@@ -8,6 +8,9 @@ open-with() {
         code -r .
         ;;
     github-online)
+        gh repo view --web --branch "$(git branch --show-current)"
+        ;;
+    github-online-main)
         gh repo view --web
         ;;
     *)
