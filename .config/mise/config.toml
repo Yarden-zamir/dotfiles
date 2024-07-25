@@ -1,6 +1,7 @@
 [tools]
-usage = "0.2.0"
-dotnet = "latest"
+usage = "0.3"
+dotnet = "8.0.303"
+python = "3.12.0"
 
 [settings]
 experimental = true
