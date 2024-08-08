@@ -6,6 +6,7 @@ gh_source yarden-zamir/zsh-act-completion \
     "export FPATH=$FPATH:{}/zsh"
 gh_source perlpunk/shell-completions \
     "export FPATH=$FPATH:{}/zsh"
+zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 
 autoload -Uz compinit
 
