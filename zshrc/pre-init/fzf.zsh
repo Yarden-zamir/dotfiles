@@ -32,7 +32,7 @@ export FZF_DEFAULT_OPTS=" \
 export FZF_CTRL_T_OPTS=" \
     --bind 'ctrl-o:become(code {})' \
     --preview '\
-        ([ -d {} ] && erd {} 2> /dev/null || erd {} --hidden --no-git) ||\
+        ([ -d {} ] && erd {} 2> /dev/null || erd {} --hidden --no-git 2> /dev/null || echo {}) ||\
         bat --terminal-width \$(expr \$(tput cols) / 2 - 7) --wrap=character --color=always --style=header {}'"
 # --preview '[ -d {} ] && et --dirs-first --icons --sort=name --scale=0 --level=4 {} || bat --terminal-width \$(expr \$(tput cols) / 2 - 7) --wrap=character --color=always --style=header --line-range :300 {}'"
 export FZF_ALT_C_OPTS="
