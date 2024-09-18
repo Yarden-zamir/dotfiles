@@ -13,6 +13,7 @@ export FZF_DEFAULT_OPTS=" \
     --bind 'alt-space:toggle+down' \
     --bind 'ctrl-space:toggle+down' \
     --bind 'alt-enter:toggle+down' \
+    --select-1 \
     --height=100% \
     --multi  \
     --no-separator \
