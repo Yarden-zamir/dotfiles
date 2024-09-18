@@ -11,7 +11,7 @@ Computer-Engineering-Major-Ort-Ariel/WebTemplate"
 
 for folder in $INDEX_FOLDERS; do
     all_items+="$folder\n"
-    all_items+="$(find "$folder" -maxdepth 1 -mindepth 1 -type d -printf "%p\n")\n"
+    all_items+="$(find "$folder" -maxdepth 1 -mindepth 1 -type d -print0 | xargs -0 printf "%s\n")\n"
 done
 
 navigate() {
