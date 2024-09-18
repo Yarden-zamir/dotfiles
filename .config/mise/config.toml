@@ -1,6 +1,6 @@
 [tools]
 usage = "0.3"
-dotnet = "8.0.303"
+dotnet = "8.0.401"
 python = "3.12.0"
 
 [settings]
