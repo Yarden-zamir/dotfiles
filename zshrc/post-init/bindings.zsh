@@ -17,7 +17,7 @@ type -p fzf &>/dev/null && {
 }
 # ctrl + enter to open in vscode
 bindkey '^b' open-with
-bindkey '^[b' open-with
+# bindkey '^[b' open-with
 bindkey '^k' open-with-code
 # Use fzf with syntax highlighted history
 # bindkey '^R' fzf-history-syntax-highlighted-widget
@@ -35,3 +35,16 @@ zle -N nuc
 bindkey '^n' nuc
 
 eval "$(atuin init zsh --disable-up-arrow)"
+
+
+autoload -Uz edit-command-line
+zle -N edit-command-line
+# bindkey '^e' edit-command-line
+
+WORDCHARS='*?_-.[]~=&;!#$%^(){}<>/ '$'\n'
+autoload -Uz select-word-style
+select-word-style normal
+zstyle ':zle:*' word-style unspecified
+
+bindkey ';3A' move-beginning-of-line
+bindkey ';3B' move-end-of-line
