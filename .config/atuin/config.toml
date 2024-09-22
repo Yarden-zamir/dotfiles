@@ -1,0 +1,16 @@
+auto_sync = true
+update_check = false
+workspaces = true
+filter_mode_shell_up_key_binding = "global"
+search_mode_shell_up_key_binding = "prefix"
+style = "compact"
+invert = true
+show_preview = true
+inline_height = 400
+ctrl_n_shortcuts = true
+max_preview_height = 14
+show_help = false
+enter_accept = true
+common_prefix = ["sudo"]
+[dotfiles]
+enabled = true
