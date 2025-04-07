@@ -39,6 +39,7 @@ default-root-container-orientation = 'auto'
 # See https://nikitabobko.github.io/AeroSpace/commands#move-mouse
 # Fallback value (if you omit the key): on-focused-monitor-changed = []
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+# on-focus-changed = ['move-mouse window-lazy-center']
 
 # You can effectively turn off macOS "Hide application" (cmd-h) feature by toggling this flag
 # Useful if you don't use this macOS feature, but accidentally hit cmd-h or cmd-alt-h key
@@ -61,7 +62,7 @@ preset = 'qwerty'
 inner.horizontal = 10
 inner.vertical =   10
 outer.left =       10
-outer.bottom =     10
+outer.bottom =     0
 outer.top =        10
 outer.right =      10
 
@@ -96,24 +97,33 @@ outer.right =      10
 # '''
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#layout
+# alt-slash = 'layout tiles horizontal vertical'
 alt-slash = 'layout tiles horizontal vertical'
-alt-comma = 'layout accordion horizontal vertical'
+alt-p = 'layout accordion horizontal vertical'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#focus
 alt-h = 'focus left'
 alt-j = 'focus down'
 alt-k = 'focus up'
 alt-l = 'focus right'
+alt-s  = 'focus left'
+alt-f = 'focus down'
+alt-d = 'focus up'
+alt-g = 'focus right'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move
 alt-shift-h = 'move left'
 alt-shift-j = 'move down'
 alt-shift-k = 'move up'
 alt-shift-l = 'move right'
+alt-shift-s = 'move left'
+alt-shift-f = 'move down'
+alt-shift-d = 'move up'
+alt-shift-g = 'move right'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#resize
-alt-shift-minus = 'resize smart -50'
-alt-shift-equal = 'resize smart +50'
+alt-shift-minus = 'resize smart -350'
+alt-shift-equal = 'resize smart +350'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace
 alt-1 = 'workspace 1'
@@ -162,5 +172,3 @@ run = 'layout floating'
 [[on-window-detected]]
 if.app-name-regex-substring = 'finder'
 run = 'layout floating'
-
-
