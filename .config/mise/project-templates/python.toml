@@ -1,8 +1,0 @@
-[tools]
-python = "3.11.9"
-
-[env]
-_.python.venv = { path = ".venv", create = true }
-
-[tasks."reset:venv"] 
-run = "rm -rf .venv"
