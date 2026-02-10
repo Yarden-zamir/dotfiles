@@ -1,6 +1,7 @@
 # config for fzf
 gh_source junegunn/fzf '[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh || {}/install'
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+    # --bind 'tab:replace-query' \
 export FZF_DEFAULT_OPTS=" \
     --bind 'bs:backward-delete-char/eof' \
     --bind 'ctrl-p:toggle-preview' \
@@ -8,14 +9,11 @@ export FZF_DEFAULT_OPTS=" \
     --bind 'ctrl-y:execute-silent(echo -n {} | pbcopy)' \
     --bind 'alt-up:half-page-up' \
     --bind 'alt-down:half-page-down' \
-    --bind 'tab:replace-query' \
     --bind 'ctrl-a:toggle-all' \
     --bind 'alt-space:toggle+down' \
     --bind 'ctrl-space:toggle+down' \
     --bind 'alt-enter:toggle+down' \
-    --select-1 \
     --height=100% \
-    --multi  \
     --no-separator \
     --info inline:'' \
     --prompt='🥔 ' \

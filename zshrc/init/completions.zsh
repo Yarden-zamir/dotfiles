@@ -1,11 +1,12 @@
 
 gh_source Aloxaf/fzf-tab/fzf-tab.plugin.zsh
+zstyle ':fzf-tab:*' use-zcompui yes
+zstyle ':fzf-tab:*' zcompui-command /Users/kcw/GitHub/fzf-tab/target/release/zcompui
 
 zstyle ':fzf-tab:*' switch-group ',' '.'
 zstyle ':fzf-tab:*' prefix ''
 zstyle ':fzf-tab:*' continuous-trigger 'tab'
 zstyle ':fzf-tab:*' single-group color header
-# zstyle ':fzf-tab:*' continuous-trigger 'right' # not needed because of `right:replace-query`
 
 zstyle ':completion:*' fzf-search-display true
 zstyle ':completion:*' insert-tab false
@@ -13,7 +14,7 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS} # set list-colors to enabl
 # make comletion case insensitive
 zstyle ':completion:*:git-checkout:*' sort false # disable sort when completing `git checkout`
 zstyle ':completion:*:descriptions' format '[%d]' # set descriptions format to enable group support
-
+zstyle ':fzf-tab:*' use-fzf-default-opts yes
 zstyle ':fzf-tab:complete:*' fzf-min-height 30  
 
 
@@ -30,4 +31,8 @@ gh_source zsh-users/zsh-autosuggestions/zsh-autosuggestions.zsh
 # To install shell completions, add this to your profile:
 if command -v ngrok &>/dev/null; then
     eval "$(ngrok completion)"
+fi
+
+if command -v uv &>/dev/null; then
+    eval "$(uv generate-shell-completion zsh)"
 fi

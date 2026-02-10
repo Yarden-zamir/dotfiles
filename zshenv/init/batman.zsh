@@ -1,1 +1,1 @@
-export MANPAGER="sh -c 'col -bx | bat -l man -p --color always'"
+export MANPAGER="sh -c 'col -bx | bat --theme=ansi -l man -p --color always'"
