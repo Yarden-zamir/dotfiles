@@ -1,6 +1,7 @@
 auto_sync = true
 update_check = false
 workspaces = true
+# filter_mode = "directory"
 filter_mode_shell_up_key_binding = "global"
 search_mode_shell_up_key_binding = "prefix"
 style = "compact"
@@ -14,3 +15,5 @@ enter_accept = true
 common_prefix = ["sudo"]
 [dotfiles]
 enabled = true
+[sync]
+records = true

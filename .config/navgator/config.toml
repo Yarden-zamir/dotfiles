@@ -1,0 +1,3 @@
+[paths]
+index_folders = ["/Users/kcw/Github", "/Users/kcw/Desktop"]
+static_items = ["/opt/homebrew", "/Users/kcw/Downloads"]

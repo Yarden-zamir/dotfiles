@@ -8,8 +8,16 @@
 	required = true
 [core]
 	excludesfile = /Users/kcw/Github/dotfiles/global.gitignore
+	fsmonitor = true
+	untrackedcache = true
+	preloadindex = true
+	editor = code --wait
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
 [mergetool "sourcetree"]
 	trustExitCode = true
+[pack]
+	threads = 0
+[feature]
+	manyFiles = true
