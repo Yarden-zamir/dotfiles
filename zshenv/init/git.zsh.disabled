@@ -1,0 +1,787 @@
+# Enhanced merge conflict resolution
+# Enhanced merge conflict resolution
+handle_merge_conflict() {
+    if ! git status --porcelain | grep -q "^UU\|^AA\|^DD"; then
+        return 0
+    fi
+    
+    echo "\033[31m⚠️ Merge conflicts detected!\033[0m"
+    
+    local conflict_files=$(git status --porcelain | grep "^UU\|^AA\|^DD" | awk '{print $2}')
+    local conflict_count=$(echo "$conflict_files" | wc -l)
+    
+    echo "\033[33m📝 Found $conflict_count conflicted file(s):\033[0m"
+    echo "$conflict_files" | sed 's/^/  /'
+    
+    local conflict_tool=$(echo -e "🔧 mergetool\n🚀 gitClient (per file)\n🚀 gitClient (project)\n🐙 GitHub Desktop\n💻 VSCode\n✋ Handle manually\n❌ Abort merge" | \
+        fzf --prompt "🎯 Choose conflict resolution tool: ")
+    
+    case "$conflict_tool" in
+        "🔧 mergetool")
+            git mergetool
+            ;;
+        "🚀 gitClient (per file)")
+            if command -v gitclient >/dev/null 2>&1; then
+                echo "$conflict_files" | while read -r file; do
+                    if [[ -n "$file" ]]; then
+                        echo "\033[36m🔀 Resolving conflicts in: $file\033[0m"
+                        
+                        # Create temporary files for the different versions
+                        local temp_dir=$(mktemp -d)
+                        local local_file="$temp_dir/local_$(basename "$file")"
+                        local remote_file="$temp_dir/remote_$(basename "$file")"
+                        local base_file="$temp_dir/base_$(basename "$file")"
+                        
+                        # Extract the different versions from git index
+                        git show ":2:$file" > "$local_file" 2>/dev/null || touch "$local_file"
+                        git show ":3:$file" > "$remote_file" 2>/dev/null || touch "$remote_file"
+                        git show ":1:$file" > "$base_file" 2>/dev/null || touch "$base_file"
+                        
+                        # Use gitClient merge command (suppress JB internal warnings)
+                        if [[ -s "$base_file" ]]; then
+                            gitclient merge "$local_file" "$remote_file" "$base_file" "$file" 2>/dev/null
+                        else
+                            gitclient merge "$local_file" "$remote_file" "$file" 2>/dev/null
+                        fi
+                        
+                        # Clean up temp files
+                        rm -rf "$temp_dir"
+                        
+                        # Mark as resolved if user saved the file
+                        if ! grep -q "<<<<<<< HEAD\|=======\|>>>>>>>" "$file" 2>/dev/null; then
+                            git add "$file"
+                            echo "\033[32m✅ Marked $file as resolved\033[0m"
+                        fi
+                    fi
+                done
+            elif command -v git-client >/dev/null 2>&1; then
+                echo "$conflict_files" | while read -r file; do
+                    if [[ -n "$file" ]]; then
+                        echo "\033[36m🔀 Resolving conflicts in: $file\033[0m"
+                        
+                        local temp_dir=$(mktemp -d)
+                        local local_file="$temp_dir/local_$(basename "$file")"
+                        local remote_file="$temp_dir/remote_$(basename "$file")"
+                        local base_file="$temp_dir/base_$(basename "$file")"
+                        
+                        git show ":2:$file" > "$local_file" 2>/dev/null || touch "$local_file"
+                        git show ":3:$file" > "$remote_file" 2>/dev/null || touch "$remote_file"
+                        git show ":1:$file" > "$base_file" 2>/dev/null || touch "$base_file"
+                        
+                        if [[ -s "$base_file" ]]; then
+                            git-client merge "$local_file" "$remote_file" "$base_file" "$file" 2>/dev/null
+                        else
+                            git-client merge "$local_file" "$remote_file" "$file" 2>/dev/null
+                        fi
+                        
+                        rm -rf "$temp_dir"
+                        
+                        if ! grep -q "<<<<<<< HEAD\|=======\|>>>>>>>" "$file" 2>/dev/null; then
+                            git add "$file"
+                            echo "\033[32m✅ Marked $file as resolved\033[0m"
+                        fi
+                    fi
+                done
+            else
+                echo "\033[31m❌ JetBrains gitClient not found\033[0m"
+            fi
+            ;;
+        "🚀 gitClient (project)")
+            if command -v gitclient >/dev/null 2>&1; then
+                gitclient . 2>/dev/null &
+            elif command -v git-client >/dev/null 2>&1; then
+                git-client . 2>/dev/null &
+            else
+                echo "\033[31m❌ JetBrains gitClient not found\033[0m"
+            fi
+            ;;
+        "🐙 GitHub Desktop")
+            if command -v github >/dev/null 2>&1; then
+                github .
+            else
+                echo "\033[31m❌ GitHub Desktop not found\033[0m"
+            fi
+            ;;
+        "💻 VSCode")
+            if command -v code >/dev/null 2>&1; then
+                code .
+            else
+                echo "\033[31m❌ VSCode not found\033[0m"
+            fi
+            ;;
+        "✋ Handle manually")
+            echo "\033[33m📝 Conflict files:\033[0m"
+            echo "$conflict_files" | sed 's/^/  /'
+            ;;
+        "❌ Abort merge")
+            git merge --abort
+            echo "\033[31m❌ Merge aborted\033[0m"
+            ;;
+    esac
+}
+
+git_stash() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "\033[31m❌ Not in a git repository\033[0m"
+        return 1
+    fi
+
+    local stashes=$(git stash list --format="%gd|%s|%cr" 2>/dev/null)
+    
+    if [[ -z "$stashes" ]]; then
+        local action=$(echo -e "💾 Create new stash\n💾 Create stash with message\n❌ Cancel" | \
+            fzf --prompt "📦 No stashes found: ")
+        
+        case "$action" in
+            "💾 Create new stash")
+                echo "\033[32m💾 Creating stash...\033[0m"
+                git stash
+                ;;
+            "💾 Create stash with message")
+                echo "\033[33m💡 Enter stash message:\033[0m"
+                local stash_message=""
+                vared stash_message
+                if [[ -n "$stash_message" ]]; then
+                    git stash push -m "$stash_message"
+                    echo "\033[32m💾 Created stash: $stash_message\033[0m"
+                fi
+                ;;
+        esac
+        return 0
+    fi
+    
+    local selection=$(echo "$stashes" | \
+        while IFS='|' read -r stash_ref message time; do
+            printf "\033[36m%s\033[0m %s \033[90m(%s)\033[0m\n" "$stash_ref" "$message" "$time"
+        done | \
+        fzf --ansi \
+            --prompt "📦 Select stash: " \
+            --header $'\033[36m>> 💾 Press TAB to create new stash <<\033[0m' \
+            --preview 'git stash show -p $(echo {} | awk "{print \$1}") 2>/dev/null || echo "📝 No diff available"' \
+            --preview-window=right:60% \
+            --bind 'tab:print-query' \
+            --print-query)
+    
+    local query=$(echo "$selection" | head -1)
+    local choice=$(echo "$selection" | tail -1)
+    
+    if [[ -z "$choice" && -n "$query" ]] || [[ "$choice" == "$query" ]]; then
+        if [[ -n "$query" ]]; then
+            echo "\033[32m💾 Creating stash with message: $query\033[0m"
+            git stash push -m "$query"
+        fi
+        return 0
+    fi
+    
+    [[ -z "$choice" ]] && return 0
+    
+    local stash_ref=$(echo "$choice" | awk '{print $1}')
+    [[ -z "$stash_ref" ]] && return 0
+    
+    local action=$(echo -e "✅ Apply stash\n🎯 Pop stash\n🌿 Create branch from stash\n🗑️ Drop stash\n👁️ Show stash details\n💾 Create new stash\n❌ Cancel" | \
+        fzf --prompt "🎯 Action for '$stash_ref': ")
+    
+    case "$action" in
+        "✅ Apply stash")
+            echo "\033[32m✅ Applying stash: $stash_ref\033[0m"
+            git stash apply "$stash_ref"
+            ;;
+        "🎯 Pop stash")
+            echo "\033[32m🎯 Popping stash: $stash_ref\033[0m"
+            git stash pop "$stash_ref"
+            ;;
+        "🌿 Create branch from stash")
+            echo "\033[33m💡 Enter branch name for stash $stash_ref:\033[0m"
+            local branch_name=""
+            vared branch_name
+            if [[ -n "$branch_name" ]]; then
+                branch_name="${branch_name// /-}"
+                echo "\033[32m🌿 Creating branch '$branch_name' from stash $stash_ref\033[0m"
+                git stash branch "$branch_name" "$stash_ref"
+            fi
+            ;;
+        "🗑️ Drop stash")
+            echo "\033[31m🗑️ Dropping stash: $stash_ref\033[0m"
+            git stash drop "$stash_ref"
+            ;;
+        "👁️ Show stash details")
+            git stash show -p "$stash_ref" | less
+            ;;
+        "💾 Create new stash")
+            echo "\033[33m💡 Enter stash message (or leave empty for auto message):\033[0m"
+            local stash_message=""
+            vared stash_message
+            if [[ -n "$stash_message" ]]; then
+                git stash push -m "$stash_message"
+            else
+                git stash
+            fi
+            ;;
+    esac
+}
+
+git_stage() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "\033[31m❌ Not in a git repository\033[0m"
+        return 1
+    fi
+
+    local files=$(git status --porcelain | \
+        while read -r status file; do
+            local color="\033[31m"
+            local emoji="📝"
+            case "$status" in
+                "M ") color="\033[32m"; emoji="✅" ;;
+                " M") color="\033[33m"; emoji="⚠️ " ;;
+                "MM") color="\033[35m"; emoji="🔄" ;;
+                "A ") color="\033[32m"; emoji="➕" ;;
+                " A") color="\033[33m"; emoji="📄" ;;
+                "D ") color="\033[31m"; emoji="🗑️" ;;
+                " D") color="\033[31m"; emoji="❌" ;;
+                "??") color="\033[36m"; emoji="❓" ;;
+                "!!") color="\033[90m"; emoji="🚫" ;;
+            esac
+            printf "%s%s %s %s\033[0m\n" "$color" "$emoji" "$status" "$file"
+        done)
+    
+    if [[ -z "$files" ]]; then
+        echo "\033[32m✨ Working directory clean\033[0m"
+        return 0
+    fi
+    
+    local selection=$(echo "$files" | \
+        fzf --ansi \
+            --multi \
+            --prompt "📁 Select files (TAB for multi-select): " \
+            --header $'\033[36m>> ✅=staged ⚠️=modified 📄=new ❌=deleted <<\033[0m' \
+            --preview 'git diff --color=always $(echo {} | awk "{print \$3}") 2>/dev/null || git diff --cached --color=always $(echo {} | awk "{print \$3}") 2>/dev/null || echo "📝 Binary file or no diff"' \
+            --preview-window=right:60%)
+    
+    [[ -z "$selection" ]] && return 0
+    
+    local action=$(echo -e "➕ Stage selected files\n➖ Unstage selected files\n🎯 Stage hunks interactively\n💻 Commit staged files\n🗑️ Discard changes\n❌ Cancel" | \
+        fzf --prompt "🎯 Action for selected files: ")
+    
+    local file_list=$(echo "$selection" | awk '{print $3}' | tr '\n' ' ')
+    
+    case "$action" in
+        "➕ Stage selected files")
+            echo "\033[32m➕ Staging files...\033[0m"
+            echo "$selection" | awk '{print $3}' | xargs git add
+            ;;
+        "➖ Unstage selected files")
+            echo "\033[33m➖ Unstaging files...\033[0m"
+            echo "$selection" | awk '{print $3}' | xargs git reset HEAD --
+            ;;
+        "🎯 Stage hunks interactively")
+            echo "\033[35m🎯 Interactive staging...\033[0m"
+            echo "$selection" | awk '{print $3}' | xargs git add -p
+            ;;
+        "💻 Commit staged files")
+            local staged=$(git diff --cached --name-only)
+            if [[ -z "$staged" ]]; then
+                echo "\033[31m❌ No staged files to commit\033[0m"
+                return 1
+            fi
+            echo "\033[33m💡 Enter commit message:\033[0m"
+            local commit_message=""
+            vared commit_message
+            if [[ -n "$commit_message" ]]; then
+                git commit -m "$commit_message"
+                echo "\033[32m✅ Committed successfully\033[0m"
+            fi
+            ;;
+        "🗑️ Discard changes")
+            echo "\033[31m⚠️  WARNING: This will permanently discard changes!\033[0m"
+            echo "\033[31m🔥 Type 'DISCARD' to confirm:\033[0m"
+            local confirm=""
+            vared confirm
+            if [[ "$confirm" == "DISCARD" ]]; then
+                echo "\033[31m🗑️ Discarding changes...\033[0m"
+                echo "$selection" | awk '{print $3}' | xargs git checkout --
+            else
+                echo "\033[33m❌ Discard cancelled\033[0m"
+            fi
+            ;;
+    esac
+}
+
+git_tags() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "\033[31m❌ Not in a git repository\033[0m"
+        return 1
+    fi
+
+    local tags=$(git tag -l --format='%(refname:short)|%(objectname:short)|%(creatordate:relative)' --sort=-creatordate 2>/dev/null)
+    
+    if [[ -z "$tags" ]]; then
+        local action=$(echo -e "🏷️ Create new tag\n🏷️ Create annotated tag\n❌ Cancel" | \
+            fzf --prompt "🏷️ No tags found: ")
+        
+        case "$action" in
+            "🏷️ Create new tag")
+                echo "\033[33m💡 Enter tag name:\033[0m"
+                local tag_name=""
+                vared tag_name
+                if [[ -n "$tag_name" ]]; then
+                    tag_name="${tag_name// /-}"
+                    git tag "$tag_name"
+                    echo "\033[32m🏷️ Created tag: $tag_name\033[0m"
+                fi
+                ;;
+            "🏷️ Create annotated tag")
+                echo "\033[33m💡 Enter tag name:\033[0m"
+                local tag_name=""
+                vared tag_name
+                if [[ -n "$tag_name" ]]; then
+                    tag_name="${tag_name// /-}"
+                    echo "\033[33m💡 Enter tag message:\033[0m"
+                    local tag_message=""
+                    vared tag_message
+                    if [[ -n "$tag_message" ]]; then
+                        git tag -a "$tag_name" -m "$tag_message"
+                        echo "\033[32m🏷️ Created annotated tag: $tag_name\033[0m"
+                    fi
+                fi
+                ;;
+        esac
+        return 0
+    fi
+    
+    local selection=$(echo "$tags" | \
+        while IFS='|' read -r tag commit_hash date; do
+            printf "\033[33m🏷️ %s\033[0m \033[90m%s\033[0m \033[36m(%s)\033[0m\n" "$tag" "$commit_hash" "$date"
+        done | \
+        fzf --ansi \
+            --prompt "🏷️ Select tag: " \
+            --header $'\033[36m>> 🏷️ Press TAB to create new tag <<\033[0m' \
+            --preview 'git show --color=always $(echo {} | awk "{print \$2}") 2>/dev/null' \
+            --preview-window=right:60% \
+            --bind 'tab:print-query' \
+            --print-query)
+    
+    local query=$(echo "$selection" | head -1)
+    local choice=$(echo "$selection" | tail -1)
+    
+    if [[ -z "$choice" && -n "$query" ]] || [[ "$choice" == "$query" ]]; then
+        if [[ -n "$query" ]]; then
+            local tag_name="${query// /-}"
+            echo "\033[32m🏷️ Creating tag: $tag_name\033[0m"
+            git tag "$tag_name"
+        fi
+        return 0
+    fi
+    
+    [[ -z "$choice" ]] && return 0
+    
+    local tag_name=$(echo "$choice" | awk '{print $2}')
+    [[ -z "$tag_name" ]] && return 0
+    
+    local action=$(echo -e "🎯 Checkout tag\n🌿 Create branch from tag\n📤 Push tag to remote\n📥 Pull tag from remote\n🗑️ Delete tag\n📋 Copy tag name\n👁️ Show tag details\n🏷️ Create new tag\n❌ Cancel" | \
+        fzf --prompt "🎯 Action for tag '$tag_name': ")
+    
+    case "$action" in
+        "🎯 Checkout tag")
+            echo "\033[32m🎯 Checking out tag: $tag_name\033[0m"
+            git checkout "$tag_name"
+            ;;
+        "🌿 Create branch from tag")
+            echo "\033[33m💡 Enter branch name for tag $tag_name:\033[0m"
+            local branch_name=""
+            vared branch_name
+            if [[ -n "$branch_name" ]]; then
+                branch_name="${branch_name// /-}"
+                echo "\033[32m🌿 Creating branch '$branch_name' from tag $tag_name\033[0m"
+                git checkout -b "$branch_name" "$tag_name"
+            fi
+            ;;
+        "📤 Push tag to remote")
+            echo "\033[34m📤 Pushing tag to remote: $tag_name\033[0m"
+            git push origin "$tag_name"
+            ;;
+        "📥 Pull tag from remote")
+            echo "\033[34m📥 Fetching tags from remote...\033[0m"
+            git fetch --tags
+            ;;
+        "🗑️ Delete tag")
+            echo "\033[31m🗑️ Deleting tag: $tag_name\033[0m"
+            git tag -d "$tag_name"
+            ;;
+        "📋 Copy tag name")
+            if command -v pbcopy >/dev/null 2>&1; then
+                echo "$tag_name" | pbcopy
+                echo "\033[32m📋 Copied tag name to clipboard: $tag_name\033[0m"
+            elif command -v xclip >/dev/null 2>&1; then
+                echo "$tag_name" | xclip -selection clipboard
+                echo "\033[32m📋 Copied tag name to clipboard: $tag_name\033[0m"
+            elif command -v xsel >/dev/null 2>&1; then
+                echo "$tag_name" | xsel --clipboard --input
+                echo "\033[32m📋 Copied tag name to clipboard: $tag_name\033[0m"
+            else
+                echo "\033[33m📋 Tag name: $tag_name\033[0m"
+            fi
+            ;;
+        "👁️ Show tag details")
+            git show "$tag_name" | less
+            ;;
+        "🏷️ Create new tag")
+            echo "\033[33m💡 Enter new tag name:\033[0m"
+            local new_tag=""
+            vared new_tag
+            if [[ -n "$new_tag" ]]; then
+                new_tag="${new_tag// /-}"
+                git tag "$new_tag"
+                echo "\033[32m🏷️ Created tag: $new_tag\033[0m"
+            fi
+            ;;
+    esac
+}
+
+git_reflog() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "\033[31m❌ Not in a git repository\033[0m"
+        return 1
+    fi
+
+    local reflog_entries=$(git reflog --format='%h|%gd|%gs|%cr' 2>/dev/null)
+    
+    if [[ -z "$reflog_entries" ]]; then
+        echo "\033[33m⚠️ No reflog entries found\033[0m"
+        return 0
+    fi
+    
+    local selection=$(echo "$reflog_entries" | \
+        while IFS='|' read -r hash ref action time; do
+            printf "\033[33m%s\033[0m \033[36m%s\033[0m %s \033[90m(%s)\033[0m\n" "$hash" "$ref" "$action" "$time"
+        done | \
+        fzf --ansi \
+            --prompt "🔄 Select reflog entry: " \
+            --preview 'git show --color=always $(echo {} | awk "{print \$1}") 2>/dev/null' \
+            --preview-window=right:60%)
+    
+    [[ -z "$selection" ]] && return 0
+    
+    local commit_hash=$(echo "$selection" | awk '{print $1}')
+    local ref_name=$(echo "$selection" | awk '{print $2}')
+    [[ -z "$commit_hash" ]] && return 0
+    
+    local action=$(echo -e "🎯 Checkout commit\n🌿 Create branch from commit\n🔄 Reset --hard to commit\n📝 Reset --soft to commit\n🍒 Cherry-pick commit\n📋 Copy commit hash\n👁️ Show commit details\n❌ Cancel" | \
+        fzf --prompt "🎯 Action for '$ref_name' ($commit_hash): ")
+    
+    case "$action" in
+        "🎯 Checkout commit")
+            echo "\033[32m🎯 Checking out commit: $commit_hash\033[0m"
+            git checkout "$commit_hash"
+            ;;
+        "🌿 Create branch from commit")
+            echo "\033[33m💡 Enter branch name for commit $commit_hash:\033[0m"
+            local branch_name=""
+            vared branch_name
+            if [[ -n "$branch_name" ]]; then
+                branch_name="${branch_name// /-}"
+                echo "\033[32m🌿 Creating branch '$branch_name' from commit $commit_hash\033[0m"
+                git checkout -b "$branch_name" "$commit_hash"
+            fi
+            ;;
+        "🔄 Reset --hard to commit")
+            echo "\033[31m⚠️  WARNING: This will PERMANENTLY DELETE all changes after commit $commit_hash!\033[0m"
+            echo "\033[31m🔥 This action cannot be undone. Type 'DELETE' to confirm:\033[0m"
+            local confirm=""
+            vared confirm
+            if [[ "$confirm" == "DELETE" ]]; then
+                echo "\033[31m💥 Performing hard reset to: $commit_hash\033[0m"
+                git reset --hard "$commit_hash"
+            else
+                echo "\033[33m❌ Reset cancelled\033[0m"
+            fi
+            ;;
+        "📝 Reset --soft to commit")
+            echo "\033[34m📝 Soft resetting to commit: $commit_hash\033[0m"
+            git reset --soft "$commit_hash"
+            ;;
+        "🍒 Cherry-pick commit")
+            echo "\033[35m🍒 Cherry-picking commit: $commit_hash\033[0m"
+            git cherry-pick "$commit_hash"
+            ;;
+        "📋 Copy commit hash")
+            if command -v pbcopy >/dev/null 2>&1; then
+                echo "$commit_hash" | pbcopy
+                echo "\033[32m📋 Copied commit hash to clipboard: $commit_hash\033[0m"
+            elif command -v xclip >/dev/null 2>&1; then
+                echo "$commit_hash" | xclip -selection clipboard
+                echo "\033[32m📋 Copied commit hash to clipboard: $commit_hash\033[0m"
+            elif command -v xsel >/dev/null 2>&1; then
+                echo "$commit_hash" | xsel --clipboard --input
+                echo "\033[32m📋 Copied commit hash to clipboard: $commit_hash\033[0m"
+            else
+                echo "\033[33m📋 Commit hash: $commit_hash\033[0m"
+            fi
+            ;;
+        "👁️ Show commit details")
+            git show "$commit_hash" | less
+            ;;
+    esac
+}
+
+# Enhanced git_branch with comparison options
+git_branch() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "\033[31m❌ Not in a git repository\033[0m"
+        return 1
+    fi
+
+    local branches=$(git for-each-ref --format='%(refname:short)|%(committerdate:relative)|%(authorname)' refs/heads/ refs/remotes/ | \
+        while IFS='|' read -r branch date author; do
+            local color="\033[31m"
+            local emoji="🔴"
+            if [[ $date == *"minute"* ]] || [[ $date == *"hour"* ]] || [[ $date == *"day"* ]]; then
+                color="\033[32m"
+                emoji="🟢"
+            elif [[ $date == *"week"* ]] || [[ $date == *"month"* ]]; then
+                color="\033[33m"
+                emoji="🟡"
+            fi
+            printf "%s%s %s\033[0m %s (%s by %s)\n" "$color" "$emoji" "$branch" "$branch" "$date" "$author"
+        done | sort -k3 | \
+        awk '/main|master/ {print; next} {rest = rest $0 "\n"} END {printf "%s", rest}')
+    
+    local current_branch=$(git branch --show-current)
+    
+    local selection=$(printf "%s\n" "$branches" | \
+        fzf --ansi \
+            --prompt "🌿 Select branch: " \
+            --header $'\033[36m>> 🚀 Press TAB to create new branch with current query <<\033[0m' \
+            --preview 'git log --oneline --graph --color=always $(echo {} | awk "{print \$3}") -- 2>/dev/null || echo "📝 No commits yet"' \
+            --preview-window=right:50% \
+            --with-nth=3.. \
+            --bind 'tab:print-query' \
+            --print-query)
+    
+    local query=$(echo "$selection" | head -1)
+    local choice=$(echo "$selection" | tail -1)
+    
+    if [[ -z "$choice" && -n "$query" ]] || [[ "$choice" == "$query" ]]; then
+        if [[ -n "$query" ]]; then
+            local branch_name="${query// /-}"
+            
+            local creation_option=$(echo -e "🚀 Create and switch\n💾 Stash changes and create\n📝 Commit changes and create\n🌿 Create from current HEAD\n❌ Cancel" | \
+                fzf --prompt "🎯 How to create branch '$branch_name'? ")
+            
+            case "$creation_option" in
+                "🚀 Create and switch")
+                    echo "\033[32m🚀 Creating and switching to branch: $branch_name\033[0m"
+                    git checkout -b "$branch_name"
+                    ;;
+                "💾 Stash changes and create")
+                    echo "\033[33m💾 Stashing changes and creating branch: $branch_name\033[0m"
+                    git stash push -m "Auto-stash before creating $branch_name"
+                    git checkout -b "$branch_name"
+                    ;;
+                "📝 Commit changes and create")
+                    echo "\033[34m📝 Committing changes and creating branch: $branch_name\033[0m"
+                    git add -A
+                    git commit -m "WIP: Before creating branch $branch_name"
+                    git checkout -b "$branch_name"
+                    ;;
+                "🌿 Create from current HEAD")
+                    echo "\033[32m🌿 Creating branch: $branch_name\033[0m"
+                    git branch "$branch_name"
+                    echo "\033[36m📍 Branch '$branch_name' created. Use 'git checkout $branch_name' to switch.\033[0m"
+                    ;;
+            esac
+        fi
+        return 0
+    fi
+    
+    [[ -z "$choice" ]] && return 0
+    
+    local branch_name=$(echo "$choice" | awk '{print $3}')
+    [[ -z "$branch_name" ]] && return 0
+    
+    if [[ "$branch_name" == "$current_branch" ]]; then
+        echo "\033[33m⚠️  Already on branch '$branch_name'\033[0m"
+        return 0
+    fi
+    
+    local action=$(echo -e "🔄 Switch to branch\n🔀 Merge into current branch\n🔁 Rebase current onto this\n🔍 Compare with current branch\n🔍 Compare with another branch\n📋 Copy commit hash\n🗑️ Delete branch\n❌ Cancel" | \
+        fzf --prompt "🎯 Action for '$branch_name': ")
+    
+    case "$action" in
+        "🔄 Switch to branch")
+            echo "\033[32m🔄 Switching to branch: $branch_name\033[0m"
+            git checkout "$branch_name"
+            handle_merge_conflict
+            ;;
+        "🔀 Merge into current branch")
+            echo "\033[34m🔀 Merging '$branch_name' into current branch ($current_branch)\033[0m"
+            git merge "$branch_name"
+            handle_merge_conflict
+            ;;
+        "🔁 Rebase current onto this")
+            echo "\033[35m🔁 Rebasing current branch ($current_branch) onto '$branch_name'\033[0m"
+            git rebase "$branch_name"
+            handle_merge_conflict
+            ;;
+        "🔍 Compare with current branch")
+            echo "\033[36m🔍 Comparing '$branch_name' with current branch ($current_branch)\033[0m"
+            git log --oneline --graph --color=always "$current_branch".."$branch_name" | less
+            ;;
+        "🔍 Compare with another branch")
+            local other_branch=$(git branch -a --format='%(refname:short)' | grep -v "^$branch_name$" | \
+                fzf --prompt "🔍 Compare '$branch_name' with: ")
+            if [[ -n "$other_branch" ]]; then
+                echo "\033[36m🔍 Comparing '$branch_name' with '$other_branch'\033[0m"
+                git log --oneline --graph --color=always "$other_branch".."$branch_name" | less
+            fi
+            ;;
+        "📋 Copy commit hash")
+            local commit_hash=$(git rev-parse "$branch_name")
+            if command -v pbcopy >/dev/null 2>&1; then
+                echo "$commit_hash" | pbcopy
+                echo "\033[32m📋 Copied commit hash to clipboard: $commit_hash\033[0m"
+            elif command -v xclip >/dev/null 2>&1; then
+                echo "$commit_hash" | xclip -selection clipboard
+                echo "\033[32m📋 Copied commit hash to clipboard: $commit_hash\033[0m"
+            elif command -v xsel >/dev/null 2>&1; then
+                echo "$commit_hash" | xsel --clipboard --input
+                echo "\033[32m📋 Copied commit hash to clipboard: $commit_hash\033[0m"
+            else
+                echo "\033[33m📋 Commit hash: $commit_hash\033[0m"
+            fi
+            ;;
+        "🗑️ Delete branch")
+            if [[ "$branch_name" =~ ^(main|master)$ ]]; then
+                echo "\033[31m❌ Cannot delete main/master branch\033[0m"
+                return 1
+            fi
+            echo "\033[31m🗑️ Deleting branch: $branch_name\033[0m"
+            git branch -d "$branch_name" 2>/dev/null || git branch -D "$branch_name"
+            ;;
+    esac
+}
+
+# Enhanced git_history with comparison options
+git_history() {
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "\033[31m❌ Not in a git repository\033[0m"
+        return 1
+    fi
+
+    local commit=$(git log --oneline --graph --color=always \
+        --format="%C(yellow)%h%C(reset) %C(white)%s%C(reset) %C(blue)by %an%C(reset) %C(green)%ar%C(reset)%C(auto)%d%C(reset)" \
+        --all | \
+        sed 's/tag: /🏷️ /g' | \
+        fzf --ansi \
+            --prompt "📋 Select commit: " \
+            --preview 'git show --color=always $(echo {} | grep -o "[a-f0-9]\{7,\}" | head -1)' \
+            --preview-window=right:60% \
+            --bind 'ctrl-d:preview-page-down,ctrl-u:preview-page-up')
+    
+    [[ -z "$commit" ]] && return 0
+    
+    local commit_hash=$(echo "$commit" | grep -o "[a-f0-9]\{7,\}" | head -1)
+    [[ -z "$commit_hash" ]] && return 0
+    
+    local action=$(echo -e "🎯 Checkout commit\n🌿 Create branch from commit\n🔄 Revert commit\n💥 Reset --hard to commit\n📝 Reset --soft to commit\n🍒 Cherry-pick commit\n🏷️ Create tag from commit\n🔍 Compare with another commit\n🔍 Compare with branch\n📋 Copy commit hash\n👁️ Show commit details\n❌ Cancel" | \
+        fzf --prompt "🎯 Action for commit '$commit_hash': ")
+    
+    case "$action" in
+        "🎯 Checkout commit")
+            echo "\033[32m🎯 Checking out commit: $commit_hash\033[0m"
+            git checkout "$commit_hash"
+            ;;
+        "🌿 Create branch from commit")
+            echo "\033[36m🌿 Creating new branch from commit: $commit_hash\033[0m"
+            echo "\033[33m💡 Enter the name for the new branch (will be created from $commit_hash):\033[0m"
+            local branch_input=""
+            vared branch_input
+            if [[ -n "$branch_input" ]]; then
+                local branch_name="${branch_input// /-}"
+                echo "\033[32m🚀 Creating and switching to branch '$branch_name' from commit $commit_hash\033[0m"
+                git checkout -b "$branch_name" "$commit_hash"
+            else
+                echo "\033[31m❌ Branch creation cancelled - no name provided\033[0m"
+            fi
+            ;;
+        "🔄 Revert commit")
+            echo "\033[33m🔄 Reverting commit: $commit_hash\033[0m"
+            git revert "$commit_hash"
+            handle_merge_conflict
+            ;;
+        "💥 Reset --hard to commit")
+            echo "\033[31m⚠️  WARNING: This will PERMANENTLY DELETE all changes after commit $commit_hash!\033[0m"
+            echo "\033[31m🔥 This action cannot be undone. Type 'DELETE' to confirm:\033[0m"
+            local confirm=""
+            vared confirm
+            if [[ "$confirm" == "DELETE" ]]; then
+                echo "\033[31m💥 Performing hard reset to: $commit_hash\033[0m"
+                git reset --hard "$commit_hash"
+            else
+                echo "\033[33m❌ Reset cancelled - confirmation not received\033[0m"
+            fi
+            ;;
+        "📝 Reset --soft to commit")
+            echo "\033[34m📝 Soft resetting to commit: $commit_hash (keeping changes staged)\033[0m"
+            git reset --soft "$commit_hash"
+            ;;
+        "🍒 Cherry-pick commit")
+            echo "\033[35m🍒 Cherry-picking commit: $commit_hash\033[0m"
+            git cherry-pick "$commit_hash"
+            handle_merge_conflict
+            ;;
+        "🏷️ Create tag from commit")
+            echo "\033[36m🏷️ Creating tag from commit: $commit_hash\033[0m"
+            echo "\033[33m💡 Enter tag name (will tag commit $commit_hash):\033[0m"
+            local tag_input=""
+            vared tag_input
+            if [[ -n "$tag_input" ]]; then
+                local tag_name="${tag_input// /-}"
+                echo "\033[32m🏷️ Creating tag '$tag_name' at commit $commit_hash\033[0m"
+                git tag "$tag_name" "$commit_hash"
+            else
+                echo "\033[31m❌ Tag creation cancelled - no name provided\033[0m"
+            fi
+            ;;
+        "🔍 Compare with another commit")
+            local other_commit=$(git log --oneline --format="%h %s" | \
+                fzf --prompt "🔍 Compare '$commit_hash' with: " | awk '{print $1}')
+            if [[ -n "$other_commit" ]]; then
+                echo "\033[36m🔍 Comparing commits $commit_hash and $other_commit\033[0m"
+                git diff --color=always "$other_commit" "$commit_hash" | less
+            fi
+            ;;
+        "🔍 Compare with branch")
+            local branch=$(git branch -a --format='%(refname:short)' | \
+                fzf --prompt "🔍 Compare '$commit_hash' with branch: ")
+            if [[ -n "$branch" ]]; then
+                echo "\033[36m🔍 Comparing commit $commit_hash with branch $branch\033[0m"
+                git diff --color=always "$branch" "$commit_hash" | less
+            fi
+            ;;
+        "📋 Copy commit hash")
+            if command -v pbcopy >/dev/null 2>&1; then
+                echo "$commit_hash" | pbcopy
+                echo "\033[32m📋 Copied commit hash to clipboard: $commit_hash\033[0m"
+            elif command -v xclip >/dev/null 2>&1; then
+                echo "$commit_hash" | xclip -selection clipboard
+                echo "\033[32m📋 Copied commit hash to clipboard: $commit_hash\033[0m"
+            elif command -v xsel >/dev/null 2>&1; then
+                echo "$commit_hash" | xsel --clipboard --input
+                echo "\033[32m📋 Copied commit hash to clipboard: $commit_hash\033[0m"
+            else
+                echo "\033[33m📋 Commit hash: $commit_hash\033[0m"
+            fi
+            ;;
+        "👁️ Show commit details")
+            git show "$commit_hash" | less
+            ;;
+    esac
+}
+
+# Register all functions
+zle -N git_branch git_branch
+zle -N git_history git_history
+zle -N git_stash git_stash
+zle -N git_stage git_stage
+zle -N git_tags git_tags
+zle -N git_reflog git_reflog
