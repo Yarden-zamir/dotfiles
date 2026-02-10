@@ -1,0 +1,71 @@
+font-size=20
+theme="Light Owl"
+fullscreen=true
+font-family="JetBrains Mono Nerd Font"
+foreground=#000000
+background=#FFFFFF
+palette=7=#7A7A7A
+palette=8=#5C5C5C
+palette=15=#A0A0A0
+bold-color=bright
+font-thicken=true
+font-thicken-strength=0
+window-colorspace = display-p3
+window-theme=ghostty
+macos-titlebar-style = tabs
+
+shell-integration-features=no-title
+
+macos-non-native-fullscreen = false
+# Split creation
+keybind=cmd+d=new_split:right
+keybind=cmd+s=new_split:down
+keybind=cmd+a=new_split:left
+
+# Split navigation
+keybind=cmd+shift+d=goto_split:right
+keybind=cmd+shift+s=goto_split:down
+keybind=cmd+shift+a=goto_split:left
+
+# Global shortcut
+keybind=global:f17=toggle_visibility
+
+# Copy b§§§ehavior
+copy-on-select=clipboard
+keybind=cmd+c=csi:99~
+
+# Shift+Enter inserts a literal newline (zsh quoted-insert)
+keybind=shift+enter=text:\x16\n
+
+# Line/document movement for zsh
+#keybind=cmd+arrow_left=text:\x01
+#keybind=cmd+arrow_right=text:\x05
+#keybind=cmd+arrow_up=esc:<
+#keybind=cmd+arrow_down=esc:>
+## Copy zsh selection#use cmd+shift+c for terminal selection
+#keybind=cmd+c=csi:99~
+#keybind=cmd+shift+c=copy_to_clipboard:mixed
+
+## Word movement
+#keybind=opt+arrow_left=esc:b
+#keybind=opt+arrow_right=esc:f
+## Selection to line/document bounds (handled by zsh)
+#keybind=cmd+shift+arrow_left=csi:1;10D
+#keybind=cmd+shift+arrow_right=csi:1;10C
+#keybind=cmd+shift+arrow_up=csi:1;10A
+#keybind=cmd+shift+arrow_down=csi:1;10B
+
+## Allow zsh to handle Shift+arrows for selection
+#keybind=shift+arrow_left=unbind
+#keybind=shift+arrow_right=unbind
+#keybind=shift+arrow_up=unbind
+#keybind=shift+arrow_down=unbind
+
+## Deletion
+#keybind=backspace=text:\x7f
+#keybind=delete=csi:3~
+#keybind=opt+backspace=esc:\x7f
+#keybind=opt+delete=esc:d
+#keybind=cmd+backspace=text:\x15
+
+confirm-close-surface=false

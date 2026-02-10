@@ -1,5 +1,12 @@
 zshenv
 zshrc
+old
+zshprofile
+zlogin
 completions
 .DS_Store
 .mise.toml
+.navgator.toml
+swiftbar
+zprofile
+.git
