@@ -2,3 +2,14 @@
 **/.direnv
 **/.envrc
 **/.navgator.toml
+*.secret*
+*.work*
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+*.pyc
+.navgator
