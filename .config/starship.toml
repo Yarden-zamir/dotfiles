@@ -1,10 +1,10 @@
 "$schema" = 'https://starship.rs/config-schema.json'
+command_timeout=900
 format = """
 $os\
 $directory\
 [](fg:#DA627D bg:#FCA17D)\
 $git_branch\
-$git_status\
 [](fg:#FCA17D)\
 """
 
@@ -92,6 +92,7 @@ truncate_to_repo = false
 "Music" = " "
 "Pictures" = " "
 "~/GitHub/" = " "
+"~/Github/" = " "
 "~/Library/Application Support/ModrinthApp/profiles/" = "󰊳  "
 "~/Desktop" = "  "
 # Keep in mind that the order matters. For example:
@@ -99,6 +100,7 @@ truncate_to_repo = false
 # will not be replaced, because "Documents" was already substituted before.
 # So either put "Important Documents" before "Documents" or use the substituted version:
 # "Important 󰈙 " = " 󰈙 "
+
 
 [c]
 symbol = " "
@@ -195,3 +197,5 @@ disabled = true
 time_format = "%R" # Hour:Minute Format
 style = "bg:#33658A"
 format = '[ $time ]($style)'
+
+
