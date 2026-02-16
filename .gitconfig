@@ -7,7 +7,7 @@
 	process = git-lfs filter-process
 	required = true
 [core]
-	excludesfile = ~/.gitignore.global
+	excludesfile = ~/global.gitignore
 	fsmonitor = true
 	untrackedCache = true
 	preloadIndex = true
