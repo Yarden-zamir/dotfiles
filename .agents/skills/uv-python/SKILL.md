@@ -1,28 +1,32 @@
 ---
 name: uv-python
-description: Use uv as the default Python workflow for versions, environments, dependencies, scripts, tools, locking, CI, Docker, and publishing. Prefer uv project commands and uv run over raw python or pip.
+description: Use uv as the default Python workflow for versions, environments, dependencies, scripts, tools, locking, CI, Docker, and publishing. Prefer uv project commands and script-first uv run usage over raw python or pip.
 license: MIT
 compatibility: opencode+claude-code
 metadata:
   standard: agentskills.io
   source: docs.astral.sh/uv
-  last-reviewed: 2026-02-16
+  last-reviewed: 2026-02-19
 ---
 
 # uv-python
 
 Use this skill for any Python task that touches environments, dependency management, script execution, tooling, packaging, publishing, CI, or Docker.
+Use this skill for running tasks that benefit from quick ephemeral scripts with inline dependencies instead of using shell command chains when relevant.
 
 ## Non-negotiable defaults
 
 - Prefer `uv` commands over `python`, `pip`, `pip-tools`, `virtualenv`, `pipx`, `poetry`, and `pyenv`.
-- Run Python through uv. Use `uv run python ...` instead of `python ...`.
+- Run scripts through uv. Use `uv run <script.py>` (or `uv run <tool>`) instead of `python ...`.
+- Never use `uv run python ...` or `python -c` in this workflow.
 - In uv projects, change dependencies with `uv add` and `uv remove`, not `uv pip install`.
 - `uv pip install` is legacy compatibility mode and is not recommended for uv-managed projects.
 - In almost all cases, prefer making the workflow uv-project-compatible (`uv add`, `uv lock`, `uv sync`, `uv run`) instead of using the pip interface.
 - Treat `uv.lock` as generated output. Never hand-edit it.
 - Keep dependency changes reproducible: update `pyproject.toml` and `uv.lock` together.
-- For ad-hoc `uv run python -c` snippets, never assume third-party imports exist. Use `--with` for one-off dependencies or `uv add` for persistent ones.
+- For ad-hoc scripts, never assume third-party imports exist. Use `--with` for one-off dependencies or `uv add` for persistent ones.
+- Prefer `ruff` as the default Python validator; do not default to `py_compile`/`compileall`.
+- Use `pyright` as an optional type-checking pass when type safety is required.
 
 ## Mode detection
 
@@ -47,7 +51,13 @@ Use these defaults:
 - Add optional extra dependency: `uv add --optional <extra> <pkg>`
 - Remove dependency: `uv remove <pkg>`
 - Run tests: `uv run pytest`
-- Run module: `uv run -m <module>`
+- Run script entrypoint: `uv run <script.py>`
+
+## Validation workflow
+
+- Primary validation: `uvx ruff check <path>`
+- Optional type checking: `uvx pyright <path>`
+- If `pyright` is part of project tooling, run it via `uv run pyright <path>`.
 
 ## Script mode workflow
 
@@ -64,19 +74,19 @@ Notes:
 - PEP 723 scripts with inline metadata run in isolated environments.
 - If inline metadata exists, project dependencies are ignored for that script.
 
-## Ad-hoc snippet preflight (`uv run python -c`)
+## Ad-hoc script preflight (`uv run <script.py>` / `uv run -`)
 
-Before running any ad-hoc Python snippet:
+Before running any ad-hoc script:
 
-1. Inspect imports in the snippet.
-2. If imports are stdlib-only, run with `uv run python -c ...`.
-3. If snippet uses third-party modules for one-off execution, run with `uv run --with <pkg> [--with <pkg> ...] python -c ...`.
-4. If dependency should persist in project, install first via `uv add <pkg>`, then run with `uv run python -c ...`.
+1. Put logic into a script file (temporary or checked-in), or feed it via stdin with `uv run -`.
+2. If imports are stdlib-only, run with `uv run script.py` (or `uv run -`).
+3. If script uses third-party modules for one-off execution, run with `uv run --with <pkg> [--with <pkg> ...] script.py` (or `uv run --with <pkg> -`).
+4. If dependency should persist in project, install first via `uv add <pkg>`, then run with `uv run script.py`.
 5. If `ModuleNotFoundError` occurs, rerun immediately with `--with` (or install via `uv add`) before retrying.
 
 Example:
 
-- One-off: `uv run --with mpmath python -c "from mpmath import mp; ..."`
+- One-off: `uv run --with mpmath scripts/pi_demo.py`
 
 ## Tool mode workflow
 
