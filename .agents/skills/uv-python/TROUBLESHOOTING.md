@@ -7,7 +7,7 @@
 | `uv run --locked` fails with lockfile out of date | `pyproject.toml` changed without lock refresh | Run `uv lock` (or `uv sync`) and commit `uv.lock` |
 | Command runs but imports wrong versions | Extraneous packages in env with inexact sync | Run `uv sync` (exact) or `uv run --exact ...` |
 | `ModuleNotFoundError` in project command | Dependency not declared in project | Add with `uv add <pkg>` then rerun via `uv run ...` |
-| `ModuleNotFoundError` in `uv run python -c ...` snippet | Third-party import missing from one-off execution environment | Re-run with `uv run --with <pkg> python -c ...`; if persistent, use `uv add <pkg>` |
+| `ModuleNotFoundError` in `uv run <script.py>` execution | Third-party import missing from one-off script execution environment | Re-run with `uv run --with <pkg> <script.py>`; if persistent, use `uv add <pkg>` |
 | Package works locally but team/CI misses it | Installed with `uv pip install` so dependency was not recorded in `pyproject.toml` | Re-add using `uv add <pkg>`, regenerate lock (`uv lock`), sync (`uv sync`) |
 | `uv pip install` complains about missing environment | No active/discovered venv | Create one with `uv venv` or use `--system` (only where appropriate) |
 | Private index package not found | Credentials missing or wrong index pinning | Verify `[[tool.uv.index]]`, auth env vars, and `tool.uv.sources` pin |
@@ -75,11 +75,11 @@ Checklist:
 - Scripts with inline metadata run isolated from project dependencies.
 - Use `uv run --no-project` for local scripts in project directories when project install is not needed.
 
-## Ad-hoc snippet pitfalls (`uv run python -c`)
+## Ad-hoc script pitfalls (`uv run <script.py>`)
 
 - Third-party imports are not auto-installed.
-- Use `--with` for one-off snippet dependencies.
-- If a snippet becomes recurring, move dependency to project with `uv add`.
+- Use `--with` for one-off script dependencies.
+- If a script becomes recurring, move dependency to project with `uv add`.
 
 ## Docker and CI pitfalls
 

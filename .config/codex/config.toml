@@ -1,0 +1,4 @@
+#:schema = "https://developers.openai.com/codex/config-schema.json"
+model = "gpt-5.3-codex"
+model_reasoning_effort = "xhigh"
+model_instructions_file = "/Users/kcw/GitHub/dotfiles/AGENTS.md"

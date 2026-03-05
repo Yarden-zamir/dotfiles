@@ -11,7 +11,9 @@
 | Lock dependencies | `uv lock` |
 | Sync environment | `uv sync` |
 | Run command in project env | `uv run <command>` |
-| Run Python directly in project env | `uv run python ...` |
+| Run script in project env | `uv run <script.py>` |
+| Static validation | `uvx ruff check <path>` |
+| Optional type check | `uvx pyright <path>` |
 | Show dependency tree | `uv tree` |
 | Export lock to requirements | `uv export --format requirements.txt` |
 | One-off tool execution | `uvx <tool> ...` |
@@ -24,8 +26,10 @@
 ## Policy
 
 - In uv-managed projects, prefer `uv add`/`uv remove`/`uv run`.
+- Never use `uv run python ...` or `python -c`; use script-first `uv run <script.py>`.
 - Avoid `uv pip install` unless you are in a legacy pip-style workflow or migration scenario.
 - Prefer converting workflows to uv project mode over extending pip-interface usage.
+- Prefer `ruff` for default validation; use `pyright` optionally for type checks.
 
 ## Daily project operations
 
@@ -41,17 +45,20 @@
 ### Run project commands
 
 - Run tests: `uv run pytest`
-- Run module: `uv run -m pytest`
-- Run app entrypoint: `uv run python -m my_app`
-- Run with temporary extra package: `uv run --with rich python script.py`
-- Run one-liner with temporary dependency: `uv run --with mpmath python -c "from mpmath import mp; print(mp.pi)"`
+- Run app entrypoint script: `uv run scripts/run_app.py`
+- Run with temporary extra package: `uv run --with rich scripts/task.py`
+- Run ad-hoc script with temporary dependency: `uv run --with mpmath scripts/pi_demo.py`
+- Validate code quickly: `uvx ruff check .`
+- Optional type check: `uvx pyright .`
 
-### Ad-hoc one-liner templates
+### Ad-hoc script templates
 
-- Stdlib-only snippet: `uv run python -c "import json; print(json.dumps({'ok': True}))"`
-- Third-party one-off snippet: `uv run --with <pkg> python -c "import <pkg>; ..."`
-- Multi-package one-off snippet: `uv run --with <pkg1> --with <pkg2> python -c "..."`
-- Promote one-off dependency to project dependency: `uv add <pkg> && uv run python -c "import <pkg>; ..."`
+- Stdlib-only script: `uv run scripts/smoke.py`
+- Stdlib-only stdin script: `uv run -`
+- Third-party one-off script: `uv run --with <pkg> scripts/task.py`
+- Third-party one-off stdin script: `uv run --with <pkg> -`
+- Multi-package one-off script: `uv run --with <pkg1> --with <pkg2> scripts/task.py`
+- Promote one-off dependency to project dependency: `uv add <pkg> && uv run scripts/task.py`
 
 ### Lock and sync semantics
 
@@ -81,10 +88,13 @@ Inline metadata block (example):
 ## Tool operations
 
 - Ephemeral run: `uvx ruff check`
+- Ephemeral type check: `uvx pyright`
 - Pin tool version: `uvx [email protected] check`
 - Use different package/command name: `uvx --from httpie http --help`
 - Install tool persistently: `uv tool install ruff`
+- Install optional type checker persistently: `uv tool install pyright`
 - Upgrade one tool: `uv tool upgrade ruff`
+- Upgrade optional type checker: `uv tool upgrade pyright`
 - Upgrade all tools: `uv tool upgrade --all`
 - Install with plugin packages: `uv tool install mkdocs --with mkdocs-material`
 

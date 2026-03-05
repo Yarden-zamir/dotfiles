@@ -1,3 +1,11 @@
+"$schema" = "https://raw.githubusercontent.com/Yarden-zamir/Navgator/refs/heads/main/config-schema.json"
+
 [paths]
+
 index_folders = ["/Users/kcw/Github", "/Users/kcw/Desktop"]
-static_items = ["/opt/homebrew", "/Users/kcw/Downloads"]
+static_items = [
+    "/opt/homebrew",
+    "/Users/kcw/Downloads",
+    "/Users/kcw/Library/Application Support/ModrinthApp/profiles/Create ptd 2",
+    "/Users/kcw/Library/Application Support/ModrinthApp/profiles/Create Prepare to Dye",
+]
