@@ -25,3 +25,8 @@
 /.claude/plugins
 /.claude/shell-snapshots
 .config/codex/version.json
+.claude/mcp-needs-auth-cache.json
+.claude/policy-limits.json
+/.claude/sessions
+.claude/settings.json
+.claude/telemetry/1p_failed_events.30849f6e-2c02-4a0e-a310-aa5d817afb49.0ff09298-860f-4a52-ba42-d9cc224ef93b.json

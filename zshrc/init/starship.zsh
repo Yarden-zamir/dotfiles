@@ -1,4 +1,5 @@
-_evalcache starship init zsh
+# _evalcache starship init zsh
+eval "$(starship init zsh)"
 
 
 # # transient prompt based on https://github.com/starship/starship/issues/888
