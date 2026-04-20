@@ -2,177 +2,90 @@
 name: uv-python
 description: Use uv as the default Python workflow for versions, environments, dependencies, scripts, tools, locking, CI, Docker, and publishing. Prefer uv project commands and script-first uv run usage over raw python or pip.
 license: MIT
-compatibility: opencode+claude-code
-metadata:
-  standard: agentskills.io
-  source: docs.astral.sh/uv
-  last-reviewed: 2026-02-19
 ---
 
 # uv-python
 
-Use this skill for any Python task that touches environments, dependency management, script execution, tooling, packaging, publishing, CI, or Docker.
-Use this skill for running tasks that benefit from quick ephemeral scripts with inline dependencies instead of using shell command chains when relevant.
+Use uv for anything Python: envs, deps, scripts, tools, CI, publishing.
 
-## Non-negotiable defaults
+## Core rules
 
-- Prefer `uv` commands over `python`, `pip`, `pip-tools`, `virtualenv`, `pipx`, `poetry`, and `pyenv`.
-- Run scripts through uv. Use `uv run <script.py>` (or `uv run <tool>`) instead of `python ...`.
-- Never use `uv run python ...` or `python -c` in this workflow.
-- In uv projects, change dependencies with `uv add` and `uv remove`, not `uv pip install`.
-- `uv pip install` is legacy compatibility mode and is not recommended for uv-managed projects.
-- In almost all cases, prefer making the workflow uv-project-compatible (`uv add`, `uv lock`, `uv sync`, `uv run`) instead of using the pip interface.
-- Treat `uv.lock` as generated output. Never hand-edit it.
-- Keep dependency changes reproducible: update `pyproject.toml` and `uv.lock` together.
-- For ad-hoc scripts, never assume third-party imports exist. Use `--with` for one-off dependencies or `uv add` for persistent ones.
-- Prefer `ruff` as the default Python validator; do not default to `py_compile`/`compileall`.
-- Use `pyright` as an optional type-checking pass when type safety is required.
+- Never use `python`, `pip`, `pyenv`, `poetry`, `virtualenv`, `pipx`. Use `uv`.
+- Never `uv run python ...` or `python -c ...`. Run code via `uv run -` (stdin) or `uv run <script.py>`.
+- In projects with `pyproject.toml`: use `uv add`/`uv remove`/`uv sync`/`uv run`. Do not `uv pip install`.
+- `uv.lock` is generated. Don't hand-edit.
+- For third-party imports in ad-hoc scripts: `--with <pkg>` (one-off) or `uv add <pkg>` (persistent).
+- Validate with `uvx ruff check`. Type-check (optional) with `uvx pyright`.
 
-## Mode detection
+## Modes
 
-1. If a `pyproject.toml` exists, use **project mode**.
-2. If operating on a standalone script with PEP 723 metadata, use **script mode**.
-3. If there is no project metadata and the workflow is pip-style, use **uv pip mode**.
-4. If invoking CLI packages like `ruff` or `black` outside the project env, use **tool mode** (`uvx` / `uv tool`).
+- **Project** (`pyproject.toml` exists) — `uv add`, `uv sync`, `uv run ...`, `uv lock`.
+- **Script** (single file with PEP 723 inline metadata) — `uv init --script`, `uv add --script`, `uv run script.py`. Runs isolated from any surrounding project.
+- **Tool** (CLI utilities) — `uvx <tool>` for one-off, `uv tool install <tool>` for persistent. Use `uv run <tool>` when the tool must see project env (pytest, mypy, project entry points).
+- **uv pip** (legacy/compat only) — use only when repo isn't uv-project-compatible. `uv venv`, `uv pip install/sync/compile`.
 
-## Project mode workflow
+## Ephemeral scripts (preferred over shell chains)
 
-1. Ensure interpreter intent is clear (`.python-version`, `project.requires-python`, or explicit `--python`).
-2. Install or update dependencies with `uv add` / `uv remove`.
-3. Sync environment with `uv sync`.
-4. Run commands with `uv run ...`.
-5. Lock with `uv lock` (or rely on automatic lock/sync from `uv run` and `uv sync`).
+For one-off tasks that need third-party packages, pipe code straight into `uv run -`. No file, no venv, no install step, no pyproject changes. uv resolves and caches deps on first run.
 
-Use these defaults:
+Heredoc (the main pattern — reach for this instead of `python -c` or bash pipelines):
 
-- Add runtime dependency: `uv add <pkg>`
-- Add dev dependency: `uv add --dev <pkg>`
-- Add named group dependency: `uv add --group <group> <pkg>`
-- Add optional extra dependency: `uv add --optional <extra> <pkg>`
-- Remove dependency: `uv remove <pkg>`
-- Run tests: `uv run pytest`
-- Run script entrypoint: `uv run <script.py>`
+```sh
+uv run --with httpx --with rich - <<'PY'
+import httpx
+from rich import print
+r = httpx.get("https://api.github.com/repos/astral-sh/uv")
+print({"stars": r.json()["stargazers_count"]})
+PY
+```
 
-## Validation workflow
+Pipe from another command:
 
-- Primary validation: `uvx ruff check <path>`
-- Optional type checking: `uvx pyright <path>`
-- If `pyright` is part of project tooling, run it via `uv run pyright <path>`.
+```sh
+echo '{"a":1,"b":2}' | uv run --with rich - <<'PY'
+import sys, json
+from rich import print
+print(json.load(sys.stdin))
+PY
+```
 
-## Script mode workflow
+Pin Python too: `uv run --python 3.12 --with httpx - <<'PY' ... PY`.
 
-Use this for one-file scripts and automation snippets.
+If the snippet grows, drop it into a file with a PEP 723 header and make it self-executable:
 
-- Initialize script with metadata: `uv init --script script.py --python 3.12`
-- Add script dependency: `uv add --script script.py <pkg>`
-- Run script: `uv run script.py`
-- Run ad-hoc with one-off dependency: `uv run --with <pkg> script.py`
-- Lock script dependencies: `uv lock --script script.py`
+```python
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["httpx", "rich"]
+# ///
+```
 
-Notes:
+Promote to a project dep with `uv add <pkg>` once it becomes recurring.
 
-- PEP 723 scripts with inline metadata run in isolated environments.
-- If inline metadata exists, project dependencies are ignored for that script.
+## Handy commands
 
-## Ad-hoc script preflight (`uv run <script.py>` / `uv run -`)
+| Task | Command |
+| --- | --- |
+| Add dep | `uv add <pkg>` (also `--dev`, `--group <g>`, `--optional <extra>`) |
+| Remove dep | `uv remove <pkg>` |
+| Run | `uv run <cmd>` / `uv run <script.py>` |
+| Ad-hoc with dep | `uv run --with <pkg> -` (stdin) or `uv run --with <pkg> <script.py>` |
+| Sync | `uv sync` (exact) / CI: `uv sync --locked` |
+| Upgrade | `uv lock --upgrade` or `--upgrade-package <pkg>` |
+| Python install/pin | `uv python install <v>` / `uv python pin <v>` |
+| Build/publish | `uv build`, `uv publish`, `uv version --bump <part>` |
 
-Before running any ad-hoc script:
+For anything else, `uv --help` / `uv <cmd> --help`.
 
-1. Put logic into a script file (temporary or checked-in), or feed it via stdin with `uv run -`.
-2. If imports are stdlib-only, run with `uv run script.py` (or `uv run -`).
-3. If script uses third-party modules for one-off execution, run with `uv run --with <pkg> [--with <pkg> ...] script.py` (or `uv run --with <pkg> -`).
-4. If dependency should persist in project, install first via `uv add <pkg>`, then run with `uv run script.py`.
-5. If `ModuleNotFoundError` occurs, rerun immediately with `--with` (or install via `uv add`) before retrying.
+## Gotchas
 
-Example:
-
-- One-off: `uv run --with mpmath scripts/pi_demo.py`
-
-## Tool mode workflow
-
-Use for command-line tools that should be isolated from project dependencies.
-
-- One-off command: `uvx <tool> ...`
-- One-off with explicit package source: `uvx --from <package> <command> ...`
-- Install persistent tool: `uv tool install <package>`
-- Upgrade tool: `uv tool upgrade <package>`
-- List tools: `uv tool list`
-- Uninstall tool: `uv tool uninstall <package>`
-
-Choose `uv run` instead of `uvx` when the tool must see the project package/environment (for example `pytest`, `mypy`, or project entry points).
-
-## uv pip mode workflow (last-resort compatibility)
-
-Use only when working in a pip-style repository or explicit migration tasks. Do not use this mode as the default in uv-managed projects.
-
-Default-first rule:
-
-- If a `pyproject.toml` exists, use `uv add`/`uv remove` and `uv run`.
-- Reach for `uv pip ...` only when the repository is not yet uv-project-compatible.
-
-- Create venv: `uv venv`
-- Install: `uv pip install <pkg>`
-- Install from requirements: `uv pip install -r requirements.txt`
-- Compile locks: `uv pip compile requirements.in -o requirements.txt`
-- Sync exact environment: `uv pip sync requirements.txt`
-
-Important behavior:
-
-- uv does not read `pip.conf` or `PIP_*` env vars.
-- uv defaults to virtual environments for `uv pip`; use `--system` only when explicitly needed (CI/container cases).
-
-## Python version management workflow
-
-- Install Python: `uv python install <version>`
-- List versions: `uv python list`
-- Pin project version: `uv python pin <version>`
-- Find matching interpreter: `uv python find '<specifier>'`
-- Upgrade managed patch versions: `uv python upgrade [<minor>]`
-
-Defaults:
-
-- uv can auto-download missing Python versions unless disabled.
-- Prefer managed interpreters by default; use `--no-managed-python` only when required.
-
-## Reproducibility and safety defaults
-
-- CI installs should prefer lock correctness: `uv sync --locked`.
-- For hard reproducibility where lock freshness checks are already enforced upstream, use `--frozen`.
-- Use `uv lock --check` to validate lock freshness.
-- Use `uv run --no-sync` only when intentionally skipping environment updates.
-- Use `uv sync` for exact installs (removes extraneous packages).
-- Use `uv run` for inexact run-time sync by default (keeps extraneous packages unless `--exact`).
-
-## Indexes and authentication defaults
-
-- Define indexes with `[[tool.uv.index]]` in project config.
-- Keep the default secure index strategy (`first-index`) unless explicitly changed.
-- Prefer environment variables for credentials over embedding them in project files.
-- Use `uv auth login <host>` for uv-managed HTTP credential storage.
-- For private Git dependencies, prefer SSH URLs or configured Git credential helpers.
-
-## Packaging and publishing defaults
-
-- Build distributions: `uv build`
-- Validate package build without source overrides: `uv build --no-sources`
-- Publish: `uv publish`
-- Bump version: `uv version --bump <major|minor|patch|...>`
-
-## CI and Docker defaults
-
-- In GitHub Actions, use `astral-sh/setup-uv` and pin uv version.
-- Cache uv data for CI speedups; prune with `uv cache prune --ci`.
-- In Docker, use intermediate layers with `uv sync --no-install-project` (or `--no-install-workspace` in workspaces), then final sync.
-- Add `.venv` to `.dockerignore`.
-
-## Quick escalation rules
-
-- If resolution fails, inspect conflicts first, then consider constraints or overrides.
-- If build isolation fails, prefer `tool.uv.extra-build-dependencies` before disabling build isolation.
-- If private index auth fails, verify index config and auth source order (URL, netrc, uv auth store, keyring).
-- If you are about to use `uv pip install` in a project with `pyproject.toml`, stop and model the change with `uv add` instead.
-
-## Supporting docs in this skill
-
-- Command cookbook and pip-to-uv mapping: [COMMANDS.md](COMMANDS.md)
-- Failure diagnosis and fixes: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- `ModuleNotFoundError` in `uv run -` or `uv run <script>`: rerun with `--with <pkg>` (ephemeral) or `uv add <pkg>` (persistent).
+- `uv pip install` in a uv project doesn't update `pyproject.toml` — dep won't be reproducible elsewhere. Use `uv add`.
+- `uv sync` is exact (removes extras); `uv run` is inexact by default.
+- `--locked` = fail if stale; `--frozen` = trust lock, skip check; `--no-sync` = skip env update.
+- `uv` ignores `pip.conf` / `PIP_*`. Use `UV_*` or `pyproject.toml` config.
+- Build-isolation failure: prefer `tool.uv.extra-build-dependencies` over disabling isolation.
+- Private index: configure under `[[tool.uv.index]]`, pin with `[tool.uv.sources]`, credentials via `UV_INDEX_<NAME>_{USERNAME,PASSWORD}` or `uv auth login`.
+- CI: `astral-sh/setup-uv`, `uv sync --locked`, `uv cache prune --ci`.
+- Docker: don't copy host `.venv`, add it to `.dockerignore`, set `UV_LINK_MODE=copy`.
