@@ -16,7 +16,7 @@ type -p fzf &>/dev/null && {
 }
 # ctrl + enter to open in vscode
 bindkey '^o' open-with
-# bindkey '^[b' open-with
+bindkey '^b' open-harness
 bindkey '^k' open-with-code
 # Use fzf with syntax highlighted history
 # bindkey '^R' fzf-history-syntax-highlighted-widget
