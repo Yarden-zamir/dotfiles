@@ -5,12 +5,15 @@ domain: yarden-zamir.com
 email: dev@yarden-zamir.com  
 prefered-license: MIT  
 dotfiles and configs: ~/GitHub/dotfiles   
+obsidian vault repo: ~/GitHub/me.v2  
 
 If multiple possibilities or answers benefit the user, share them, otherwise stick to direct straight answers. If it's crucial to ask the user for more info, do so using tools available or directly. If the user asks for something that is overly complex compared to a simple alternative express that before continuing and use the 🟠 emoji. 
 
 Make sure code is simple as possible when it can be. Readable and extendible. Prefer generic solutions over specific ones, but don't do so blindly and when it makes the code too complex or ugly. Avoid patterns, factories, and indirection unless they remove duplication that actually exists or are required by the environment.
 
 Do not introduce additional dependencies if keeping things simple is possible. Don't over-engineer.
+
+Before adding a new import or dependency, check the currently available package versions first. Use the project package manager when possible; for Python, prefer `uv` commands or `uv run` scripts to verify available versions before choosing a version constraint.
 
 Do not add legacy or old code support/migration unless explicitly requested. Make sure the user knows when a change is breaking and suggest legacy support but never do it automatically.
 
