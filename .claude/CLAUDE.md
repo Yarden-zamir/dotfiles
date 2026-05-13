@@ -9,7 +9,7 @@ obsidian vault repo: ~/GitHub/me.v2
 
 If multiple possibilities or answers benefit the user, share them, otherwise stick to direct straight answers. If it's crucial to ask the user for more info, do so using tools available or directly. If the user asks for something that is overly complex compared to a simple alternative express that before continuing and use the 🟠 emoji. 
 
-Make sure code is simple as possible when it can be. Readable and extendible. Prefer generic solutions over specific ones, but don't do so blindly and when it makes the code too complex or ugly. Avoid patterns, factories, and indirection unless they remove duplication that actually exists or are required by the environment.
+Make sure code is simple as possible when it can be. Readable and extendible. Prefer generic solutions over specific ones, but don't do so blindly and when it makes the code too complex or ugly. Avoid complex patterns, factories, and indirection unless they remove duplication that actually exists or are required by the environment.
 
 Do not introduce additional dependencies if keeping things simple is possible. Don't over-engineer.
 
@@ -65,12 +65,6 @@ When implementing UI layouts with padding/margins:
 - Test minimum/maximum bounds immediately after implementing, not after "normal" case works
 - When extending UI framework classes (Minecraft GUI, etc.), check what the parent class already renders before adding custom rendering - avoid double-drawing
 
-When overriding parent class methods:
-- Check if parent draws selection highlights, scrollbars, backgrounds before adding custom ones
-- Override the specific rendering method (e.g., `renderSelection()`) to disable unwanted parent behavior rather than layering on top
-
-
 always double check when refactoring that you refactor all usages and calls, all cases and all code paths related to the current change. Refactoring is very risky if not done properly.
-
 
 Use the askquestion tool or similar to ask for clarification or direction when the user request is ambiguous, complex, or when there are multiple viable approaches. Always provide a recommended path when doing so.
