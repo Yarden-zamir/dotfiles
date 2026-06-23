@@ -30,3 +30,15 @@
 /.claude/sessions
 .claude/settings.json
 .claude/telemetry/1p_failed_events.30849f6e-2c02-4a0e-a310-aa5d817afb49.0ff09298-860f-4a52-ba42-d9cc224ef93b.json
+.claude/stats-cache.json
+/.config/codex/.tmp
+.config/codex/installation_id
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.claude/.last-cleanup
+.agents/.skill-lock.json
+.claude/.last-update-result.json
+/.claude/paste-cache
+.claude/remote-settings.json
+/.config/codex/cache
