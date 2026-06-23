@@ -5,6 +5,10 @@ gh_source --require zsh-users/zsh-history-substring-search && {
     bindkey '^[[B' history-substring-search-down
 }
 
+# gh_source --require andreacasarin/zsh-ask-opencode && {
+    bindkey '^o' ask_opencode
+# }
+
 type -p fzf &>/dev/null && {
     # bindkey '^a' browse_apps
     bindkey '^@' navigate #ctrl+space / ctrl+@
@@ -15,7 +19,7 @@ type -p fzf &>/dev/null && {
         bindkey '^[ ' ripgrep_search #alt+space
 }
 # ctrl + enter to open in vscode
-bindkey '^o' open-with
+# bindkey '^o' open-with
 bindkey '^b' open-harness
 bindkey '^k' open-with-code
 # Use fzf with syntax highlighted history
