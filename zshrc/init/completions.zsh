@@ -1,7 +1,7 @@
 
 gh_source Aloxaf/fzf-tab/fzf-tab.plugin.zsh
 zstyle ':fzf-tab:*' use-zcompui yes
-zstyle ':fzf-tab:*' zcompui-command /Users/kcw/GitHub/fzf-tab/target/release/zcompui
+zstyle ':fzf-tab:*' zcompui-command /Users/kcw/Github/fzf-tab/target/release/zcompui
 
 zstyle ':fzf-tab:*' switch-group ',' '.'
 zstyle ':fzf-tab:*' prefix ''
@@ -25,6 +25,7 @@ gh_source yarden-zamir/fzf-tab-source/fzf-tab-source.plugin.zsh
 
 # ZSH_AUTOSUGGEST_STRATEGY=(AI history completion)
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_STRATEGY=(history)
 gh_source zsh-users/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 # ngrok
