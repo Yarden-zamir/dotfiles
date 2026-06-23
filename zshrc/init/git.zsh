@@ -1,4 +1,4 @@
-export PATH="$PATH:/Users/kcw/GitHub/git-fuzzer"
+export PATH="$PATH:/Users/kcw/Github/git-fuzzer"
 git-branch() {
     git-fuzzer branch
 }
