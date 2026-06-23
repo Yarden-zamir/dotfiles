@@ -1,6 +1,29 @@
 # config for fzf
-gh_source junegunn/fzf '[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh || {}/install'
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+_dotfiles_source_fzf_zsh() {
+    local -a restore_options
+    local opt
+
+    for opt in "${(@k)options}"; do
+        [[ "$opt" == zle ]] && continue
+        if [[ -o "$opt" ]]; then
+            restore_options+=("-o" "$opt")
+        else
+            restore_options+=("+o" "$opt")
+        fi
+    done
+
+    # fzf snapshots $options and tries to restore the unchangeable zle option.
+    () {
+        local -hA options
+        source "$1"
+    } "$1"
+
+    setopt "${restore_options[@]}"
+}
+
+gh_source junegunn/fzf 'export PATH="${PATH:+$PATH:}{}/bin"; [[ $- == *i* ]] && _dotfiles_source_fzf_zsh {}/shell/completion.zsh; _dotfiles_source_fzf_zsh {}/shell/key-bindings.zsh'
+
+unfunction _dotfiles_source_fzf_zsh
     # --bind 'tab:replace-query' \
 export FZF_DEFAULT_OPTS=" \
     --bind 'bs:backward-delete-char/eof' \
@@ -40,7 +63,6 @@ export FZF_ALT_C_OPTS="
 export FZF_CTRL_R_OPTS=" \
     --preview 'echo {} | bat -pl zsh --color=always && explain {}'"
 
-export PATH="$PATH:/opt/homebrew/bin"
 export FZF_DEFAULT_COMMAND='fd --hidden --strip-cwd-prefix'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
