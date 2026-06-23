@@ -13,8 +13,8 @@ Use this skill when the user asks for a summary of what they worked on today, a 
 - OpenCode data directory: `~/.local/share/opencode`
 - OpenCode database: `~/.local/share/opencode/opencode.db`
 - Session diffs: `~/.local/share/opencode/storage/session_diff/*.json`
-- Obsidian vault repo: `~/GitHub/me.v2`
-- Default note path: `~/GitHub/me.v2/Daily/YYYY-MM-DD.md`
+- Obsidian vault repo: `~/Github/me.v2`
+- Default note path: `~/Github/me.v2/Daily/YYYY-MM-DD.md`
 - Date basis: local time
 
 ## Workflow
@@ -137,7 +137,7 @@ Use this structure unless the user asks for a different template:
 - Do not paste full diffs unless explicitly requested; summarize changed files and intent.
 - Keep `Possible Todos` at the end of the note, and only include evidence-backed follow-ups. Do not invent generic next steps.
 - Preserve existing note content when updating an existing daily note; append a clearly titled section unless the user asks to replace it.
-- Create `~/GitHub/me.v2/Daily` if it does not exist and the default path is used.
+- Create `~/Github/me.v2/Daily` if it does not exist and the default path is used.
 - If the vault path is missing, stop and ask for the correct Obsidian vault repo path.
 
 ## Verification
