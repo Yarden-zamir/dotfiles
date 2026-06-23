@@ -4,8 +4,8 @@ github-name: Yarden-zamir
 domain: yarden-zamir.com  
 email: dev@yarden-zamir.com  
 prefered-license: MIT  
-dotfiles and configs: ~/GitHub/dotfiles   
-obsidian vault repo: ~/GitHub/me.v2  
+dotfiles and configs: ~/Github/dotfiles   
+obsidian vault repo: ~/Github/me.v2  
 
 If multiple possibilities or answers benefit the user, share them, otherwise stick to direct straight answers. If it's crucial to ask the user for more info, do so using tools available or directly. If the user asks for something that is overly complex compared to a simple alternative express that before continuing and use the 🟠 emoji. 
 
@@ -57,14 +57,10 @@ order. Don't edit blind.
 Respect tool feedback: If a tool operation fails (like a failed edit or missing file),
 stop immediately. Fix the root cause before proceeding. Do not assume "it probably worked."
 
-## UI Layout Implementation
-
-When implementing UI layouts with padding/margins:
-- Write out the full math chain before coding: `total = margin + padding + content + padding + margin`
-- Derive size constants from component sizes, don't guess magic numbers. Example: `COMPACT_WIDTH = PADDING * 4 + AVATAR_SIZE` not `COMPACT_WIDTH = 56`
-- Test minimum/maximum bounds immediately after implementing, not after "normal" case works
-- When extending UI framework classes (Minecraft GUI, etc.), check what the parent class already renders before adding custom rendering - avoid double-drawing
-
 always double check when refactoring that you refactor all usages and calls, all cases and all code paths related to the current change. Refactoring is very risky if not done properly.
 
 Use the askquestion tool or similar to ask for clarification or direction when the user request is ambiguous, complex, or when there are multiple viable approaches. Always provide a recommended path when doing so.
+
+Do not use regex unless absolutely necessary. Always check if a simpler string method or existing utility function can achieve the same result before resorting to regex, which can be complex and error-prone.
+
+Tests: Tests should be contract-focused and source-of-truth focused. They should verify stable behavior that can break silently, not mirror incidental copy, formatting, layout, or implementation details. Exact-output assertions should live only where that output is produced; callers should assert behavior, shape, or key fields unless exact output is their contract.
