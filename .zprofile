@@ -1,6 +1,3 @@
-# Added by Homebrew
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
 folders=(
   "$DOTFILES/zprofile/pre-init"
   "$DOTFILES/zprofile/init"
