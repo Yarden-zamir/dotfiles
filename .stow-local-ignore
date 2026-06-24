@@ -11,3 +11,23 @@ swiftbar
 zprofile
 .git
 AGENTS.md
+
+# Generated local state and dependency folders should never be stowed.
+node_modules
+package-lock.json
+package.json
+bun.lock
+tui.json
+\.sqlite(-shm|-wal)?$
+history\.jsonl
+auth\.json
+^\.ruff_cache
+
+# Agent runtime state.
+^\.agents
+^\.claude/(backups|cache|debug|file-history|ide|paste-cache|plans|plugins|projects|sessions|shell-snapshots|telemetry|todos)
+^\.claude/(\.credentials\.json|\.last-cleanup|\.last-update-result\.json|history\.jsonl|mcp-needs-auth-cache\.json|policy-limits\.json|remote-settings\.json|settings\.json|stats-cache\.json)$
+^\.config/codex/(\.codex-global-state\.json|\.personality_migration|auth\.json|history\.jsonl|installation_id|models_cache\.json|version\.json)$
+^\.config/codex/(\.tmp|archived_sessions|cache|log|memories|sessions|shell_snapshots|skills|sqlite|tmp|vendor_imports)
+^\.config/opencode/(\.gitignore|bun\.lock|node_modules|package-lock\.json|package\.json|tui\.json)
+^\.opencode/(\.gitignore|bun\.lock|node_modules|package-lock\.json|package\.json)
