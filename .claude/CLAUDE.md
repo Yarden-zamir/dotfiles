@@ -64,3 +64,9 @@ Use the askquestion tool or similar to ask for clarification or direction when t
 Do not use regex unless absolutely necessary. Always check if a simpler string method or existing utility function can achieve the same result before resorting to regex, which can be complex and error-prone.
 
 Tests: Tests should be contract-focused and source-of-truth focused. They should verify stable behavior that can break silently, not mirror incidental copy, formatting, layout, or implementation details. Exact-output assertions should live only where that output is produced; callers should assert behavior, shape, or key fields unless exact output is their contract.
+
+Dotfiles stow workflow:
+- Use `make stow-adopt-dry-run` to preview GNU Stow adoption from this repo into `~`.
+- Use `make stow-adopt` only after the user approves applying the adoption/linking step.
+- Surface any stow warnings to the user with likely causes and potential actions, instead of hiding or summarizing them away.
+- When new dotfiles are created or adopted in this repo, ask the user whether they want to run the stow workflow, preferably the dry run first.
