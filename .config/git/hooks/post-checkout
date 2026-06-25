@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -u
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+[ -n "$repo_root" ] || exit 0
+
+project_dir=$(dirname "$repo_root")
+shared_dir="$project_dir/_shared"
+
+[ -d "$shared_dir" ] || exit 0
+
+for source in "$shared_dir"/* "$shared_dir"/.[!.]* "$shared_dir"/..?*; do
+  [ -e "$source" ] || [ -L "$source" ] || continue
+  [ -f "$source" ] || continue
+
+  name=$(basename "$source")
+  target="$repo_root/$name"
+  link_target="../_shared/$name"
+
+  if [ -L "$target" ]; then
+    current_target=$(readlink "$target" 2>/dev/null || true)
+    if [ "$current_target" = "$link_target" ]; then
+      continue
+    fi
+  fi
+
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    printf '🟠 warning: %s already exists in %s, skipping %s\n' "$name" "$repo_root" "$source" >&2
+    continue
+  fi
+
+  if ln -s "$link_target" "$target"; then
+    printf '🟢 linked %s -> %s\n' "$name" "$link_target" >&2
+  else
+    printf '🔴 warning: failed to link %s -> %s\n' "$target" "$link_target" >&2
+  fi
+done
