@@ -31,6 +31,23 @@ Placement rule: add new behavior as a focused file in the correct phase director
 
 Frequently used optional tools in this setup include `gh`, `fzf`, `bat`, `rg`, `fd`, `atuin`, `starship`, and `cargo`.
 
+## Stow workflow
+
+This repo is managed as the `dotfiles` GNU Stow package from its parent directory.
+
+- Preview adoption first: `make stow-adopt-dry-run`
+- Adopt and restow files into `~`: `make stow-adopt`
+
+The Makefile derives the stow directory from the repo location and uses `$(HOME)` as the target, so the command does not depend on a hardcoded username.
+
+`stow-adopt` runs the equivalent of:
+
+```sh
+stow --verbose --dir "$(dirname "$PWD")" --target "$HOME" "$(basename "$PWD")" --adopt
+```
+
+Use `--adopt` carefully: it can move existing files from `~` into this repo before linking them back.
+
 ## Editing guidelines
 
 - Keep changes modular: add/update a focused file in the proper phase directory.
