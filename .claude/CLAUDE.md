@@ -65,6 +65,12 @@ Do not use regex unless absolutely necessary. Always check if a simpler string m
 
 Tests: Tests should be contract-focused and source-of-truth focused. They should verify stable behavior that can break silently, not mirror incidental copy, formatting, layout, or implementation details. Exact-output assertions should live only where that output is produced; callers should assert behavior, shape, or key fields unless exact output is their contract.
 
+Parallel verification workflow:
+- When a task asks to test the same behavior across many local SDEs, kubeconfigs, branches, repos, or similar targets, do the checks concurrently with bounded per-target timeouts instead of serial one-by-one commands.
+- Prefer source-of-truth checks and isolated caches/config dirs so previous local state cannot mask failures.
+- Flush or collect per-target results so long-running/offline targets do not hide progress; summarize successes and failures separately.
+- Treat unreachable/offline targets as expected when the user says they may be off; do not spend time debugging each one unless asked.
+
 Dotfiles stow workflow:
 - Use `make stow-adopt-dry-run` to preview GNU Stow adoption from this repo into `~`.
 - Use `make stow-adopt` only after the user approves applying the adoption/linking step.
