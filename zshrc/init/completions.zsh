@@ -1,12 +1,13 @@
 
 gh_source Aloxaf/fzf-tab/fzf-tab.plugin.zsh
-zstyle ':fzf-tab:*' use-zcompui yes
-zstyle ':fzf-tab:*' zcompui-command /Users/kcw/Github/fzf-tab/target/release/zcompui
+# zstyle ':fzf-tab:*' use-zcompui yes
+# zstyle ':fzf-tab:*' zcompui-command /Users/kcw/Github/fzf-tab/target/release/zcompui
 
 zstyle ':fzf-tab:*' switch-group ',' '.'
 zstyle ':fzf-tab:*' prefix ''
 zstyle ':fzf-tab:*' continuous-trigger 'tab'
 zstyle ':fzf-tab:*' single-group color header
+zstyle ':fzf-tab:*' auto-accept-single false
 
 zstyle ':completion:*' fzf-search-display true
 zstyle ':completion:*' insert-tab false
@@ -16,7 +17,7 @@ zstyle ':completion:*:git-checkout:*' sort false # disable sort when completing 
 zstyle ':completion:*:descriptions' format '[%d]' # set descriptions format to enable group support
 zstyle ':fzf-tab:*' use-fzf-default-opts yes
 zstyle ':fzf-tab:complete:*' fzf-min-height 30  
-
+zstyle ':completion:*' prefix-needed false
 
 # zstyle ':fzf-tab:sources' config-directory "$DOTFILES/zshrc/completion-preview-specs"
 gh_source yarden-zamir/fzf-tab-source/fzf-tab-source.plugin.zsh
