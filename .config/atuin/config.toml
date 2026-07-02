@@ -17,3 +17,6 @@ common_prefix = ["sudo"]
 enabled = true
 [sync]
 records = true
+
+[ai]
+enabled = true
