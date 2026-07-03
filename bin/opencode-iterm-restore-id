@@ -1,0 +1,119 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["iterm2"]
+# ///
+
+from __future__ import annotations
+
+import os
+import re
+import sys
+from typing import Iterable
+
+import iterm2
+
+
+OPENCODE_RESTORE_RE = re.compile(r"\bopencode\s+-s\s+(ses_[A-Za-z0-9]+)\b")
+DEFAULT_MAX_LINES = 80
+
+
+def latest_restore_id(lines: Iterable[str]) -> str | None:
+    text = "\n".join(lines)
+    matches = OPENCODE_RESTORE_RE.findall(text)
+    return matches[-1] if matches else None
+
+
+def all_sessions(app):
+    windows = getattr(app, "windows", None) or getattr(app, "terminal_windows", [])
+    for window in windows:
+        for tab in window.tabs:
+            for session in tab.sessions:
+                yield session
+    for session in getattr(app, "buried_sessions", []):
+        yield session
+
+
+async def current_session(app):
+    tty = None
+    if sys.stdin.isatty():
+        try:
+            tty = os.ttyname(sys.stdin.fileno())
+        except OSError:
+            tty = None
+
+    term_session_id = os.environ.get("TERM_SESSION_ID")
+    iterm_session_id = os.environ.get("ITERM_SESSION_ID")
+
+    if iterm_session_id:
+        session = app.get_session_by_id(iterm_session_id)
+        if session is not None:
+            return session
+
+    for session in all_sessions(app):
+        if tty and await session.async_get_variable("tty") == tty:
+            return session
+
+        termid = await session.async_get_variable("termid")
+        if term_session_id and termid == term_session_id:
+            return session
+        if iterm_session_id and termid == iterm_session_id:
+            return session
+
+        session_id = await session.async_get_variable("id")
+        if iterm_session_id and session_id == iterm_session_id:
+            return session
+
+    return None
+
+
+async def recent_lines(connection, session, max_lines: int) -> list[str]:
+    async with iterm2.Transaction(connection):
+        info = await session.async_get_line_info()
+        available_lines = info.scrollback_buffer_height + info.mutable_area_height
+        if available_lines <= 0:
+            return []
+
+        first_line = max(info.overflow, info.overflow + available_lines - max_lines)
+        line_count = info.overflow + available_lines - first_line
+        contents = await session.async_get_contents(first_line, line_count)
+
+    return [line.string for line in contents]
+
+
+async def main(connection):
+    app = await iterm2.async_get_app(connection)
+    if app is None:
+        return
+
+    session = await current_session(app)
+    if session is None:
+        return
+
+    try:
+        max_lines = int(os.environ.get("OPENCODE_ITERM_RESTORE_LINES", DEFAULT_MAX_LINES))
+    except ValueError:
+        max_lines = DEFAULT_MAX_LINES
+
+    restore_id = latest_restore_id(await recent_lines(connection, session, max(1, max_lines)))
+    if restore_id is not None:
+        print(restore_id)
+
+
+def self_test() -> None:
+    restore_id = latest_restore_id(
+        [
+            "some old output",
+            "Run this to restore: opencode -s ses_oldSession123",
+            "opencode -s ses_2217e5d3effeVhPAE4SVtPD5x6",
+        ]
+    )
+    if restore_id != "ses_2217e5d3effeVhPAE4SVtPD5x6":
+        raise SystemExit(f"unexpected restore id: {restore_id!r}")
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--self-test"]:
+        self_test()
+    else:
+        iterm2.run_until_complete(main)
