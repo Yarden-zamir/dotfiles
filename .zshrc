@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env zsh
 
 export DOTFILES="$HOME/Github/dotfiles"
 
@@ -8,5 +8,3 @@ folders=(
   "$DOTFILES/zshrc/post-init"
 )
 _dotfiles_source_dir "${folders[@]}"
-
-# zprof
