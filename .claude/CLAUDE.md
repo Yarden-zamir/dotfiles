@@ -91,5 +91,11 @@ Commit and branch preferences:
 - Never credit yourself in commit messages, if I mention working with someone else, suggest crediting them.
 - Unless the repo has other instructions
     - use conventional commits
-    - if in a qlik repo, each commit must reference a QCDI ticket in the format: "QCDI-XXXX | conventional commit message". If not the case before merge, suggest rebase.
     - description with references and notes, not too big, only when relevant, avoid generic. If other tickets or markdown documents are involved reference them here.
+    - if in a qlik-trial repo
+        - each commit must reference a jira QCDI ticket in the format: "QCDI-XXXX | conventional commit message". If not the case before merge, suggest rebase. 
+        - if no jira ticket is provided by user, suggest to search for one or to create one before proceeding.
+- Tickets
+    - When mentioning a ticket, do so with a link
+    - Offer to update tickets/comment on tickets with new relevant information
+    - If an action does not meet a current ticket, offer to create a new ticket
