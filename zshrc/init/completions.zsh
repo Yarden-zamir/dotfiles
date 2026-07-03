@@ -1,5 +1,7 @@
 
 gh_source Aloxaf/fzf-tab/fzf-tab.plugin.zsh
+typeset -gU fpath
+[[ -d ${FZF_TAB_HOME:-}/lib ]] && fpath=($fpath "$FZF_TAB_HOME/lib")
 # zstyle ':fzf-tab:*' use-zcompui yes
 # zstyle ':fzf-tab:*' zcompui-command /Users/kcw/Github/fzf-tab/target/release/zcompui
 
@@ -18,6 +20,7 @@ zstyle ':completion:*:descriptions' format '[%d]' # set descriptions format to e
 zstyle ':fzf-tab:*' use-fzf-default-opts yes
 zstyle ':fzf-tab:complete:*' fzf-min-height 30  
 zstyle ':completion:*' prefix-needed false
+zstyle ':completion:*' menu select
 
 # zstyle ':fzf-tab:sources' config-directory "$DOTFILES/zshrc/completion-preview-specs"
 gh_source yarden-zamir/fzf-tab-source/fzf-tab-source.plugin.zsh
@@ -29,13 +32,4 @@ ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 ZSH_AUTOSUGGEST_STRATEGY=(history)
 gh_source zsh-users/zsh-autosuggestions/zsh-autosuggestions.zsh
 
-# ngrok
-# To install shell completions, add this to your profile:
-if command -v ngrok &>/dev/null; then
-    eval "$(ngrok completion)"
-fi
-
-if command -v uv &>/dev/null; then
-    eval "$(uv generate-shell-completion zsh)"
-fi
 #helllo
