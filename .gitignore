@@ -1,73 +1,34 @@
 # macOS local state
 .DS_Store
 
-# Local databases
+# Local databases and tool caches
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
 /.ruff_cache/
 
-# Agent runtime state
+# Agent tool state — ignore everything, track only the curated config.
+# Allowlist (not blocklist) so new runtime dirs can never leak in on their own.
+# This is git's job: keep machine state out of history. Stow's separate job
+# (keeping repo-internal paths out of $HOME) lives in .stow-local-ignore.
 /.agents/
 
-# Claude runtime state
-/.claude/.credentials.json
-/.claude/.last-cleanup
-/.claude/.last-update-result.json
-/.claude/backups/
-/.claude/cache/
-/.claude/debug/
-/.claude/file-history/
-/.claude/history.jsonl
-/.claude/ide/
-/.claude/mcp-needs-auth-cache.json
-/.claude/paste-cache/
-/.claude/plans/
-/.claude/plugins/
-/.claude/policy-limits.json
-/.claude/projects/
-/.claude/remote-settings.json
-/.claude/sessions/
-/.claude/settings.json
-/.claude/shell-snapshots/
-/.claude/stats-cache.json
-/.claude/telemetry/
-/.claude/todos/
+/.claude/*
+!/.claude/CLAUDE.md
+!/.claude/skills/
 
-# Codex runtime state
-/.config/codex/.codex-global-state.json
-/.config/codex/.personality_migration
-/.config/codex/.tmp/
-/.config/codex/archived_sessions/
-/.config/codex/auth.json
-/.config/codex/cache/
-/.config/codex/history.jsonl
-/.config/codex/installation_id
-/.config/codex/log/
-/.config/codex/memories/
-/.config/codex/models_cache.json
-/.config/codex/sessions/
-/.config/codex/shell_snapshots/
-/.config/codex/skills/
-/.config/codex/sqlite/
-/.config/codex/tmp/
-/.config/codex/vendor_imports/
-/.config/codex/version.json
+/.config/codex/*
+!/.config/codex/config.toml
 
-# OpenCode local dependencies and UI state
-/.config/opencode/.gitignore
-/.config/opencode/bun.lock
-/.config/opencode/node_modules/
-/.config/opencode/package-lock.json
-/.config/opencode/package.json
-/.config/opencode/tui.json
-/.opencode/.gitignore
-/.opencode/bun.lock
-/.opencode/node_modules/
-/.opencode/package-lock.json
-/.opencode/package.json
+/.config/opencode/*
+!/.config/opencode/opencode.jsonc
+!/.config/opencode/command/
+!/.config/opencode/tools/
 
-# Local secrets and work environment overlays
+/.opencode/*
+!/.opencode/skills/
+
+# Local secrets and work-environment overlays
 /zshenv/init/*.secret.zsh
 /zshenv/init/env.*.work.zsh
 /zshenv/init/env.secrets.*.zsh
