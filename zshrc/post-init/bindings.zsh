@@ -6,7 +6,7 @@ gh_source --require zsh-users/zsh-history-substring-search && {
 }
 
 # gh_source --require andreacasarin/zsh-ask-opencode && {
-    bindkey '^o' ask_opencode
+    bindkey '^o' ask_atuin_ai
 # }
 
 type -p fzf &>/dev/null && {
@@ -15,6 +15,9 @@ type -p fzf &>/dev/null && {
     bindkey '^l' navigate #ctrl+space / ctrl+@
     bindkey '^z' fzf-cd-widget
     bindkey '^f' fzf-file-widget
+    if (( $+functions[ai-sessions] )); then
+        bindkey '^s' ai-sessions #ctrl+s: AI session picker
+    fi
     type - p rg &>/dev/null &&
         bindkey '^[ ' ripgrep_search #alt+space
 }
@@ -40,4 +43,3 @@ bindkey '^k' open-with-code
 
 # bindkey '^b' git-branch
 # bindkey '^h' git-history
-
