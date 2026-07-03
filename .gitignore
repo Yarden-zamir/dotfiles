@@ -29,6 +29,7 @@
 !/.opencode/skills/
 
 # Local secrets and work-environment overlays
+*secret*
 /zshenv/init/*.secret.zsh
 /zshenv/init/env.*.work.zsh
 /zshenv/init/env.secrets.*.zsh
