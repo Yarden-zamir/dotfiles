@@ -33,7 +33,7 @@ _dotfiles_brew_fpath() {
 
   brew_prefix=${HOMEBREW_PREFIX-}
   if [[ -n $brew_prefix ]] && [[ -d $brew_prefix/share/zsh/site-functions ]]; then
-    export FPATH="$brew_prefix/share/zsh/site-functions:${FPATH}"
+    fpath=("$brew_prefix/share/zsh/site-functions" $fpath)
     return 0
   fi
 
@@ -41,7 +41,7 @@ _dotfiles_brew_fpath() {
   [[ -n $brew_path ]] || return 0
   brew_prefix=${brew_path%/bin/brew}
   [[ -d $brew_prefix/share/zsh/site-functions ]] || return 0
-  export FPATH="$brew_prefix/share/zsh/site-functions:${FPATH}"
+  fpath=("$brew_prefix/share/zsh/site-functions" $fpath)
 }
 
 _dotfiles_source_completions() {
@@ -52,14 +52,34 @@ _dotfiles_source_completions() {
   done
 }
 
-export FPATH=$HOME/.zfunc/:$FPATH
-export FPATH=/usr/share/zsh/5.8.1/functions:$FPATH
+_dotfiles_prune_fpath() {
+  local dir
+  local -a existing_fpath
+
+  for dir in $fpath; do
+    [[ -d $dir ]] && existing_fpath+=("$dir")
+  done
+
+  fpath=("${existing_fpath[@]}")
+}
+
+typeset -gU fpath
+_dotfiles_zsh_functions=/usr/share/zsh/${ZSH_VERSION%.*}/functions
+fpath=("$HOME/.zfunc" $fpath)
+[[ -d /opt/homebrew/share/zsh/functions ]] && fpath=(/opt/homebrew/share/zsh/functions $fpath)
+[[ -d $_dotfiles_zsh_functions ]] && fpath=("$_dotfiles_zsh_functions" $fpath)
 _zsh_profile_time "brew prefix" _dotfiles_brew_fpath
-export FPATH="$DOTFILES/completions:$FPATH"
+fpath=("$DOTFILES/completions" $fpath)
 _zsh_profile_time "gh_source perlpunk/shell-completions" gh_source perlpunk/shell-completions \
-  "export FPATH=$FPATH:{}/zsh"
+  'fpath=("{}"/zsh $fpath)'
+_dotfiles_prune_fpath
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 
 autoload -Uz compinit
-_zsh_profile_time "compinit -u" compinit -u
+_dotfiles_compdump=${ZDOTDIR:-$HOME}/.zcompdump
+if [[ -s $_dotfiles_compdump ]]; then
+  _zsh_profile_time "compinit -u -C" compinit -u -C -d "$_dotfiles_compdump"
+else
+  _zsh_profile_time "compinit -u" compinit -u -d "$_dotfiles_compdump"
+fi
 _zsh_profile_time "source $DOTFILES/completions" _dotfiles_source_completions
