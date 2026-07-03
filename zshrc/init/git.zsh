@@ -13,3 +13,9 @@ git-history() {
    git-fuzzer history
 }
 zle -N git-history git-history
+
+wt() {
+    local target
+    target="$($DOTFILES/bin/wt "$@")" || return
+    [[ -n "$target" ]] && cd "$target"
+}
