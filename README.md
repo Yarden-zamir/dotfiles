@@ -2,6 +2,46 @@
 
 Personal Zsh-first dotfiles for daily terminal work on macOS and Linux.
 
+> **Not a drop-in framework.** This repo is published to read, learn from, and
+> copy pieces out of — the phase loader, individual `zshrc/init/*.zsh` modules,
+> the stow/git split, etc. It hardcodes personal paths and assumptions and is
+> not meant to be installed wholesale on someone else's machine. Lift the parts
+> that are useful; don't `make stow-adopt` it into your `$HOME` expecting it to
+> "just work."
+
+## Bootstrap
+
+For reference, this is how the setup wires itself onto a fresh machine.
+
+Prerequisites: `zsh`, `git`, and GNU `stow` (macOS: `brew install stow`). The
+`gh_source` plugin helper is self-bootstrapped by the dotfiles themselves
+(`zshenv/pre-init/_gh_source.zsh`), so nothing extra is needed for plugins.
+
+1. Clone to the expected location — `$DOTFILES` is hardcoded to
+   `~/Github/dotfiles` in `.zshenv` and `.zshrc`:
+
+   ```sh
+   git clone <this-repo> ~/Github/dotfiles
+   cd ~/Github/dotfiles
+   ```
+
+2. Preview what stow would link, then adopt (see the Stow workflow section for
+   what `--adopt` does):
+
+   ```sh
+   make stow-adopt-dry-run
+   make stow-adopt
+   ```
+
+3. Open a new shell. `.zshenv` → `.zprofile` → `.zshrc` source their phase
+   directories and everything loads from there.
+
+Runtime state (`.claude`, `.agents`, `.config/codex`, …) is stowed as folded
+symlinks so it accumulates inside this repo; `.gitignore` keeps that state out
+of history while tracking only the curated config. Stow and git have separate
+jobs here — see `.stow-local-ignore` (keeps repo-internal paths out of `$HOME`)
+versus `.gitignore` (keeps machine state out of git).
+
 ## Phase system
 
 Phase-based loader for shell startup.
