@@ -1,1 +1,1 @@
-export FPATH=$FPATH:$HOME/atuin/completions
+[[ -d $HOME/atuin/completions ]] && fpath=($fpath "$HOME/atuin/completions")
