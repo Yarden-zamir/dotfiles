@@ -1,0 +1,229 @@
+#!/bin/sh
+
+set -u
+
+fail() {
+  printf '🔴 %s\n' "$1" >&2
+  exit 1
+}
+
+info() {
+  printf '🟢 %s\n' "$1" >&2
+}
+
+log_cmd() {
+  if ! { true >/dev/tty; } 2>/dev/null; then
+    return 0
+  fi
+
+  printf '⚪' >/dev/tty
+  for arg in "$@"; do
+    printf ' %s' "$arg" >/dev/tty
+  done
+  printf '\n' >/dev/tty
+}
+
+git_cmd() {
+  log_cmd git "$@"
+  git "$@"
+}
+
+fzf_cmd() {
+  log_cmd fzf "$@"
+  fzf "$@"
+}
+
+command -v fzf >/dev/null 2>&1 || fail 'fzf is required'
+
+tab=$(printf '\t')
+
+log_cmd git rev-parse --show-toplevel
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || fail 'run wt inside a Git worktree'
+container=$(dirname "$repo_root")
+bare="$container/.bare"
+
+[ -d "$bare" ] || fail "expected worktree container with .bare at $bare"
+
+branch_basename() {
+  branch=$1
+  printf '%s' "${branch##*/}"
+}
+
+branch_fullname() {
+  branch=$1
+  printf '%s' "$branch" | tr '/' '-'
+}
+
+local_branch_for_remote() {
+  remote_branch=$1
+  printf '%s' "${remote_branch#*/}"
+}
+
+branch_exists() {
+  git_cmd --git-dir "$bare" show-ref --verify --quiet "refs/heads/$1"
+}
+
+main_branch_ref() {
+  if branch_exists main; then
+    printf 'main\n'
+    return 0
+  fi
+
+  if git_cmd --git-dir "$bare" show-ref --verify --quiet refs/remotes/origin/main; then
+    printf 'origin/main\n'
+    return 0
+  fi
+
+  fail 'could not find main or origin/main'
+}
+
+worktree_for_branch() {
+  wanted=$1
+  current_path=
+  current_branch=
+
+  git_cmd --git-dir "$bare" worktree list --porcelain | while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      worktree\ *)
+        current_path=${line#worktree }
+        current_branch=
+        ;;
+      branch\ refs/heads/*)
+        current_branch=${line#branch refs/heads/}
+        if [ "$current_branch" = "$wanted" ]; then
+          printf '%s\n' "$current_path"
+          exit 0
+        fi
+        ;;
+    esac
+  done
+}
+
+dir_name_for_branch() {
+  branch=$1
+  basename=$(branch_basename "$branch")
+  conflicts=0
+
+  for candidate in $(git_cmd --git-dir "$bare" for-each-ref --format='%(refname:short)' refs/heads refs/remotes); do
+    [ -n "$candidate" ] || continue
+    case "$candidate" in
+      */HEAD) continue ;;
+      */*) candidate_branch=$(local_branch_for_remote "$candidate") ;;
+      *) candidate_branch=$candidate ;;
+    esac
+
+    [ "$candidate_branch" != "$branch" ] || continue
+    [ "$(branch_basename "$candidate_branch")" = "$basename" ] || continue
+    conflicts=1
+    break
+  done
+
+  if [ "$conflicts" -eq 1 ] || { [ -e "$container/$basename" ] && [ ! -f "$container/$basename/.git" ] && [ ! -d "$container/$basename/.git" ]; }; then
+    branch_fullname "$branch"
+  else
+    printf '%s' "$basename"
+  fi
+}
+
+add_worktree_for_remote() {
+  remote_branch=$1
+  branch=$(local_branch_for_remote "$remote_branch")
+  existing=$(worktree_for_branch "$branch" || true)
+
+  if [ -n "$existing" ]; then
+    printf '%s\n' "$existing"
+    return 0
+  fi
+
+  dir_name=$(dir_name_for_branch "$branch")
+  target="$container/$dir_name"
+
+  [ ! -e "$target" ] && [ ! -L "$target" ] || fail "target already exists: $target"
+
+  if branch_exists "$branch"; then
+    info "creating worktree $dir_name for $branch"
+    git_cmd --git-dir "$bare" worktree add "$target" "$branch" >&2 || exit 1
+  else
+    info "creating worktree $dir_name for $branch from $remote_branch"
+    git_cmd --git-dir "$bare" worktree add -b "$branch" "$target" "$remote_branch" >&2 || exit 1
+  fi
+
+  printf '%s\n' "$target"
+}
+
+add_worktree_for_new_branch() {
+  branch=$1
+
+  [ -n "$branch" ] || fail 'branch name is required'
+  branch_exists "$branch" && fail "branch already exists: $branch"
+
+  dir_name=$(dir_name_for_branch "$branch")
+  target="$container/$dir_name"
+
+  [ ! -e "$target" ] && [ ! -L "$target" ] || fail "target already exists: $target"
+
+  base=$(main_branch_ref)
+  info "creating worktree $dir_name for new branch $branch from $base"
+  git_cmd --git-dir "$bare" worktree add -b "$branch" "$target" "$base" >&2 || exit 1
+
+  printf '%s\n' "$target"
+}
+
+if [ "$#" -gt 1 ]; then
+  fail 'usage: wt [new-branch-name]'
+fi
+
+if [ "$#" -eq 1 ]; then
+  add_worktree_for_new_branch "$1"
+  exit 0
+fi
+
+entries=$(mktemp)
+trap 'rm -f "$entries"' EXIT INT HUP TERM
+
+current_path=
+current_branch=
+git_cmd --git-dir "$bare" worktree list --porcelain | while IFS= read -r line || [ -n "$line" ]; do
+  case "$line" in
+    worktree\ *)
+      current_path=${line#worktree }
+      current_branch=
+      ;;
+    branch\ refs/heads/*)
+      current_branch=${line#branch refs/heads/}
+      [ "$current_path" != "$bare" ] || continue
+      printf 'worktree\t%s\t%s\n' "$current_branch" "$current_path"
+      ;;
+  esac
+done >"$entries"
+
+git_cmd --git-dir "$bare" for-each-ref --format='%(refname:short)' refs/remotes | while IFS= read -r remote_branch || [ -n "$remote_branch" ]; do
+  [ -n "$remote_branch" ] || continue
+  case "$remote_branch" in
+    */HEAD) continue ;;
+  esac
+  printf 'remote\t%s\t%s\n' "$remote_branch" "create/open"
+done >>"$entries"
+
+selection=$(fzf_cmd --prompt='wt> ' --height=60% --reverse --delimiter="$tab" --with-nth=1,2,3 <"$entries") || exit 130
+
+old_ifs=$IFS
+IFS=$tab
+set -- $selection
+IFS=$old_ifs
+
+kind=${1:-}
+name=${2:-}
+path=${3:-}
+
+case "$kind" in
+  worktree)
+    printf '%s\n' "$path"
+    ;;
+  remote)
+    add_worktree_for_remote "$name"
+    ;;
+  *)
+    fail "unknown selection: $selection"
+    ;;
+esac

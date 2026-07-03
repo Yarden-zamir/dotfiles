@@ -1,0 +1,188 @@
+#!/bin/sh
+
+set -u
+
+fail() {
+  printf '🔴 %s\n' "$1" >&2
+  exit 1
+}
+
+info() {
+  printf '🟢 %s\n' "$1"
+}
+
+warn() {
+  printf '🟠 %s\n' "$1"
+}
+
+command -v fzf >/dev/null 2>&1 || fail 'fzf is required'
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || fail 'could not resolve script directory'
+migration_script="$script_dir/git-repo-to-bare-with-worktrees"
+[ -x "$migration_script" ] || fail "missing migration script: $migration_script"
+
+tab=$(printf '\t')
+dirs=$(mktemp)
+trap 'rm -f "$dirs"' EXIT INT HUP TERM
+
+has_meaningful_status() {
+  dir=$1
+
+  git -C "$dir" diff --quiet --ignore-submodules -- 2>/dev/null || return 0
+  git -C "$dir" diff --cached --quiet --ignore-submodules -- 2>/dev/null || return 0
+
+  untracked=$(git -C "$dir" ls-files --others --exclude-standard 2>/dev/null) || return 0
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    [ -n "$line" ] || continue
+    if [ "$line" = ".DS_Store" ] || [ "${line##*/}" = ".DS_Store" ]; then
+      continue
+    fi
+    return 0
+  done <<EOF
+$untracked
+EOF
+
+  return 1
+}
+
+worktree_count() {
+  dir=$1
+  count=0
+  output=$(git -C "$dir" worktree list --porcelain 2>/dev/null || true)
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      worktree\ *) count=$((count + 1)) ;;
+    esac
+  done <<EOF
+$output
+EOF
+
+  printf '%s\n' "$count"
+}
+
+bare_worktree_count() {
+  bare_dir=$1
+  count=0
+  output=$(git --git-dir "$bare_dir" worktree list --porcelain 2>/dev/null || true)
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      worktree\ *) count=$((count + 1)) ;;
+    esac
+  done <<EOF
+$output
+EOF
+
+  printf '%s\n' "$count"
+}
+
+dir_mtime() {
+  dir=$1
+  stat -f '%m' "$dir" 2>/dev/null || stat -c '%Y' "$dir" 2>/dev/null || printf '0\n'
+}
+
+write_dirs_by_mtime() {
+  root=$(pwd -P)
+  : >"$dirs"
+
+  for dir in "$root"/*; do
+    [ -d "$dir" ] || continue
+    printf '%s\t%s\n' "$(dir_mtime "$dir")" "$dir" >>"$dirs"
+  done
+}
+
+sorted_dirs_by_mtime() {
+  sort -rn "$dirs" | while IFS="$tab" read -r _mtime dir || [ -n "$dir" ]; do
+    [ -n "$dir" ] || continue
+    printf '%s\n' "$dir"
+  done
+}
+
+classify_dir() {
+  dir=$1
+  name=${dir##*/}
+
+  if [ -d "$dir/.bare" ]; then
+    is_bare=$(git --git-dir "$dir/.bare" rev-parse --is-bare-repository 2>/dev/null || true)
+    linked_count=$(bare_worktree_count "$dir/.bare")
+
+    if [ "$is_bare" = true ] && [ -d "$dir/_shared" ] && [ "$linked_count" -gt 1 ]; then
+      printf '1\t🟢\t%s\t%s\t%s\n' "$name" "$dir" 'already migrated'
+    else
+      printf '3\t🔴\t%s\t%s\t%s\n' "$name" "$dir" 'has .bare but not the expected layout'
+    fi
+    return
+  fi
+
+  if [ -f "$dir/.git" ]; then
+    printf '3\t🔴\t%s\t%s\t%s\n' "$name" "$dir" 'linked worktree, not a normal repo'
+    return
+  fi
+
+  if [ ! -d "$dir/.git" ]; then
+    return
+  fi
+
+  is_bare=$(git -C "$dir" rev-parse --is-bare-repository 2>/dev/null || true)
+  if [ "$is_bare" = true ]; then
+    printf '3\t🔴\t%s\t%s\t%s\n' "$name" "$dir" 'bare repo without worktree container layout'
+    return
+  fi
+
+  count=$(worktree_count "$dir")
+  if [ "$count" != 1 ]; then
+    printf '3\t🔴\t%s\t%s\t%s\n' "$name" "$dir" 'already has linked worktrees'
+    return
+  fi
+
+  if has_meaningful_status "$dir"; then
+    printf '3\t🔴\t%s\t%s\t%s\n' "$name" "$dir" 'has uncommitted tracked or untracked changes'
+    return
+  fi
+
+  printf '2\t🟠\t%s\t%s\t%s\n' "$name" "$dir" 'ready to migrate'
+}
+
+scan_dirs() {
+  write_dirs_by_mtime
+
+  sorted_dirs_by_mtime | while IFS= read -r dir || [ -n "$dir" ]; do
+    classify_dir "$dir"
+  done
+}
+
+selection=$(scan_dirs | fzf --prompt='wt-migrate> ' --height=70% --reverse --delimiter="$tab" --with-nth=2,3,5,4) || exit 130
+
+if [ -z "$selection" ]; then
+  warn 'no Git repos or worktree containers found under the current directory'
+  exit 0
+fi
+
+old_ifs=$IFS
+IFS=$tab
+set -- $selection
+IFS=$old_ifs
+
+state=${1:-}
+marker=${2:-}
+name=${3:-}
+path=${4:-}
+reason=${5:-}
+
+case "$state" in
+  1)
+    info "$name is already migrated: $path"
+    ;;
+  2)
+    warn "migrating $name: $path"
+    (cd "$path" && "$migration_script" --yes)
+    ;;
+  3)
+    fail "$name cannot be one-click migrated: $reason ($path)"
+    ;;
+  *)
+    fail "unknown selection: $selection"
+    ;;
+esac
