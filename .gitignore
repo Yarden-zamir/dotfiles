@@ -35,3 +35,4 @@
 /zshenv/init/env.secrets.*.zsh
 /zshenv/init/shelf/
 /zshrc/init/*.secret.zsh
+zshenv/init/sde.zsh
