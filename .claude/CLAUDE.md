@@ -76,11 +76,11 @@ Parallel verification workflow:
 - Treat unreachable/offline targets as expected when the user says they may be off; do not spend time debugging each one unless asked.
 
 Worktree workflow preferences:
+- project_name(bare), project_name/worktree-1, project_name/main
 - Prefer repo container layouts with `.bare/`, `_shared/`, and sibling worktrees such as `main/` or branch-name folders.
-- Treat the container directory as organizational only, not as a checkout.
-- Put shared local-only files in `_shared/` and symlink them into worktrees when needed.
-- Keep stashes untouched during migration; create worktrees for relevant branches but do not auto-apply stashes.
-- Use branch folder names based on the last branch path segment by default; use the full branch name with `/` replaced by `-` only when names conflict.
+- Put shared local-only files in `_shared/` and symlink them into worktrees
+- Use branch folder names based on the last branch path segment by default
+- Use this structure when creating a new project
 
 Dotfiles stow workflow:
 - Use `make stow-adopt`
