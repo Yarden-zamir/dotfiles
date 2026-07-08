@@ -1,4 +1,4 @@
-export DOTFILES="$HOME/Github/dotfiles"
+export DOTFILES="$HOME/Github/dotfiles/main"
 # export ZSH_PROFILE=0
 _dotfiles_source_dir() {
   local folder file

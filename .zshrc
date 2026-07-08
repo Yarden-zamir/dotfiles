@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-export DOTFILES="$HOME/Github/dotfiles"
+export DOTFILES="$HOME/Github/dotfiles/main"
 
 folders=(
   "$DOTFILES/zshrc/pre-init"
