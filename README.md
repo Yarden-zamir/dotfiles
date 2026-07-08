@@ -17,18 +17,33 @@ Prerequisites: `zsh`, `git`, and GNU `stow` (macOS: `brew install stow`). The
 `gh_source` plugin helper is self-bootstrapped by the dotfiles themselves
 (`zshenv/pre-init/_gh_source.zsh`), so nothing extra is needed for plugins.
 
-1. Clone to the expected location — `$DOTFILES` is hardcoded to
-   `~/Github/dotfiles` in `.zshenv` and `.zshrc`:
+This repo uses a bare + worktree **container** layout (see
+`bin/git-repo-to-bare-with-worktrees`):
+
+    ~/Github/dotfiles/
+    ├── .bare/     the git repository
+    ├── _shared/   local-only files shared across worktrees (secrets), symlinked in
+    └── main/      the working checkout, stow package, and $DOTFILES
+
+Secrets (`zshenv/init/*.secret.zsh`, `*.work.zsh`) live in `_shared/` and are
+symlinked into each worktree, so they are never duplicated across worktrees or
+committed.
+
+1. Clone to the expected location, then convert it to the container layout with
+   the included tool — `$DOTFILES` is hardcoded to `~/Github/dotfiles/main` in
+   `.zshenv` and `.zshrc`:
 
    ```sh
    git clone <this-repo> ~/Github/dotfiles
    cd ~/Github/dotfiles
+   bin/git-repo-to-bare-with-worktrees --yes   # -> .bare/ + main/ + _shared/
    ```
 
 2. Preview what stow would link, then adopt (see the Stow workflow section for
-   what `--adopt` does):
+   what `--adopt` does) — run from the `main/` worktree:
 
    ```sh
+   cd ~/Github/dotfiles/main
    make stow-adopt-dry-run
    make stow-adopt
    ```
@@ -37,10 +52,10 @@ Prerequisites: `zsh`, `git`, and GNU `stow` (macOS: `brew install stow`). The
    directories and everything loads from there.
 
 Runtime state (`.claude`, `.agents`, `.config/codex`, …) is stowed as folded
-symlinks so it accumulates inside this repo; `.gitignore` keeps that state out
-of history while tracking only the curated config. Stow and git have separate
-jobs here — see `.stow-local-ignore` (keeps repo-internal paths out of `$HOME`)
-versus `.gitignore` (keeps machine state out of git).
+symlinks so it accumulates inside the `main/` worktree; `.gitignore` keeps that
+state out of history while tracking only the curated config. Stow and git have
+separate jobs here — see `.stow-local-ignore` (keeps repo-internal paths out of
+`$HOME`) versus `.gitignore` (keeps machine state out of git).
 
 ## Phase system
 
@@ -73,7 +88,8 @@ Frequently used optional tools in this setup include `gh`, `fzf`, `bat`, `rg`, `
 
 ## Stow workflow
 
-This repo is managed as the `dotfiles` GNU Stow package from its parent directory.
+This repo is managed as the `main` GNU Stow package, run from the `main/` worktree;
+the Makefile derives the stow directory as its parent (the container).
 
 - Preview adoption first: `make stow-adopt-dry-run`
 - Adopt and restow files into `~`: `make stow-adopt`
