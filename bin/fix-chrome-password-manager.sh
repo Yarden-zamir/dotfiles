@@ -54,5 +54,3 @@ fi
 /usr/bin/killall "Google Chrome Helper" 2>/dev/null || true
 /usr/bin/killall "Google Chrome" 2>/dev/null || true
 /bin/sleep 5
-/usr/bin/open -a "Google Chrome"
-log 'chrome reopen requested'
