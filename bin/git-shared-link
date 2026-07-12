@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+# Symlink every file in <project>/_shared into a worktree, mirroring the tree:
+#
+#   <project>/_shared/zshenv/init/atuin.secret.zsh
+#     -> <project>/<worktree>/zshenv/init/atuin.secret.zsh
+#
+# Idempotent: correct links are left alone, real files are never overwritten.
+#
+# usage: git-shared-link [worktree-path]     (default: the current worktree)
+
+set -u
+unset CDPATH
+
+fail() {
+  printf '🔴 %s\n' "$1" >&2
+  exit 1
+}
+
+warn() {
+  printf '🟠 %s\n' "$1" >&2
+}
+
+info() {
+  printf '🟢 %s\n' "$1" >&2
+}
+
+usage() {
+  printf 'usage: git-shared-link [worktree-path]\n'
+}
+
+case "${1:-}" in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+esac
+
+[ "$#" -le 1 ] || {
+  usage >&2
+  exit 2
+}
+
+if [ "$#" -eq 1 ]; then
+  [ -d "$1" ] || fail "not a directory: $1"
+  worktree=$1
+else
+  worktree=$(git rev-parse --show-toplevel 2>/dev/null) || fail 'not inside a Git worktree'
+fi
+
+worktree=$(cd -- "$worktree" && pwd -P) || fail "could not resolve $worktree"
+project=$(dirname "$worktree")
+shared="$project/_shared"
+
+[ -d "$project/.bare" ] || fail "not a bare + worktree container: $project"
+[ -d "$shared" ] || fail "no shared directory: $shared"
+
+sources=$(find "$shared" ! -type d) || fail "could not scan $shared"
+status=0
+
+while IFS= read -r source || [ -n "$source" ]; do
+  [ -n "$source" ] || continue
+
+  rel=${source#"$shared"/}
+  case "$rel" in
+    .DS_Store | */.DS_Store) continue ;;
+  esac
+
+  # One ".." for the worktree directory, plus one per directory in $rel.
+  up="../"
+  dir=${rel%/*}
+  if [ "$dir" != "$rel" ]; then
+    rest=$dir
+    while [ -n "$rest" ]; do
+      up="../$up"
+      case "$rest" in
+        */*) rest=${rest%/*} ;;
+        *) rest= ;;
+      esac
+    done
+  fi
+
+  target="$worktree/$rel"
+  link="${up}_shared/$rel"
+
+  if [ -L "$target" ] && [ "$(readlink "$target")" = "$link" ]; then
+    continue
+  fi
+
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    warn "$rel already exists in $worktree, skipping"
+    continue
+  fi
+
+  if ! mkdir -p "$(dirname "$target")"; then
+    warn "could not create parent directory for $rel"
+    status=1
+    continue
+  fi
+
+  if ln -s "$link" "$target"; then
+    info "linked $rel -> $link"
+  else
+    warn "failed to link $rel -> $link"
+    status=1
+  fi
+done <<EOF
+$sources
+EOF
+
+exit "$status"
