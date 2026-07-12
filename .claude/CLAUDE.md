@@ -76,11 +76,10 @@ Parallel verification workflow:
 - Treat unreachable/offline targets as expected when the user says they may be off; do not spend time debugging each one unless asked.
 
 Worktree workflow preferences:
-- project_name(bare), project_name/worktree-1, project_name/main
-- Prefer repo container layouts with `.bare/`, `_shared/`, and sibling worktrees such as `main/` or branch-name folders.
-- Put shared local-only files in `_shared/` and symlink them into worktrees
-- Use branch folder names based on the last branch path segment by default
-- Use this structure when creating a new project
+- Every repo is a container directory holding `.bare/` (the git dir), `_shared/` (local-only files), and one folder per checked-out branch: `main/`, plus e.g. `auth/` for branch `feat/api/auth` (last path segment).
+- Use the `worktree-repo` skill whenever creating a new project, cloning, converting an existing clone, or adding a worktree. Convert an existing clone with `$DOTFILES/bin/wt-migrate` (dry-run by default, `--yes` to apply); nothing in `bin/` is on `$PATH`, so call it by path.
+- Add worktrees with plain `git worktree add`, naming the folder after the branch's last path segment.
+- Local-only files (secrets, env) live in `_shared/`, mirroring their path in the worktree. A global `post-checkout` hook symlinks them in on every checkout; never create those symlinks by hand.
 
 Dotfiles stow workflow:
 - Use `make stow-adopt`
