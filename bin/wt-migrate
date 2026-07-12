@@ -1,6 +1,23 @@
 #!/bin/sh
+#
+# Convert a normal Git checkout into a bare + worktree container:
+#
+#   <project>/.bare       the git directory
+#   <project>/_shared     ignored root-level files, symlinked into each worktree
+#   <project>/<branch>    worktree for the checked-out branch
+#
+# Ignored files directly in the repo root move to _shared/ and are symlinked
+# back by git-shared-link. Ignored files inside directories stay in the
+# worktree. Stashes are left alone.
+#
+# usage:
+#   wt-migrate [--yes] <path>   migrate the repository at <path>
+#   wt-migrate [--yes]          pick a repository under $PWD with fzf
+#
+# Without --yes this only prints the plan.
 
 set -u
+unset CDPATH
 
 fail() {
   printf '🔴 %s\n' "$1" >&2
@@ -15,15 +32,33 @@ warn() {
   printf '🟠 %s\n' "$1"
 }
 
-command -v fzf >/dev/null 2>&1 || fail 'fzf is required'
+usage() {
+  printf 'usage: wt-migrate [--yes] [path]\n'
+}
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || fail 'could not resolve script directory'
-migration_script="$script_dir/git-repo-to-bare-with-worktrees"
-[ -x "$migration_script" ] || fail "missing migration script: $migration_script"
+script_dir=$(cd -- "$(dirname -- "$0")" && pwd -P) || fail 'could not resolve script directory'
+linker="$script_dir/git-shared-link"
+[ -x "$linker" ] || fail "missing linker: $linker"
 
 tab=$(printf '\t')
-dirs=$(mktemp)
-trap 'rm -f "$dirs"' EXIT INT HUP TERM
+apply=0
+target=
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --yes) apply=1 ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -*) fail "unknown option: $1" ;;
+    *)
+      [ -z "$target" ] || fail 'expected at most one path'
+      target=$1
+      ;;
+  esac
+  shift
+done
 
 has_meaningful_status() {
   dir=$1
@@ -35,9 +70,7 @@ has_meaningful_status() {
 
   while IFS= read -r line || [ -n "$line" ]; do
     [ -n "$line" ] || continue
-    if [ "$line" = ".DS_Store" ] || [ "${line##*/}" = ".DS_Store" ]; then
-      continue
-    fi
+    [ "${line##*/}" = '.DS_Store' ] && continue
     return 0
   done <<EOF
 $untracked
@@ -47,9 +80,8 @@ EOF
 }
 
 worktree_count() {
-  dir=$1
   count=0
-  output=$(git -C "$dir" worktree list --porcelain 2>/dev/null || true)
+  output=$(git -C "$1" worktree list --porcelain 2>/dev/null || true)
 
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in
@@ -62,43 +94,152 @@ EOF
   printf '%s\n' "$count"
 }
 
-bare_worktree_count() {
-  bare_dir=$1
-  count=0
-  output=$(git --git-dir "$bare_dir" worktree list --porcelain 2>/dev/null || true)
+migrate_repo() {
+  repo=$1
 
-  while IFS= read -r line || [ -n "$line" ]; do
-    case "$line" in
-      worktree\ *) count=$((count + 1)) ;;
+  repo_root=$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null) || fail "not a Git repository: $repo"
+  repo_root=$(cd -- "$repo_root" && pwd -P) || fail "could not resolve $repo_root"
+
+  [ "$(git -C "$repo_root" rev-parse --is-bare-repository)" = 'false' ] ||
+    fail 'refusing to migrate a bare repository'
+
+  git_dir=$(git -C "$repo_root" rev-parse --git-dir)
+  case "$git_dir" in
+    /*) ;;
+    *) git_dir="$repo_root/$git_dir" ;;
+  esac
+  [ -d "$git_dir" ] || fail 'refusing to migrate a linked worktree (.git is not a directory)'
+
+  [ "$(worktree_count "$repo_root")" = '1' ] ||
+    fail 'refusing to migrate a repository that already has linked worktrees'
+
+  ! has_meaningful_status "$repo_root" ||
+    fail 'refusing to migrate with tracked or non-ignored untracked changes present'
+
+  branch=$(git -C "$repo_root" branch --show-current)
+  [ -n "$branch" ] || fail 'refusing to migrate a detached HEAD checkout'
+
+  dir_name=${branch##*/}
+  [ -n "$dir_name" ] || fail "cannot derive a worktree directory name for branch $branch"
+
+  bare="$repo_root/.bare"
+  shared="$repo_root/_shared"
+  worktree="$repo_root/$dir_name"
+  staging="$repo_root.wt-migrate-staging"
+
+  if [ -e "$staging" ] || [ -L "$staging" ]; then
+    fail "staging path already exists: $staging"
+  fi
+
+  root_ignored=
+  nested_ignored=
+  nested_tops=
+  nested_count=0
+
+  ignored=$(git -C "$repo_root" ls-files --others --ignored --exclude-standard)
+  while IFS= read -r item || [ -n "$item" ]; do
+    [ -n "$item" ] || continue
+    [ "${item##*/}" = '.DS_Store' ] && continue
+
+    case "$item" in
+      */*)
+        top=${item%%/*}
+        nested_ignored="$nested_ignored$item
+"
+        nested_count=$((nested_count + 1))
+        printf '%s\n' "$nested_tops" | grep -qxF "$top" || nested_tops="$nested_tops$top
+"
+        ;;
+      *)
+        root_ignored="$root_ignored$item
+"
+        ;;
     esac
   done <<EOF
-$output
+$ignored
 EOF
 
-  printf '%s\n' "$count"
+  info "repo:     $repo_root"
+  info "bare:     $bare"
+  info "shared:   $shared"
+  info "worktree: $branch -> $worktree"
+
+  if [ -n "$root_ignored" ]; then
+    while IFS= read -r item || [ -n "$item" ]; do
+      [ -n "$item" ] || continue
+      info "move ignored root file to _shared: $item"
+    done <<EOF
+$root_ignored
+EOF
+  else
+    info 'no root-level ignored files found'
+  fi
+
+  if [ "$nested_count" -gt 0 ]; then
+    tops=$(printf '%s' "$nested_tops" | tr '\n' ' ')
+    warn "keeping $nested_count ignored file(s) in the worktree, under: $tops"
+  fi
+
+  [ -z "$(git -C "$repo_root" stash list)" ] ||
+    warn 'stash entries exist and are left untouched; apply them manually after migrating'
+
+  if [ "$apply" -eq 0 ]; then
+    warn 'dry run only; re-run with --yes to apply this migration'
+    return 0
+  fi
+
+  mv "$repo_root" "$staging" || fail "could not move checkout to $staging"
+
+  # Self-migration: this script lives in the checkout that just moved to staging.
+  case "$linker" in
+    "$repo_root"/*)
+      linker="$staging/${linker#"$repo_root"/}"
+      [ -x "$linker" ] || fail "linker vanished with the checkout: $linker"
+      ;;
+  esac
+
+  mkdir "$repo_root" || fail "could not recreate $repo_root (checkout is at $staging)"
+  mv "$staging/.git" "$bare" || fail "could not move .git to $bare (checkout is at $staging)"
+
+  git --git-dir "$bare" config core.bare true || fail "could not mark $bare bare (checkout is at $staging)"
+  git --git-dir "$bare" config --unset core.worktree 2>/dev/null || true
+
+  mkdir -p "$shared" || fail "could not create $shared (checkout is at $staging)"
+
+  while IFS= read -r item || [ -n "$item" ]; do
+    [ -n "$item" ] || continue
+    mv "$staging/$item" "$shared/$item" || fail "could not move $item into $shared"
+  done <<EOF
+$root_ignored
+EOF
+
+  git --git-dir "$bare" worktree add "$worktree" "$branch" ||
+    fail "could not create worktree $worktree (checkout is at $staging)"
+
+  while IFS= read -r item || [ -n "$item" ]; do
+    [ -n "$item" ] || continue
+    if [ -e "$worktree/$item" ]; then
+      fail "refusing to overwrite $worktree/$item"
+    fi
+    mkdir -p "$(dirname "$worktree/$item")" || fail "could not create parent for $item"
+    mv "$staging/$item" "$worktree/$item" || fail "could not move $item into $worktree"
+  done <<EOF
+$nested_ignored
+EOF
+
+  "$linker" "$worktree" || fail "could not link _shared into $worktree"
+
+  rm -rf "$staging" || warn "could not remove staging directory: $staging"
+
+  info "migration complete: $worktree"
 }
 
-dir_mtime() {
-  dir=$1
-  stat -f '%m' "$dir" 2>/dev/null || stat -c '%Y' "$dir" 2>/dev/null || printf '0\n'
-}
+if [ -n "$target" ]; then
+  migrate_repo "$target"
+  exit 0
+fi
 
-write_dirs_by_mtime() {
-  root=$(pwd -P)
-  : >"$dirs"
-
-  for dir in "$root"/*; do
-    [ -d "$dir" ] || continue
-    printf '%s\t%s\n' "$(dir_mtime "$dir")" "$dir" >>"$dirs"
-  done
-}
-
-sorted_dirs_by_mtime() {
-  sort -rn "$dirs" | while IFS="$tab" read -r _mtime dir || [ -n "$dir" ]; do
-    [ -n "$dir" ] || continue
-    printf '%s\n' "$dir"
-  done
-}
+command -v fzf >/dev/null 2>&1 || fail 'fzf is required to pick a repository; pass a path instead'
 
 classify_dir() {
   dir=$1
@@ -106,9 +247,7 @@ classify_dir() {
 
   if [ -d "$dir/.bare" ]; then
     is_bare=$(git --git-dir "$dir/.bare" rev-parse --is-bare-repository 2>/dev/null || true)
-    linked_count=$(bare_worktree_count "$dir/.bare")
-
-    if [ "$is_bare" = true ] && [ -d "$dir/_shared" ] && [ "$linked_count" -gt 1 ]; then
+    if [ "$is_bare" = 'true' ] && [ -d "$dir/_shared" ]; then
       printf '1\t🟢\t%s\t%s\t%s\n' "$name" "$dir" 'already migrated'
     else
       printf '3\t🔴\t%s\t%s\t%s\n' "$name" "$dir" 'has .bare but not the expected layout'
@@ -121,18 +260,15 @@ classify_dir() {
     return
   fi
 
-  if [ ! -d "$dir/.git" ]; then
-    return
-  fi
+  [ -d "$dir/.git" ] || return
 
   is_bare=$(git -C "$dir" rev-parse --is-bare-repository 2>/dev/null || true)
-  if [ "$is_bare" = true ]; then
+  if [ "$is_bare" = 'true' ]; then
     printf '3\t🔴\t%s\t%s\t%s\n' "$name" "$dir" 'bare repo without worktree container layout'
     return
   fi
 
-  count=$(worktree_count "$dir")
-  if [ "$count" != 1 ]; then
+  if [ "$(worktree_count "$dir")" != '1' ]; then
     printf '3\t🔴\t%s\t%s\t%s\n' "$name" "$dir" 'already has linked worktrees'
     return
   fi
@@ -146,43 +282,27 @@ classify_dir() {
 }
 
 scan_dirs() {
-  write_dirs_by_mtime
-
-  sorted_dirs_by_mtime | while IFS= read -r dir || [ -n "$dir" ]; do
+  for dir in "$(pwd -P)"/*; do
+    [ -d "$dir" ] || continue
     classify_dir "$dir"
   done
 }
 
 selection=$(scan_dirs | fzf --prompt='wt-migrate> ' --height=70% --reverse --delimiter="$tab" --with-nth=2,3,5,4) || exit 130
-
-if [ -z "$selection" ]; then
+[ -n "$selection" ] || {
   warn 'no Git repos or worktree containers found under the current directory'
   exit 0
-fi
+}
 
 old_ifs=$IFS
 IFS=$tab
+# shellcheck disable=SC2086
 set -- $selection
 IFS=$old_ifs
 
-state=${1:-}
-marker=${2:-}
-name=${3:-}
-path=${4:-}
-reason=${5:-}
-
-case "$state" in
-  1)
-    info "$name is already migrated: $path"
-    ;;
-  2)
-    warn "migrating $name: $path"
-    (cd "$path" && "$migration_script" --yes)
-    ;;
-  3)
-    fail "$name cannot be one-click migrated: $reason ($path)"
-    ;;
-  *)
-    fail "unknown selection: $selection"
-    ;;
+case "${1:-}" in
+  1) info "${3:-} is already migrated: ${4:-}" ;;
+  2) migrate_repo "${4:-}" ;;
+  3) fail "${3:-} cannot be migrated: ${5:-} (${4:-})" ;;
+  *) fail "unknown selection: $selection" ;;
 esac
