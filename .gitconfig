@@ -8,6 +8,7 @@
 	required = true
 [core]
 	excludesfile = ~/global.gitignore
+	hooksPath = ~/.config/git/hooks
 	fsmonitor = true
 	untrackedCache = true
 	preloadIndex = true
