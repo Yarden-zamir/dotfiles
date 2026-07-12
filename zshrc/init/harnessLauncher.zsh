@@ -1,21 +1,14 @@
-OPEN_HARNESS_PROGRAMS=(opencode claude codex)
+OPEN_HARNESS_PROGRAMS=(opencode claude codex copilot)
 open-harness() {
     # open current folder with a program selected with fzf
     local program
-    program=$(echo -e "$OPEN_HARNESS_PROGRAMS" | tr ' ' '\n' | fzf --prompt "Open this folder with - ")
-    case $program in
-    opencode)
-        opencode
-        ;;
-    claude)
-        claude
-        ;;
-    codex)
-        codex
-        ;;
-    *)
-        $program 2>/dev/null
-        ;;
-    esac
+
+    zle -I
+    program=$(printf '%s\n' "${OPEN_HARNESS_PROGRAMS[@]}" | fzf --prompt "Open this folder with - ") || return
+    [[ -n "$program" ]] || return
+
+    BUFFER="$program"
+    CURSOR=${#BUFFER}
+    zle accept-line
 }
 zle -N open-harness open-harness
