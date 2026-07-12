@@ -13,6 +13,7 @@ type -p fzf &>/dev/null && {
     # bindkey '^a' browse_apps
     bindkey '^@' navigate #ctrl+space / ctrl+@
     bindkey '^l' navigate #ctrl+space / ctrl+@
+    bindkey '^n' navgator-create #ctrl+n: create new project
     bindkey '^z' fzf-cd-widget
     bindkey '^f' fzf-file-widget
     if (( $+functions[ai-sessions] )); then
