@@ -17,8 +17,7 @@ Prerequisites: `zsh`, `git`, and GNU `stow` (macOS: `brew install stow`). The
 `gh_source` plugin helper is self-bootstrapped by the dotfiles themselves
 (`zshenv/pre-init/_gh_source.zsh`), so nothing extra is needed for plugins.
 
-This repo uses a bare + worktree **container** layout (see
-`bin/git-repo-to-bare-with-worktrees`):
+This repo uses a bare + worktree **container** layout (see `bin/wt-migrate`):
 
     ~/Github/dotfiles/
     ├── .bare/     the git repository
@@ -26,8 +25,9 @@ This repo uses a bare + worktree **container** layout (see
     └── main/      the working checkout, stow package, and $DOTFILES
 
 Secrets (`zshenv/init/*.secret.zsh`, `*.work.zsh`) live in `_shared/` and are
-symlinked into each worktree, so they are never duplicated across worktrees or
-committed.
+symlinked into each worktree by `bin/git-shared-link`, which the global
+`post-checkout` hook runs on every checkout, clone, and `git worktree add`. They
+are never duplicated across worktrees or committed.
 
 1. Clone to the expected location, then convert it to the container layout with
    the included tool — `$DOTFILES` is hardcoded to `~/Github/dotfiles/main` in
@@ -36,7 +36,8 @@ committed.
    ```sh
    git clone <this-repo> ~/Github/dotfiles
    cd ~/Github/dotfiles
-   bin/git-repo-to-bare-with-worktrees --yes   # -> .bare/ + main/ + _shared/
+   bin/wt-migrate .          # dry run: print the plan
+   bin/wt-migrate --yes .    # apply -> .bare/ + main/ + _shared/
    ```
 
 2. Preview what stow would link, then adopt (see the Stow workflow section for
