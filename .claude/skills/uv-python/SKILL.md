@@ -1,6 +1,6 @@
 ---
 name: uv-python
-description: Use uv as the default Python workflow for versions, environments, dependencies, scripts, tools, locking, CI, Docker, and publishing. Prefer uv project commands and script-first uv run usage over raw python or pip.
+description: Use uv as the default Python runner and workflow for versions, environments, dependencies, scripts, tools, locking, CI, Docker, and publishing. Prefer uv project commands and script-first uv run usage over raw python or pip.
 license: MIT
 ---
 
