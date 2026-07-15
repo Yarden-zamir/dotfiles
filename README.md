@@ -110,4 +110,4 @@ Use `--adopt` carefully: it can move existing files from `~` into this repo befo
 - Keep changes modular: add/update a focused file in the proper phase directory.
 - Avoid broad inline `source` blocks in `.zshenv` or `.zshrc`.
 - Follow existing `gh_source` usage for plugin sourcing.
-- Use `gh_source --require` only for hard dependencies.
+- Use `gh_source --loaded` only for hard dependencies.
