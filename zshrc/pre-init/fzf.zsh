@@ -1,29 +1,8 @@
 # config for fzf
-_dotfiles_source_fzf_zsh() {
-    local -a restore_options
-    local opt
-
-    for opt in "${(@k)options}"; do
-        [[ "$opt" == zle ]] && continue
-        if [[ -o "$opt" ]]; then
-            restore_options+=("-o" "$opt")
-        else
-            restore_options+=("+o" "$opt")
-        fi
-    done
-
-    # fzf snapshots $options and tries to restore the unchangeable zle option.
-    () {
-        local -hA options
-        source "$1"
-    } "$1"
-
-    setopt "${restore_options[@]}"
-}
-
-gh_source junegunn/fzf 'export PATH="${PATH:+$PATH:}{}/bin"; [[ $- == *i* ]] && _dotfiles_source_fzf_zsh {}/shell/completion.zsh; _dotfiles_source_fzf_zsh {}/shell/key-bindings.zsh'
-
-unfunction _dotfiles_source_fzf_zsh
+gh_source junegunn/fzf/shell/completion.zsh \
+    --path bin \
+    --preserve-zsh-options \
+    --source shell/key-bindings.zsh
     # --bind 'tab:replace-query' \
 export FZF_DEFAULT_OPTS=" \
     --bind 'bs:backward-delete-char/eof' \

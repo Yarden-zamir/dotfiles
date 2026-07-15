@@ -71,7 +71,7 @@ fpath=("$HOME/.zfunc" $fpath)
 _zsh_profile_time "brew prefix" _dotfiles_brew_fpath
 fpath=("$DOTFILES/completions" $fpath)
 _zsh_profile_time "gh_source perlpunk/shell-completions" gh_source perlpunk/shell-completions \
-  'fpath=("{}"/zsh $fpath)'
+  --fpath zsh
 _dotfiles_prune_fpath
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
 

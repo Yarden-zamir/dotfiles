@@ -1,11 +1,11 @@
 #! /bin/bash
 # for global bindings see: $DOTFILES/.skhdrc
-gh_source --require zsh-users/zsh-history-substring-search && {
+gh_source --loaded doncollins1985/zsh-history-substring-search && {
     bindkey '^[[A' history-substring-search-up
     bindkey '^[[B' history-substring-search-down
 }
 
-# gh_source --require andreacasarin/zsh-ask-opencode && {
+# gh_source --loaded andreacasarin/zsh-ask-opencode && {
     bindkey '^o' ask_atuin_ai
 # }
 
