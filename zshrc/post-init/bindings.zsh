@@ -1,6 +1,6 @@
 #! /bin/bash
 # for global bindings see: $DOTFILES/.skhdrc
-gh_source --loaded doncollins1985/zsh-history-substring-search && {
+gh_source --loaded zsh-users/zsh-history-substring-search && {
     bindkey '^[[A' history-substring-search-up
     bindkey '^[[B' history-substring-search-down
 }
