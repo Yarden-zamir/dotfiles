@@ -76,9 +76,9 @@ Parallel verification workflow:
 - Treat unreachable/offline targets as expected when the user says they may be off; do not spend time debugging each one unless asked.
 
 Worktree workflow preferences:
-- Every repo is a container directory holding `.bare/` (the git dir), `_shared/` (local-only files), and one folder per checked-out branch: `main/`, plus e.g. `auth/` for branch `feat/api/auth` (last path segment).
+- Every repo is a container directory holding `.bare/` (the git dir), `_shared/` (local-only files), and one folder per checked-out branch: `main/`, plus e.g. `qcdi-1234-auth/` for branch `feat/api/qcdi-1234-auth`.
 - Use the `worktree-repo` skill whenever creating a new project, cloning, converting an existing clone, or adding a worktree. Convert an existing clone with `$DOTFILES/bin/wt-migrate` (dry-run by default, `--yes` to apply); nothing in `bin/` is on `$PATH`, so call it by path.
-- Add worktrees with plain `git worktree add`, naming the folder after the branch's last path segment.
+- Add worktrees with plain `git worktree add`. The worktree directory name must match the branch's final path component one-to-one; preserve that component exactly and never shorten it further.
 - Local-only files (secrets, env) live in `_shared/`, mirroring their path in the worktree. A global `post-checkout` hook symlinks them in on every checkout; never create those symlinks by hand.
 
 Dotfiles stow workflow:
@@ -93,8 +93,19 @@ Commit and branch preferences:
     - description with references and notes, not too big, only when relevant, avoid generic. If other tickets or markdown documents are involved reference them here.
     - if in a qlik-trial repo
         - each commit must reference a jira QCDI ticket in the format: "QCDI-XXXX | conventional commit message". If not the case before merge, suggest rebase. 
+        - each branch must reference a jira QCDI ticket in the format: "feat/yarden/qcdi-XXXX-description" etc
         - if no jira ticket is provided by user, suggest to search for one or to create one before proceeding.
 - Tickets
     - When mentioning a ticket, do so with a link
     - Offer to update tickets/comment on tickets with new relevant information
     - If an action does not meet a current ticket, offer to create a new ticket
+
+In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information. Do not sacrifice clarity for brevity. Minimal wording maximal clarity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity
+
+Specs (if relevant)
+- A change is not done until the specs describing it are true again. Before finishing a task, re-read the specs covering what you touched and check each claim still holds — a state, a count, a default, a flag name, a "not yet", an example.
+- Fix a stale claim in the same change that made it stale, and fix it in place: patch the line, don't rewrite the doc.
+- If a change introduces behavior no spec covers (a new command, a new contract), say so and offer to write one. If a spec's state is now wrong (a draft that landed), flip it.
+- Say which specs you checked and what changed in them, so I can tell "verified, still true" apart from "didn't look".
+
+Before substituting, weakening, or reinterpreting a requirement, confirm with me when the original requirement cannot be satisfied as written.
