@@ -11,11 +11,11 @@ Every repo is a **container directory** holding the git dir, shared local files,
 ~/Github/<project>/
 ├── .bare/      the git repository (bare)
 ├── _shared/    local-only files (secrets, env) shared across worktrees
-├── main/       worktree for the main branch
-└── <branch>/   worktree, named after the branch's last path segment
+├── main/               worktree for the main branch
+└── <branch-basename>/  worktree named exactly after the branch's final path component
 ```
 
-A worktree folder is named after the **last segment** of its branch: `feat/api/auth` → `auth/`.
+The worktree directory name must equal the branch's **final path component** one-to-one: `feat/api/qcdi-1234-auth` → `qcdi-1234-auth/`. Preserve that component exactly, including ticket prefixes, casing, and separators; do not shorten it further.
 
 Nothing in `$DOTFILES/bin` is on `$PATH` — call these tools by path.
 
@@ -38,7 +38,7 @@ It refuses to migrate a dirty tree, a detached HEAD, a bare repo, or a repo that
 Plain git is correct — the `post-checkout` hook links `_shared/` automatically:
 
 ```sh
-git --git-dir ~/Github/<project>/.bare worktree add ~/Github/<project>/auth -b feat/api/auth
+git --git-dir ~/Github/<project>/.bare worktree add ~/Github/<project>/qcdi-1234-auth -b feat/api/qcdi-1234-auth
 ```
 
 ## _shared/
