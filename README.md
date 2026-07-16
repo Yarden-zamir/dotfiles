@@ -65,6 +65,7 @@ The `_dotfiles_source_dir` helper sources `*.zsh` files from phase directories i
 
 Startup flow:
 
+asdasd
 - `.zshenv` (always): `zshenv/pre-init` -> `zshenv/init` -> `zshenv/post-init`
 - `.zprofile` (login shells): `zprofile/pre-init` -> `zprofile/init` -> `zprofile/post-init`
 - `.zshrc` (interactive shells): `zshrc/pre-init` -> `zshrc/init` -> `zshrc/post-init`
