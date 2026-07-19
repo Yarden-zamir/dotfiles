@@ -22,7 +22,7 @@ fi
 
 /usr/bin/open -na "/Applications/Ghostty.app" --args \
     --config-default-files=false \
-    --font-size=25 \
+    --font-size=28 \
     --maximize=true \
     --background-opacity=0.9 \
     --background-blur=true \
@@ -31,5 +31,5 @@ fi
     --confirm-close-surface=false \
     -e "$NAVGATOR_BIN" \
     --config-entry 'ui.theme="dark"' \
-    --config-entry 'actions.picker=["open-vs-code","open-iterm","open-github-desktop","open-repo-online","open-intellij","open-claude-iterm","open-opencode-iterm"]' \
+    --config-entry 'actions.picker=["open-vs-code","open-intellij","open-iterm","open-github-desktop","open-repo-online","open-claude-iterm","open-opencode-iterm", "open-finder"]' \
     --config-entry 'keybindings.navigator.enter="actions"'
