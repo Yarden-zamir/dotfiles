@@ -102,6 +102,8 @@ Commit and branch preferences:
 
 In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information. Do not sacrifice clarity for brevity. Minimal wording maximal clarity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity
 
+When exploring external code that we own like other services, sdk, forks, try to find local clone of the codebase and explore there, otherwise attempt to clone to a local place same as my other clonses and explore there. Never check compiled decompiled deps and try to reverse engineer unless no other way is possible.
+
 Specs (if relevant)
 - A change is not done until the specs describing it are true again. Before finishing a task, re-read the specs covering what you touched and check each claim still holds — a state, a count, a default, a flag name, a "not yet", an example.
 - Fix a stale claim in the same change that made it stale, and fix it in place: patch the line, don't rewrite the doc.
