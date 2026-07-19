@@ -9,3 +9,71 @@ static_items = [
     "/Users/kcw/Library/Application Support/ModrinthApp/profiles/Create ptd 2",
     "/Users/kcw/Library/Application Support/ModrinthApp/profiles/Create Prepare to Dye",
 ]
+
+[actions]
+include_defaults = true
+picker = [
+    "open-vs-code",
+    "open-github-desktop",
+    "open-repo-online",
+    "open-intellij",
+    "navigate-to",
+    "open-claude-session",
+    "open-opencode-session",
+]
+
+[[actions.items]]
+id = "open-iterm"
+label = "Open iTerm"
+icon = ""
+type = "command"
+command = "open"
+args = ["-a", "iTerm", "{path}"]
+
+[[actions.items]]
+id = "open-claude-iterm"
+label = "Open Claude in iTerm"
+icon = "󰚩"
+type = "command"
+command = "osascript"
+args = [
+    "-e",
+    '''
+on run argv
+    set projectPath to item 1 of argv
+    set toolCommand to item 2 of argv
+    set shellCommand to "cd " & quoted form of projectPath & " && exec " & quoted form of toolCommand
+
+    tell application "iTerm2"
+        create window with default profile command shellCommand
+        activate
+    end tell
+end run
+''',
+    "{path}",
+    "claude",
+]
+
+[[actions.items]]
+id = "open-opencode-iterm"
+label = "Open OpenCode in iTerm"
+icon = "󰘦"
+type = "command"
+command = "osascript"
+args = [
+    "-e",
+    '''
+on run argv
+    set projectPath to item 1 of argv
+    set toolCommand to item 2 of argv
+    set shellCommand to "cd " & quoted form of projectPath & " && exec " & quoted form of toolCommand
+
+    tell application "iTerm2"
+        create window with default profile command shellCommand
+        activate
+    end tell
+end run
+''',
+    "{path}",
+    "opencode",
+]
