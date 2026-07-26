@@ -1,0 +1,15 @@
+"$schema" = "https://raw.githubusercontent.com/Yarden-zamir/issuegator/main/config-schema.json"
+
+[ui]
+theme = "auto"
+
+[keybindings.list]
+# By default a bare "r" reloads, which makes that letter impossible to type
+# into the filter. Move reload to ctrl+r and free up the letter.
+"r" = "none"
+
+[keybindings.global]
+"ctrl+r" = "refresh"
+
+# Other actions: cancel, select, copy-url, cycle-state, clear-input, move-up,
+# move-down, page-up, page-down, scroll-top, scroll-bottom.

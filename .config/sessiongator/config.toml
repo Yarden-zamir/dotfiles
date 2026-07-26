@@ -1,0 +1,18 @@
+"$schema" = "https://raw.githubusercontent.com/Yarden-zamir/sessiongator/main/config-schema.json"
+
+[ui]
+theme = "auto"
+
+# Key chords map to action identifiers; "none" disables a default binding.
+# Contexts: global, list, transcript.
+# Actions: cancel, resume, resume-here, show-path, convert, copy-id,
+#          toggle-search, cycle-sort, move-up, move-down, move-left,
+#          move-right, move-home, move-end, page-up, page-down, scroll-top,
+#          scroll-bottom.
+#
+# [keybindings.global]
+# "ctrl+s" = "cycle-sort"
+#
+# [keybindings.list]
+# "ctrl+k" = "move-up"
+# "ctrl+j" = "move-down"
