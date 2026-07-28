@@ -9,23 +9,25 @@ gh_source --loaded zsh-users/zsh-history-substring-search && {
     bindkey '^o' ask_atuin_ai
 # }
 
-type -p fzf &>/dev/null && {
-    # bindkey '^a' browse_apps
+if (( ${+widgets[navigate]} )); then
     bindkey '^@' navigate #ctrl+space / ctrl+@
     bindkey '^l' navigate #ctrl+space / ctrl+@
+fi
+if (( ${+widgets[navgator-create]} )); then
     bindkey '^n' navgator-create #ctrl+n: create new project
+fi
+if (( ${+widgets[ai-sessions]} )); then
+    bindkey '^s' ai-sessions #ctrl+s: AI session picker
+fi
+
+type -p fzf &>/dev/null && {
+    # bindkey '^a' browse_apps
     bindkey '^z' fzf-cd-widget
     bindkey '^f' fzf-file-widget
-    if (( $+functions[ai-sessions] )); then
-        bindkey '^s' ai-sessions #ctrl+s: AI session picker
-    fi
     type - p rg &>/dev/null &&
         bindkey '^[ ' ripgrep_search #alt+space
 }
-# ctrl + enter to open in vscode
-# bindkey '^o' open-with
 bindkey '^b' open-harness
-bindkey '^k' open-with-code
 # Use fzf with syntax highlighted history
 # bindkey '^R' fzf-history-syntax-highlighted-widget
 
