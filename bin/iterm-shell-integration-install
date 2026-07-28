@@ -1,0 +1,46 @@
+#!/bin/sh
+
+set -eu
+
+url='https://iterm2.com/shell_integration/zsh'
+official_sha='91027c6d5221ee7123609e8e5aa8840ea218f98583e516c3d425d5f8a2b20e7a'
+installed_sha='4e0ed24b8ac820c5d39905807136fc2e6164263c5d5cac78b19d98fd8e29e770'
+target=${ITERM_SHELL_INTEGRATION_PATH:-"$HOME/.iterm2_shell_integration.zsh"}
+
+checksum() {
+    shasum -a 256 "$1" | cut -d ' ' -f 1
+}
+
+if [ -f "$target" ]; then
+    current_sha=$(checksum "$target")
+    if [ "$current_sha" = "$official_sha" ] || [ "$current_sha" = "$installed_sha" ]; then
+        printf 'Compatible iTerm shell integration is already installed: %s\n' "$target"
+        exit 0
+    fi
+fi
+
+command -v curl >/dev/null 2>&1 || {
+    printf 'curl is required to install iTerm shell integration\n' >&2
+    exit 1
+}
+
+temporary=$(mktemp "${target}.tmp.XXXXXX")
+trap 'rm -f "$temporary"' EXIT HUP INT TERM
+curl --fail --silent --show-error --location "$url" --output "$temporary"
+
+download_sha=$(checksum "$temporary")
+if [ "$download_sha" != "$official_sha" ]; then
+    printf 'iTerm shell integration checksum mismatch: expected %s, got %s\n' \
+        "$official_sha" "$download_sha" >&2
+    exit 1
+fi
+
+if [ -e "$target" ]; then
+    cp -p "$target" "${target}.backup"
+    printf 'Backed up incompatible shell integration to %s\n' "${target}.backup"
+fi
+
+chmod 0644 "$temporary"
+mv "$temporary" "$target"
+trap - EXIT HUP INT TERM
+printf 'Installed iTerm shell integration: %s\n' "$target"
