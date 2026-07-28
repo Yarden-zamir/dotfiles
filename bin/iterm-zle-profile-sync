@@ -1,0 +1,907 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["iterm2==2.20"]
+# ///
+
+from __future__ import annotations
+
+# Documented iterm2 APIs are absent from the package's export declarations.
+# pyright: reportPrivateImportUsage=false
+import argparse
+import asyncio
+import json
+import os
+import sys
+import uuid
+from collections.abc import Awaitable, Callable, Iterable
+from copy import deepcopy
+from dataclasses import dataclass
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Any
+
+import iterm2
+from iterm2.rpc import RPCException
+
+Mapping = dict[str, Any]
+
+
+def send_escape(text: str) -> Mapping:
+    return {
+        "Version": 2,
+        "Apply Mode": 0,
+        "Action": 10,
+        "Text": text,
+        "Escaping": 1,
+    }
+
+
+def send_hex(text: str) -> Mapping:
+    return {
+        "Version": 2,
+        "Apply Mode": 0,
+        "Action": 11,
+        "Text": text,
+        "Escaping": 1,
+    }
+
+
+@dataclass(frozen=True)
+class ManagedMapping:
+    label: str
+    value: Mapping
+
+
+MANAGED_MAPPINGS: dict[str, ManagedMapping] = {
+    # macOS editor commands that need an explicit terminal transport.
+    "0xd-0x40000-0x24": ManagedMapping("Ctrl+Enter", send_escape("[13;5u")),
+    "0x61-0x100000": ManagedMapping("Command+A", send_escape("[97;9u")),
+    "0x63-0x100000-0x8": ManagedMapping("Command+C", send_escape("[99;9u")),
+    "0x78-0x100000-0x7": ManagedMapping("Command+X", send_escape("[120;9u")),
+    "0x7a-0x100000-0x6": ManagedMapping("Command+Z", send_escape("[122;9u")),
+    "0x5a-0x120000-0x6": ManagedMapping("Command+Shift+Z", send_escape("[122;10u")),
+    "0x7f-0x100000": ManagedMapping("Command+Backspace", send_hex("0x15")),
+    "0xf728-0x100000-0x75": ManagedMapping("Command+Delete", send_hex("0xb")),
+    "0x7f-0x40000-0x33": ManagedMapping("Ctrl+Backspace", send_hex("0x17")),
+    # Command movement and selection.
+    "0xf702-0x300000": ManagedMapping("Command+Left", send_escape("[1;9D")),
+    "0xf703-0x300000": ManagedMapping("Command+Right", send_escape("[1;9C")),
+    "0xf700-0x300000-0x7e": ManagedMapping("Command+Up", send_escape("[1;9A")),
+    "0xf701-0x300000-0x7d": ManagedMapping("Command+Down", send_escape("[1;9B")),
+    "0xf700-0x320000-0x7e": ManagedMapping("Command+Shift+Up", send_escape("[1;10A")),
+    "0xf701-0x320000-0x7d": ManagedMapping("Command+Shift+Down", send_escape("[1;10B")),
+    "0xf702-0x320000-0x7b": ManagedMapping("Command+Shift+Left", send_escape("[1;10D")),
+    "0xf703-0x320000-0x7c": ManagedMapping(
+        "Command+Shift+Right", send_escape("[1;10C")
+    ),
+    # Standard xterm transports consumed by ZLE and Crossterm TUIs.
+    "0xf700-0x220000": ManagedMapping("Shift+Up", send_escape("[1;2A")),
+    "0xf701-0x220000": ManagedMapping("Shift+Down", send_escape("[1;2B")),
+    "0xf702-0x220000-0x7b": ManagedMapping("Shift+Left", send_escape("[1;2D")),
+    "0xf703-0x220000-0x7c": ManagedMapping("Shift+Right", send_escape("[1;2C")),
+    "0xf702-0x2a0000-0x7b": ManagedMapping("Option+Shift+Left", send_escape("[1;4D")),
+    "0xf703-0x2a0000-0x7c": ManagedMapping("Option+Shift+Right", send_escape("[1;4C")),
+    "0xf729-0x20000": ManagedMapping("Shift+Home", send_escape("[1;2H")),
+    "0xf72b-0x20000": ManagedMapping("Shift+End", send_escape("[1;2F")),
+    "0xf702-0x280000": ManagedMapping("Option+Left", send_escape("b")),
+    "0xf703-0x280000": ManagedMapping("Option+Right", send_escape("f")),
+    "0x7f-0x80000": ManagedMapping("Option+Backspace", send_hex("0x1b 0x7f")),
+    "0xf728-0x80000": ManagedMapping("Option+Delete", send_escape("d")),
+    "0xf728-0x0": ManagedMapping("Delete", send_escape("[3~")),
+    # Sessiongator uses the Control variants for list/transcript bounds.
+    "0xf700-0x240000": ManagedMapping("Ctrl+Up", send_escape("[1;5A")),
+    "0xf701-0x240000": ManagedMapping("Ctrl+Down", send_escape("[1;5B")),
+    "0xf702-0x240000": ManagedMapping("Ctrl+Left", send_escape("[1;5D")),
+    "0xf703-0x240000": ManagedMapping("Ctrl+Right", send_escape("[1;5C")),
+    "0xf700-0x260000": ManagedMapping("Ctrl+Shift+Up", send_escape("[1;6A")),
+    "0xf701-0x260000": ManagedMapping("Ctrl+Shift+Down", send_escape("[1;6B")),
+    "0xf702-0x260000": ManagedMapping("Ctrl+Shift+Left", send_escape("[1;6D")),
+    "0xf703-0x260000": ManagedMapping("Ctrl+Shift+Right", send_escape("[1;6C")),
+    "0xf729-0x40000": ManagedMapping("Ctrl+Home", send_escape("[1;5H")),
+    "0xf72b-0x40000": ManagedMapping("Ctrl+End", send_escape("[1;5F")),
+}
+
+CTRL_ENTER_KEY = "0xd-0x40000-0x24"
+CTRL_K_KEY = "0x6b-0x40000-0x28"
+REMOVED_SHORTCUTS = {CTRL_K_KEY: "physical Ctrl+K override"}
+COMMAND_MODIFIER = 0x100000
+PORTABLE_PROFILE_NAME = "ZLE Portable"
+PORTABLE_PROFILE_GUID = str(
+    uuid.uuid5(uuid.NAMESPACE_URL, "yarden-zamir.com/iterm/zle-portable")
+).upper()
+PORTABLE_PROFILE_RULES = ("&ssh*", "&mosh*", "&vi*", "&vim*", "&nvim*", "&tmux*")
+APS_TEST_COMMAND = "/usr/bin/env OPENCODE_ITERM_AUTO_RESTORE=0 /bin/zsh -l"
+APS_TEST_SSH_COMMAND = "ssh -N -o 'ProxyCommand=sleep 15' test.invalid\r"
+DYNAMIC_PROFILE_PATH = (
+    Path.home()
+    / "Library"
+    / "Application Support"
+    / "iTerm2"
+    / "DynamicProfiles"
+    / "zle-portable.json"
+)
+
+
+@dataclass(frozen=True)
+class MappingChange:
+    operation: str
+    key: str
+    label: str
+    before: Mapping | None
+    after: Mapping | None
+
+
+@dataclass(frozen=True)
+class SyncPlan:
+    mappings: dict[str, Mapping]
+    mapping_changes: tuple[MappingChange, ...]
+    use_csi_u_change: tuple[bool, bool] | None
+
+    @property
+    def changed(self) -> bool:
+        return bool(self.mapping_changes or self.use_csi_u_change)
+
+
+def shortcut_identity(key: str) -> tuple[str, str] | None:
+    parts = key.split("-")
+    if len(parts) < 2:
+        return None
+    return parts[0], parts[1]
+
+
+def build_plan(
+    mappings: dict[str, Mapping],
+    *,
+    use_csi_u: bool,
+) -> SyncPlan:
+    desired = deepcopy(mappings)
+    changes: list[MappingChange] = []
+
+    for key, managed in MANAGED_MAPPINGS.items():
+        identity = shortcut_identity(key)
+        for alias in list(desired):
+            if alias == key or shortcut_identity(alias) != identity:
+                continue
+            before_alias = desired.pop(alias)
+            changes.append(
+                MappingChange(
+                    "remove",
+                    alias,
+                    f"{managed.label} duplicate",
+                    deepcopy(before_alias),
+                    None,
+                )
+            )
+
+        before = desired.get(key)
+        if before == managed.value:
+            continue
+        desired[key] = deepcopy(managed.value)
+        changes.append(
+            MappingChange(
+                "add" if before is None else "update",
+                key,
+                managed.label,
+                deepcopy(before),
+                deepcopy(managed.value),
+            )
+        )
+
+    for removed_key, label in REMOVED_SHORTCUTS.items():
+        identity = shortcut_identity(removed_key)
+        for key in list(desired):
+            if shortcut_identity(key) != identity:
+                continue
+            before = desired.pop(key)
+            changes.append(
+                MappingChange("remove", key, label, deepcopy(before), None)
+            )
+
+    return SyncPlan(
+        mappings=desired,
+        mapping_changes=tuple(changes),
+        use_csi_u_change=(True, False) if use_csi_u else None,
+    )
+
+
+def shortcut_has_modifier(key: str, modifier: int) -> bool:
+    parts = key.split("-")
+    if len(parts) < 2:
+        return False
+    try:
+        modifiers = int(parts[1], 16)
+    except ValueError:
+        return False
+    return bool(modifiers & modifier)
+
+
+def build_portable_mappings(mappings: dict[str, Mapping]) -> dict[str, Mapping]:
+    ctrl_enter_identity = shortcut_identity(CTRL_ENTER_KEY)
+    ctrl_k_identity = shortcut_identity(CTRL_K_KEY)
+    return {
+        key: deepcopy(value)
+        for key, value in mappings.items()
+        if not shortcut_has_modifier(key, COMMAND_MODIFIER)
+        and shortcut_identity(key) not in (ctrl_enter_identity, ctrl_k_identity)
+    }
+
+
+def dynamic_profile_document(
+    parent_guid: str, mappings: dict[str, Mapping]
+) -> dict[str, Any]:
+    if not parent_guid:
+        raise ValueError("The portable profile requires a parent GUID")
+    return {
+        "Profiles": [
+            {
+                "Name": PORTABLE_PROFILE_NAME,
+                "Guid": PORTABLE_PROFILE_GUID,
+                "Dynamic Profile Parent GUID": parent_guid,
+                "Bound Hosts": list(PORTABLE_PROFILE_RULES),
+                "Keyboard Map": build_portable_mappings(mappings),
+                "Use libtickit protocol": False,
+                "Has Hotkey": False,
+                "Prevent Automatic Profile Switching": 0,
+            }
+        ]
+    }
+
+
+def encode_dynamic_profile(document: dict[str, Any]) -> bytes:
+    return (json.dumps(document, indent=2, sort_keys=True) + "\n").encode()
+
+
+def replace_file_atomically(path: Path, contents: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        temporary.write_bytes(contents)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def restore_file(path: Path, contents: bytes | None) -> None:
+    if contents is None:
+        path.unlink(missing_ok=True)
+        return
+    replace_file_atomically(path, contents)
+
+
+def all_sessions(app: Any) -> Iterable[Any]:
+    windows = getattr(app, "windows", None) or getattr(app, "terminal_windows", [])
+    for window in windows:
+        for tab in window.tabs:
+            yield from tab.sessions
+    yield from getattr(app, "buried_sessions", [])
+
+
+def session_id_candidates(value: str | None) -> tuple[str, ...]:
+    if not value:
+        return ()
+    candidates = [value]
+    for separator in (":", "."):
+        suffix = value.rsplit(separator, 1)[-1]
+        if suffix not in candidates:
+            candidates.append(suffix)
+    return tuple(candidates)
+
+
+async def find_current_session(app: Any, *, allow_frontmost: bool) -> Any:
+    iterm_session_id = os.environ.get("ITERM_SESSION_ID")
+    term_session_id = os.environ.get("TERM_SESSION_ID")
+    environment_ids = session_id_candidates(iterm_session_id) + session_id_candidates(
+        term_session_id
+    )
+    for session_id in environment_ids:
+        session = app.get_session_by_id(session_id)
+        if session is not None:
+            return session
+
+    tty = None
+    if sys.stdin.isatty():
+        try:
+            tty = os.ttyname(sys.stdin.fileno())
+        except OSError:
+            pass
+
+    for session in all_sessions(app):
+        if tty and await session.async_get_variable("tty") == tty:
+            return session
+        termid = await session.async_get_variable("termid")
+        session_id = await session.async_get_variable("id")
+        if termid in environment_ids or session_id in environment_ids:
+            return session
+
+    if allow_frontmost:
+        window = app.current_terminal_window
+        if window and window.current_tab and window.current_tab.current_session:
+            return window.current_tab.current_session
+    raise RuntimeError(
+        "Could not identify the invoking iTerm session from ITERM_SESSION_ID, "
+        "TERM_SESSION_ID, or its TTY"
+    )
+
+
+def original_guid(profile: Any) -> str:
+    value = profile.all_properties.get("Original Guid", profile.guid)
+    if not isinstance(value, str) or not value:
+        raise RuntimeError("Profile has no valid original GUID")
+    return value
+
+
+async def find_shared_profile(connection: Any, session_profile: Any) -> Any:
+    profiles = await iterm2.Profile.async_get(connection)
+    target_guid = original_guid(session_profile)
+    by_guid = [profile for profile in profiles if profile.guid == target_guid]
+    if len(by_guid) == 1:
+        return by_guid[0]
+    raise RuntimeError(
+        f"The current session's original profile {target_guid!r} is not uniquely writable"
+    )
+
+
+async def sessions_using_profile(app: Any, guid: str) -> list[tuple[Any, Any]]:
+    matches = []
+    for session in all_sessions(app):
+        profile = await session.async_get_profile()
+        if original_guid(profile) == guid:
+            matches.append((session, profile))
+    return matches
+
+
+def summarize_mapping(value: Mapping | None) -> str:
+    if value is None:
+        return "unset"
+    action = value.get("Action")
+    text = value.get("Text", "")
+    return f"action={action} text={text!r}"
+
+
+def print_plan(
+    profile: Any, plan: SyncPlan, session_count: int, drifting_sessions: int
+) -> None:
+    print(f"Profile: {profile.name!r} ({profile.guid})")
+    print(f"Open sessions using profile: {session_count}")
+    print(f"Session-local profiles requiring sync: {drifting_sessions}")
+    for change in plan.mapping_changes:
+        marker = {"add": "+", "update": "~", "remove": "-"}[change.operation]
+        print(
+            f"{marker} {change.label} [{change.key}]: "
+            f"{summarize_mapping(change.before)} -> {summarize_mapping(change.after)}"
+        )
+    if plan.use_csi_u_change:
+        print("~ Deprecated global CSI-u mode: enabled -> disabled")
+    if not plan.changed:
+        print("Already synchronized; no changes required.")
+    print(
+        "Note: macOS Mission Control may intercept Ctrl+Arrow before iTerm; "
+        "disable conflicting macOS shortcuts if Sessiongator bounds keys do not fire."
+    )
+
+
+def profile_matches(profile: Any, plan: SyncPlan) -> bool:
+    expected_keys = set(MANAGED_MAPPINGS)
+    managed_identities = {
+        shortcut_identity(key) for key in expected_keys if shortcut_identity(key)
+    }
+    removed_identities = {
+        shortcut_identity(key) for key in REMOVED_SHORTCUTS if shortcut_identity(key)
+    }
+    has_conflicting_alias = any(
+        key not in expected_keys and shortcut_identity(key) in managed_identities
+        for key in profile.key_mappings
+    )
+    has_removed_shortcut = any(
+        shortcut_identity(key) in removed_identities for key in profile.key_mappings
+    )
+    return (
+        not has_conflicting_alias
+        and not has_removed_shortcut
+        and all(
+            profile.key_mappings.get(key) == managed.value
+            for key, managed in MANAGED_MAPPINGS.items()
+        )
+        and not bool(profile.use_csi_u)
+    )
+
+
+async def apply_plan(
+    connection: Any,
+    shared: Any,
+    sessions: list[tuple[Any, Any]],
+    plan: SyncPlan,
+    resolve_shared: Callable[[Any, Any], Awaitable[Any]] = find_shared_profile,
+) -> int:
+    original_mappings = deepcopy(shared.key_mappings)
+    original_use_csi_u = bool(shared.use_csi_u)
+    updated_sessions: list[tuple[Any, dict[str, Mapping], bool]] = []
+
+    try:
+        if plan.mapping_changes:
+            await shared.async_set_key_mappings(plan.mappings)
+        if plan.use_csi_u_change:
+            await shared.async_set_use_csi_u(False)
+
+        refreshed = await resolve_shared(connection, shared)
+        if not profile_matches(refreshed, plan):
+            raise RuntimeError("Shared profile verification failed after update")
+
+        for session, _snapshot in sessions:
+            current = await session.async_get_profile()
+            session_plan = build_plan(
+                current.key_mappings,
+                use_csi_u=bool(current.use_csi_u),
+            )
+            if not session_plan.changed:
+                continue
+            updated_sessions.append(
+                (session, deepcopy(current.key_mappings), bool(current.use_csi_u))
+            )
+            if session_plan.mapping_changes:
+                await current.async_set_key_mappings(session_plan.mappings)
+            if session_plan.use_csi_u_change:
+                await current.async_set_use_csi_u(False)
+
+        failures = []
+        for session, _snapshot in sessions:
+            current = await session.async_get_profile()
+            if not profile_matches(current, plan):
+                failures.append(session.session_id)
+        if failures:
+            raise RuntimeError(f"Session verification failed: {failures}")
+    except Exception as error:
+        rollback_errors = []
+        for session, mappings, use_csi_u in reversed(updated_sessions):
+            try:
+                current = await session.async_get_profile()
+                await current.async_set_key_mappings(mappings)
+                await current.async_set_use_csi_u(use_csi_u)
+                restored = await session.async_get_profile()
+                if (
+                    restored.key_mappings != mappings
+                    or bool(restored.use_csi_u) != use_csi_u
+                ):
+                    raise RuntimeError(
+                        f"Session {session.session_id} rollback verification failed"
+                    )
+            except Exception as rollback_error:  # noqa: BLE001  # pragma: no cover
+                rollback_errors.append(str(rollback_error))
+        try:
+            rollback = await resolve_shared(connection, shared)
+            await rollback.async_set_key_mappings(original_mappings)
+            await rollback.async_set_use_csi_u(original_use_csi_u)
+            restored_shared = await find_shared_profile(connection, rollback)
+            if (
+                restored_shared.key_mappings != original_mappings
+                or bool(restored_shared.use_csi_u) != original_use_csi_u
+            ):
+                raise RuntimeError("Shared profile rollback verification failed")
+        except Exception as rollback_error:  # noqa: BLE001  # pragma: no cover
+            rollback_errors.append(str(rollback_error))
+        if rollback_errors:
+            raise RuntimeError(
+                f"Synchronization failed ({error}); rollback was incomplete: "
+                + "; ".join(rollback_errors)
+            ) from error
+        raise
+
+    return len(updated_sessions)
+
+
+def portable_profile_matches(
+    profile: Any, parent_guid: str, mappings: dict[str, Mapping]
+) -> bool:
+    properties = profile.all_properties
+    return (
+        profile.guid == PORTABLE_PROFILE_GUID
+        and profile.name == PORTABLE_PROFILE_NAME
+        and properties.get("Dynamic Profile Parent GUID") == parent_guid
+        and properties.get("Bound Hosts") == list(PORTABLE_PROFILE_RULES)
+        and profile.key_mappings == build_portable_mappings(mappings)
+        and not bool(profile.use_csi_u)
+        and not bool(properties.get("Has Hotkey", False))
+        and not bool(properties.get("Prevent Automatic Profile Switching", False))
+    )
+
+
+async def wait_for_portable_profile(
+    connection: Any, parent_guid: str, mappings: dict[str, Mapping]
+) -> Any:
+    for _attempt in range(50):
+        profiles = await iterm2.Profile.async_get(connection)
+        matches = [
+            profile for profile in profiles if profile.guid == PORTABLE_PROFILE_GUID
+        ]
+        if len(matches) == 1 and portable_profile_matches(
+            matches[0], parent_guid, mappings
+        ):
+            return matches[0]
+        await asyncio.sleep(0.1)
+    raise RuntimeError(
+        f"Portable profile {PORTABLE_PROFILE_NAME!r} was not loaded as configured"
+    )
+
+
+async def session_output(session: Any) -> str:
+    info = await session.async_get_line_info()
+    lines = await session.async_get_contents(
+        info.overflow,
+        info.scrollback_buffer_height + info.mutable_area_height,
+    )
+    return "\n".join(line.string for line in lines)
+
+
+async def wait_for_session_variable(
+    session: Any, name: str, expected: Any, timeout: float
+) -> None:
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    while loop.time() < deadline:
+        if await session.async_get_variable(name) == expected:
+            return
+        await asyncio.sleep(0.1)
+    output = await session_output(session)
+    raise RuntimeError(
+        f"APS test shell did not set {name!r} to {expected!r}; output: {output!r}"
+    )
+
+
+async def wait_for_session_profile(
+    session: Any, guid: str, timeout: float
+) -> list[tuple[str, str, Any]]:
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    observations: list[tuple[str, str, Any]] = []
+    while loop.time() < deadline:
+        profile = await session.async_get_profile()
+        job_name = await session.async_get_variable("jobName")
+        observation = (profile.name, profile.guid, job_name)
+        if not observations or observations[-1] != observation:
+            observations.append(observation)
+        if profile.guid == guid:
+            return observations
+        await asyncio.sleep(0.1)
+    output = await session_output(session)
+    raise RuntimeError(
+        f"APS test did not observe profile {guid!r}: {observations}; "
+        f"output: {output!r}"
+    )
+
+
+async def close_stale_aps_test_windows(app: Any) -> None:
+    await app.async_refresh()
+    for window in list(app.terminal_windows):
+        sessions = [session for tab in window.tabs for session in tab.all_sessions]
+        if len(sessions) != 1:
+            continue
+        profile = await sessions[0].async_get_profile()
+        if profile.all_properties.get("Command") == APS_TEST_COMMAND:
+            await window.async_close(force=True)
+
+
+async def run_aps_verification(connection: Any) -> None:
+    if not Path("/usr/bin/ssh").is_file():
+        raise RuntimeError("APS verification requires /usr/bin/ssh")
+
+    app = await iterm2.async_get_app(connection)
+    current = await find_current_session(app, allow_frontmost=False)
+    session_profile = await current.async_get_profile()
+    shared = await find_shared_profile(connection, session_profile)
+    plan = build_plan(shared.key_mappings, use_csi_u=bool(shared.use_csi_u))
+    if plan.changed:
+        raise RuntimeError("The rich profile is not synchronized; run --apply first")
+    expected_document = encode_dynamic_profile(
+        dynamic_profile_document(shared.guid, plan.mappings)
+    )
+    if (
+        not DYNAMIC_PROFILE_PATH.is_file()
+        or DYNAMIC_PROFILE_PATH.read_bytes() != expected_document
+    ):
+        raise RuntimeError("The portable profile is not synchronized; run --apply first")
+    await wait_for_portable_profile(connection, shared.guid, plan.mappings)
+
+    profiles = await iterm2.Profile.async_get(connection)
+    if sum(profile.name == shared.name for profile in profiles) != 1:
+        raise RuntimeError(f"Profile name {shared.name!r} is not unique")
+
+    await close_stale_aps_test_windows(app)
+    window = await iterm2.Window.async_create(
+        connection,
+        profile=shared.name,
+        command=APS_TEST_COMMAND,
+    )
+    if window is None or len(window.tabs) != 1:
+        raise RuntimeError("Could not create the isolated APS test window")
+    sessions = window.tabs[0].sessions
+    if len(sessions) != 1:
+        await window.async_close(force=True)
+        raise RuntimeError("Could not create the isolated APS test session")
+    session = sessions[0]
+
+    try:
+        await session.async_activate(select_tab=True, order_window_front=True)
+        await asyncio.sleep(1)
+        await session.async_send_text(
+            "iterm2_set_user_var apsReady yes\r",
+            suppress_broadcast=True,
+        )
+        await wait_for_session_variable(session, "user.apsReady", "yes", 10)
+        await session.async_send_text(APS_TEST_SSH_COMMAND, suppress_broadcast=True)
+        switched = await wait_for_session_profile(
+            session, PORTABLE_PROFILE_GUID, 12
+        )
+        reverted = await wait_for_session_profile(session, shared.guid, 25)
+    finally:
+        try:
+            await window.async_close(force=True)
+        except RPCException as error:
+            if str(error) != "NOT_FOUND":
+                raise
+
+    print(f"APS switch verified: {switched}")
+    print(f"APS reversion verified: {reverted}")
+
+
+def print_portable_plan(changed: bool, mappings: dict[str, Mapping]) -> None:
+    print(f"Portable profile: {PORTABLE_PROFILE_NAME!r} ({PORTABLE_PROFILE_GUID})")
+    print(f"Dynamic profile file: {DYNAMIC_PROFILE_PATH}")
+    print(f"Automatic switching rules: {', '.join(PORTABLE_PROFILE_RULES)}")
+    print(f"Portable keyboard mappings: {len(build_portable_mappings(mappings))}")
+    if changed:
+        print("~ Portable dynamic profile file requires synchronization")
+    else:
+        print("Portable dynamic profile file is already synchronized.")
+
+
+async def run_sync(args: argparse.Namespace, connection: Any) -> None:
+    app = await iterm2.async_get_app(connection)
+    current = await find_current_session(app, allow_frontmost=not args.apply)
+    session_profile = await current.async_get_profile()
+    shared = await find_shared_profile(connection, session_profile)
+    sessions = await sessions_using_profile(app, shared.guid)
+    plan = build_plan(
+        shared.key_mappings,
+        use_csi_u=bool(shared.use_csi_u),
+    )
+    portable_document = dynamic_profile_document(shared.guid, plan.mappings)
+    portable_contents = encode_dynamic_profile(portable_document)
+    original_portable_contents = (
+        DYNAMIC_PROFILE_PATH.read_bytes() if DYNAMIC_PROFILE_PATH.exists() else None
+    )
+    portable_changed = original_portable_contents != portable_contents
+    drifting_sessions = 0
+    for _session, profile in sessions:
+        session_plan = build_plan(
+            profile.key_mappings,
+            use_csi_u=bool(profile.use_csi_u),
+        )
+        drifting_sessions += int(session_plan.changed)
+    print_plan(shared, plan, len(sessions), drifting_sessions)
+    print_portable_plan(portable_changed, plan.mappings)
+
+    if not args.apply:
+        if plan.changed or drifting_sessions or portable_changed:
+            print("Dry run only. Re-run with --apply to update iTerm.")
+        return
+
+    try:
+        if portable_changed:
+            replace_file_atomically(DYNAMIC_PROFILE_PATH, portable_contents)
+        await wait_for_portable_profile(connection, shared.guid, plan.mappings)
+        refreshed_count = 0
+        if plan.changed or drifting_sessions:
+            refreshed_count = await apply_plan(
+                connection, shared, sessions, plan
+            )
+    except Exception as error:
+        if not portable_changed:
+            raise
+        try:
+            restore_file(DYNAMIC_PROFILE_PATH, original_portable_contents)
+        except Exception as rollback_error:  # noqa: BLE001
+            raise RuntimeError(
+                f"Synchronization failed ({error}); dynamic profile rollback failed: "
+                f"{rollback_error}"
+            ) from error
+        raise
+    print(
+        "Applied and verified. "
+        f"Session-local profiles updated: {refreshed_count}."
+    )
+
+
+def self_test() -> None:
+    assert session_id_candidates("w0t1p0:ABC") == ("w0t1p0:ABC", "ABC")
+    assert session_id_candidates("w0t1p0.ABC") == ("w0t1p0.ABC", "ABC")
+
+    unrelated = send_escape("unrelated")
+    old = {
+        "unrelated": unrelated,
+        "0xd-0x40000-0x24": send_hex("0xa"),
+        CTRL_K_KEY: send_escape("[107;5u"),
+    }
+    plan = build_plan(
+        old,
+        use_csi_u=True,
+    )
+    assert plan.changed
+    assert plan.mappings["unrelated"] == unrelated
+    assert plan.mappings["0xd-0x40000-0x24"] == send_escape("[13;5u")
+    assert CTRL_K_KEY not in plan.mappings
+    assert any(
+        change.key == CTRL_K_KEY and change.operation == "remove"
+        for change in plan.mapping_changes
+    )
+    assert plan.use_csi_u_change == (True, False)
+
+    idempotent = build_plan(
+        plan.mappings,
+        use_csi_u=False,
+    )
+    assert not idempotent.changed
+
+    defaults = build_plan(
+        {},
+        use_csi_u=False,
+    )
+    assert defaults.changed
+    assert CTRL_K_KEY not in defaults.mappings
+
+    remove_custom = build_plan(
+        {CTRL_K_KEY: send_escape("arbitrary")},
+        use_csi_u=False,
+    )
+    assert CTRL_K_KEY not in remove_custom.mappings
+    assert any(change.operation == "remove" for change in remove_custom.mapping_changes)
+
+    alias_key = "0x61-0x100000-0x0"
+    aliases = build_plan(
+        {alias_key: send_escape("old")},
+        use_csi_u=False,
+    )
+    assert alias_key not in aliases.mappings
+    assert aliases.mappings["0x61-0x100000"] == send_escape("[97;9u")
+
+    portable_mappings = build_portable_mappings(plan.mappings)
+    assert CTRL_ENTER_KEY not in portable_mappings
+    assert "0x61-0x100000" not in portable_mappings
+    assert "0x5a-0x120000-0x6" not in portable_mappings
+    assert "0x7f-0x40000-0x33" in portable_mappings
+    assert "0xf702-0x280000" in portable_mappings
+    assert portable_mappings["unrelated"] == unrelated
+    assert not shortcut_has_modifier("unrelated", COMMAND_MODIFIER)
+
+    document = dynamic_profile_document("PARENT", plan.mappings)
+    portable_profile = document["Profiles"][0]
+    assert portable_profile["Guid"] == PORTABLE_PROFILE_GUID
+    assert portable_profile["Dynamic Profile Parent GUID"] == "PARENT"
+    assert portable_profile["Bound Hosts"] == list(PORTABLE_PROFILE_RULES)
+    assert portable_profile["Keyboard Map"] == portable_mappings
+    assert portable_profile["Has Hotkey"] is False
+    assert encode_dynamic_profile(document).endswith(b"\n")
+
+    with TemporaryDirectory() as directory:
+        profile_path = Path(directory) / "profile.json"
+        replace_file_atomically(profile_path, b"updated")
+        assert profile_path.read_bytes() == b"updated"
+        restore_file(profile_path, b"original")
+        assert profile_path.read_bytes() == b"original"
+        restore_file(profile_path, None)
+        assert not profile_path.exists()
+
+    class FakeProfile:
+        def __init__(
+            self,
+            mappings: dict[str, Mapping],
+            *,
+            use_csi_u: bool = False,
+            fail_once: bool = False,
+        ) -> None:
+            self.key_mappings = deepcopy(mappings)
+            self.use_csi_u = use_csi_u
+            self.fail_once = fail_once
+
+        async def async_set_key_mappings(self, value: dict[str, Mapping]) -> None:
+            if self.fail_once:
+                self.fail_once = False
+                raise RuntimeError("injected mapping failure")
+            self.key_mappings = deepcopy(value)
+
+        async def async_set_use_csi_u(self, value: bool) -> None:
+            self.use_csi_u = value
+
+    class FakeSession:
+        def __init__(self, session_id: str, profile: FakeProfile) -> None:
+            self.session_id = session_id
+            self.profile = profile
+
+        async def async_get_profile(self) -> FakeProfile:
+            return self.profile
+
+    async def fake_resolver(_connection: Any, profile: Any) -> Any:
+        return profile
+
+    async def test_apply_and_rollback() -> None:
+        shared = FakeProfile(defaults.mappings)
+        shared_plan = build_plan(
+            shared.key_mappings,
+            use_csi_u=False,
+        )
+        assert not shared_plan.changed
+
+        stale_profile = FakeProfile({"unrelated": unrelated}, use_csi_u=True)
+        stale = FakeSession("stale", stale_profile)
+        updated = await apply_plan(
+            None,
+            shared,
+            [(stale, stale_profile)],
+            shared_plan,
+            fake_resolver,
+        )
+        assert updated == 1
+        assert profile_matches(stale_profile, shared_plan)
+
+        old_shared_mappings = {"unrelated": unrelated}
+        rollback_shared = FakeProfile(old_shared_mappings, use_csi_u=True)
+        rollback_plan = build_plan(
+            rollback_shared.key_mappings,
+            use_csi_u=True,
+        )
+        first_profile = FakeProfile({"first": unrelated}, use_csi_u=True)
+        failing_profile = FakeProfile(
+            {"failing": unrelated}, use_csi_u=True, fail_once=True
+        )
+        first = FakeSession("first", first_profile)
+        failing = FakeSession("failing", failing_profile)
+        try:
+            await apply_plan(
+                None,
+                rollback_shared,
+                [(first, first_profile), (failing, failing_profile)],
+                rollback_plan,
+                fake_resolver,
+            )
+        except RuntimeError as error:
+            assert "injected mapping failure" in str(error)
+        else:
+            raise AssertionError("failure injection did not fail")
+        assert rollback_shared.key_mappings == old_shared_mappings
+        assert rollback_shared.use_csi_u
+        assert first_profile.key_mappings == {"first": unrelated}
+        assert first_profile.use_csi_u
+        assert failing_profile.key_mappings == {"failing": unrelated}
+        assert failing_profile.use_csi_u
+
+    asyncio.run(test_apply_and_rollback())
+    print("iterm-zle-profile-sync self-test passed")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Synchronize the current iTerm profile's editing key transports and "
+            "managed portable profile. Defaults to a dry run."
+        )
+    )
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="show changes only")
+    mode.add_argument("--apply", action="store_true", help="apply and verify changes")
+    mode.add_argument(
+        "--verify-aps",
+        action="store_true",
+        help="verify automatic profile switching in an isolated SSH session",
+    )
+    mode.add_argument("--self-test", action="store_true", help=argparse.SUPPRESS)
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    arguments = parse_args()
+    if arguments.self_test:
+        self_test()
+    elif arguments.verify_aps:
+        iterm2.run_until_complete(run_aps_verification)
+    else:
+        iterm2.run_until_complete(lambda connection: run_sync(arguments, connection))
