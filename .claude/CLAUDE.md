@@ -87,7 +87,7 @@ Dotfiles stow workflow:
 - When new dotfiles are created or adopted in this repo, ask the user whether they want to run the stow workflow.
 
 Commit and branch preferences:
-- Never credit yourself in commit messages, if I mention working with someone else, suggest crediting them.
+- Never credit yourself in commit messages, prs etc. If I mention working with someone else, suggest crediting them.
 - Unless the repo has other instructions
     - use conventional commits
     - description with references and notes, not too big, only when relevant, avoid generic. If other tickets or markdown documents are involved reference them here.
