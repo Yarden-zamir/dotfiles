@@ -1,0 +1,59 @@
+#!/bin/zsh
+# Focus the iTerm2 session working in (or inside) the given path, or open
+# a new iTerm window there when none is.
+set -euo pipefail
+
+if [[ $# -ne 1 || -z "$1" ]]; then
+  print -u2 "usage: iterm-focus-path <absolute-path>"
+  exit 2
+fi
+target="$1"
+
+found=$(osascript - "$target" <<'APPLESCRIPT'
+on run argv
+  set targetPath to item 1 of argv
+  set targetPrefix to targetPath & "/"
+  tell application "iTerm2"
+    set fallbackWindow to missing value
+    set fallbackTab to missing value
+    set fallbackSession to missing value
+    repeat with w in windows
+      try
+        repeat with t in tabs of w
+          repeat with s in sessions of t
+            try
+              set p to variable s named "path"
+            on error
+              set p to ""
+            end try
+            if p is targetPath then
+              select w
+              select t
+              select s
+              return "FOUND"
+            else if p starts with targetPrefix and fallbackSession is missing value then
+              set fallbackWindow to w
+              set fallbackTab to t
+              set fallbackSession to s
+            end if
+          end repeat
+        end repeat
+      end try
+    end repeat
+    if fallbackSession is missing value then return "NONE"
+    select fallbackWindow
+    select fallbackTab
+    select fallbackSession
+  end tell
+  return "FOUND"
+end run
+APPLESCRIPT
+)
+
+if [[ "$found" == "NONE" ]]; then
+  open -a iTerm "$target"
+fi
+
+# Activate from a detached process after a beat, so a closing launcher
+# window (e.g. Ghostty) cannot steal focus back from iTerm.
+{ sleep 0.4; open -a iTerm } &!
