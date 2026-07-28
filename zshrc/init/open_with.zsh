@@ -18,8 +18,4 @@ open-with() {
         ;;
     esac
 }
-open-with-code() {
-    code -r .
-}
 zle -N open-with open-with
-zle -N open-with-code open-with-code
