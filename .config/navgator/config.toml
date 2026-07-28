@@ -8,7 +8,14 @@ static_items = [
     "/Users/kcw/Downloads",
     "/Users/kcw/Library/Application Support/ModrinthApp/profiles/Create ptd 2",
     "/Users/kcw/Library/Application Support/ModrinthApp/profiles/Create Prepare to Dye",
+    "/Users/kcw/.aws",
 ]
+
+[sort]
+default = "recents"
+
+[sort.ignore]
+recents = ["/Users/kcw/Downloads", "/opt/homebrew"]
 
 [actions]
 include_defaults = true
@@ -36,8 +43,8 @@ id = "open-iterm"
 label = "Open iTerm"
 icon = ""
 type = "command"
-command = "open"
-args = ["-a", "iTerm", "{path}"]
+command = "/Users/kcw/Github/dotfiles/main/bin/iterm-focus-path"
+args = ["{path}"]
 
 [[actions.items]]
 id = "open-claude-iterm"
