@@ -7,29 +7,21 @@ prefered-license: MIT
 dotfiles and configs: ~/Github/dotfiles/main   
 agent instructions: ~/Github/dotfiles/main/AGENTS.md  
 
-If multiple possibilities or answers benefit the user, share them, otherwise stick to direct straight answers. If it's crucial to ask the user for more info, do so using tools available or directly. If the user asks for something that is overly complex compared to a simple alternative express that before continuing and use the 🟠 emoji. 
+If multiple possibilities or answers benefit the user, share them, otherwise stick to direct straight answers. If the user asks for something that is overly complex compared to a simple alternative express that before continuing and use the 🟠 emoji. 
 
-Make sure code is simple as possible when it can be. Readable and extendible. Prefer generic solutions over specific ones, but don't do so blindly and when it makes the code too complex or ugly. Avoid complex patterns, factories, and indirection unless they remove duplication that actually exists or are required by the environment.
+Make sure code is simple as possible when it can be. Readable and extendible. Avoid complex patterns, factories, and indirection unless they remove duplication that actually exists, or a second case you can already name, or are required by the environment: no factory for a single product, no configuration option for a value that never changes and no interface with a single implementation unless that interface is itself what you are shipping.
 
-Do not introduce additional dependencies if keeping things simple is possible. Don't over-engineer.
+Before writing new code, stop at the first of these that already solves it: something already in this codebase (look for the existing helper before writing a second one), the standard library, a native feature, a database constraint instead of application code, an already-installed dependency. Only after all of those fail, write new code, and write the least of it that works.
 
-Before adding a new import or dependency, check the currently available package versions first. Use the project package manager when possible; for Python, prefer `uv` commands to verify available versions before choosing a version constraint.
+When you deliberately take a simpler approach with a known limit, leave a comment naming both the limit and the condition that would mean it needs revisiting. A deferral without a named trigger is not a decision, it is rot.
+
+Before adding a new import or dependency, check the currently available package versions first. Always check online for the latest version of a package before choosing a version constraint.
 
 Do not add legacy or old code support/migration unless explicitly requested. Make sure the user knows when a change is breaking and suggest legacy support but never do it automatically.
 
-Python execution
-- ALWAYS: uv run 
-- NEVER: python, python3, python3.x, pip, pip3
-**All Python code execution must go through uv. Never use the python command directly**
+Apply defensive defaults in code. Null checks, type guards, boundary conditions. No runtime surprises. Make sure that unexpected cases crash instead of failing silently or causing undefined behavior.
 
-Apply defensive defaults in code. Null checks, type guards, boundary conditions. No runtime surprises.  Make sure that unexpected cases crash instead of failing silently or causing undefined behavior. We want the code to be itself resilient.
-
-When calling an existing function or API make sure to check it's definition first for type annotation (verify enums vs strings, optional vs required, etc), boundary conditions, and other requirements. If it's not clear, check other calls to the same function or API to establish a pattern before proceeding. Adhering to type rules is mandatory. examine existing usage patterns in the codebase before proceeding.
-
-Before implementing changes that reference existing code structure (routes, API endpoints, component names,
-configuration):
-- Read the relevant source files to verify actual implementation
-- Don't assume - check the code for ground truth
+When calling an existing function or API make sure to check it's definition first for type annotation (verify enums vs strings, optional vs required, etc), boundary conditions, and other requirements. Check other calls to the same function or API to establish a pattern before proceeding. Adhering to type rules is mandatory. The same holds for anything else that references existing code structure (routes, API endpoints, component names, configuration): read the relevant source and check the code for ground truth instead of assuming.
 
 When accessing dictionary/object keys from external sources (API responses, JWT payloads, database
 results, function returns), never assume key names. Before accessing:
@@ -43,48 +35,22 @@ Use emoji only as structural markers or to signal important meta-information, no
 🔴 only when describing hard blockers, breaking changes, or critical risks
 🧪 for repetitive mistakes that require a change to (this) base prompt or the project's base prompt
 
-
-1. Verification First
-Verify before linking: Never import, reference, or link to a new file or resource until
-you have explicitly confirmed its existence with a tool.
-
-2. Context Awareness
-Read the room: When modifying logic flow or moving code blocks, you must read the full
-function or container scope first to ensure variable availability and correct execution
-order. Don't edit blind. Don't save on tokens at the cost of quality.
-
-3. Explicit Failure Handling
-Respect tool feedback: If a tool operation fails (like a failed edit or missing file),
-stop immediately. Fix the root cause before proceeding. Do not assume "it probably worked."
-
 always double check when refactoring that you refactor all usages and calls, all cases and all code paths related to the current change. Refactoring is very risky if not done properly.
+
+The same applies to bug fixes: a report names one symptom, so before editing, check every caller of the function you are about to touch
 
 Use the askquestion tool or similar to ask for clarification or direction when the user request is ambiguous, complex, or when there are multiple viable approaches. Always provide a recommended path when doing so.
 
 Do not use regex unless absolutely necessary. Always check if a simpler string method or existing utility function can achieve the same result before resorting to regex, which can be complex and error-prone.
 
-Tests
-- Tests should be contract-focused and source-of-truth focused. 
-- They should verify stable behavior that can break silently, not mirror identical copy, formatting, layout, or implementation details. 
-- Exact-output assertions should live only where that output is produced; 
-- Callers should assert behavior, shape, or key fields unless exact output is their contract.
+Tests should be contract-focused and source-of-truth focused. They should verify stable behavior that can break silently, not mirror identical copy, formatting, layout, or implementation details. Exact-output assertions should live only where that output is produced. Callers should assert behavior, shape, or key fields unless exact output is their contract.
 
-Parallel verification workflow:
-- When a task asks to test the same behavior across many local SDEs, kubeconfigs, branches, repos, or similar targets, do the checks concurrently with bounded per-target timeouts instead of serial one-by-one commands.
-- Prefer source-of-truth checks and isolated caches/config dirs so previous local state cannot mask failures.
-- Flush or collect per-target results so long-running/offline targets do not hide progress; summarize successes and failures separately.
-- Treat unreachable/offline targets as expected when the user says they may be off; do not spend time debugging each one unless asked.
+Make sure to parallelize tasks and runs where task dependencies allow it
 
 Worktree workflow preferences:
 - Every repo is a container directory holding `.bare/` (the git dir), `_shared/` (local-only files), and one folder per checked-out branch: `main/`, plus e.g. `qcdi-1234-auth/` for branch `feat/api/qcdi-1234-auth`.
 - Use the `worktree-repo` skill whenever creating a new project, cloning, converting an existing clone, or adding a worktree. Convert an existing clone with `$DOTFILES/bin/wt-migrate` (dry-run by default, `--yes` to apply); nothing in `bin/` is on `$PATH`, so call it by path.
-- Add worktrees with plain `git worktree add`. The worktree directory name must match the branch's final path component one-to-one; preserve that component exactly and never shorten it further.
-- Local-only files (secrets, env) live in `_shared/`, mirroring their path in the worktree. A global `post-checkout` hook symlinks them in on every checkout; never create those symlinks by hand.
-
-Dotfiles stow workflow:
-- Use `make stow-adopt`
-- Surface any stow warnings to the user with likely causes and potential actions, instead of hiding or summarizing them away.
-- When new dotfiles are created or adopted in this repo, ask the user whether they want to run the stow workflow.
+- Local-only files (secrets, env) live in `_shared/`, mirroring their path in the worktree. A global `post-checkout` hook symlinks them in on every checkout; do not create those symlinks by hand.
 
 Commit and branch preferences:
 - Never credit yourself in commit messages, prs etc. If I mention working with someone else, suggest crediting them.
@@ -98,11 +64,10 @@ Commit and branch preferences:
 - Tickets
     - When mentioning a ticket, do so with a link
     - Offer to update tickets/comment on tickets with new relevant information
-    - If an action does not meet a current ticket, offer to create a new ticket
 
-In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information. Do not sacrifice clarity for brevity. Minimal wording maximal clarity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity
+In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information. Do not sacrifice clarity for brevity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity
 
-When exploring external code that we own like other services, sdk, forks, try to find local clone of the codebase and explore there, otherwise attempt to clone to a local place same as my other clonses and explore there. Never check compiled decompiled deps and try to reverse engineer unless no other way is possible.
+When exploring external code that we own like other services, sdk, forks, try to find local clone of the codebase and explore there, otherwise attempt to clone to a local place same as my other clones and explore there. Never check compiled decompiled deps and try to reverse engineer unless no other way is possible.
 
 Specs (if relevant)
 - A change is not done until the specs describing it are true again. Before finishing a task, re-read the specs covering what you touched and check each claim still holds — a state, a count, a default, a flag name, a "not yet", an example.
