@@ -19,6 +19,13 @@ fi
 if (( ${+widgets[ai-sessions]} )); then
     bindkey '^s' ai-sessions #ctrl+s: AI session picker
 fi
+if (( ${+widgets[jq-complete]} )); then
+    # jq-zsh-plugin (see $DOTFILES/zshenv/init/jq.zsh) binds alt+j itself.
+    # ^] is the only ctrl chord left unbound: every ctrl+letter is taken, ^C is
+    # eaten by the tty, ^X is a prefix, ^_ is undo, ^\ risks SIGQUIT.
+    bindkey '^]' jq-complete #ctrl+]: build a jq filter for the piped command
+    bindkey -r '^[j'
+fi
 
 type -p fzf &>/dev/null && {
     # bindkey '^a' browse_apps
