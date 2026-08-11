@@ -131,33 +131,20 @@ migrate_repo() {
     fail "staging path already exists: $staging"
   fi
 
-  root_ignored=
-  nested_ignored=
-  nested_tops=
-  nested_count=0
-
   ignored=$(git -C "$repo_root" ls-files --others --ignored --exclude-standard)
-  while IFS= read -r item || [ -n "$item" ]; do
-    [ -n "$item" ] || continue
-    [ "${item##*/}" = '.DS_Store' ] && continue
 
-    case "$item" in
-      */*)
-        top=${item%%/*}
-        nested_ignored="$nested_ignored$item
-"
-        nested_count=$((nested_count + 1))
-        printf '%s\n' "$nested_tops" | grep -qxF "$top" || nested_tops="$nested_tops$top
-"
-        ;;
-      *)
-        root_ignored="$root_ignored$item
-"
-        ;;
-    esac
-  done <<EOF
-$ignored
-EOF
+  # One awk pass, not a shell read-loop: a big ignored tree (a venv, node_modules) has tens
+  # of thousands of entries, and per-file string appends plus a grep fork per file made this
+  # quadratic — it hung for minutes on ~20k files.
+  root_ignored=$(printf '%s\n' "$ignored" | awk -F/ 'NF == 1 && $1 != "" && $1 != ".DS_Store"')
+  nested_ignored=$(printf '%s\n' "$ignored" | awk -F/ 'NF > 1 && $NF != ".DS_Store"')
+  if [ -n "$nested_ignored" ]; then
+    nested_count=$(printf '%s\n' "$nested_ignored" | wc -l | tr -d '[:space:]')
+    nested_tops=$(printf '%s\n' "$nested_ignored" | awk -F/ '!seen[$1]++ { print $1 }')
+  else
+    nested_count=0
+    nested_tops=
+  fi
 
   info "repo:     $repo_root"
   info "bare:     $bare"
