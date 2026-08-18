@@ -119,6 +119,12 @@ migrate_repo() {
   branch=$(git -C "$repo_root" branch --show-current)
   [ -n "$branch" ] || fail 'refusing to migrate a detached HEAD checkout'
 
+  if git -C "$repo_root" rev-parse --verify HEAD >/dev/null 2>&1; then
+    has_head=1
+  else
+    has_head=0
+  fi
+
   dir_name=${branch##*/}
   [ -n "$dir_name" ] || fail "cannot derive a worktree directory name for branch $branch"
 
@@ -200,8 +206,13 @@ EOF
 $root_ignored
 EOF
 
-  git --git-dir "$bare" worktree add "$worktree" "$branch" ||
-    fail "could not create worktree $worktree (checkout is at $staging)"
+  if [ "$has_head" -eq 1 ]; then
+    git --git-dir "$bare" worktree add "$worktree" "$branch" ||
+      fail "could not create worktree $worktree (checkout is at $staging)"
+  else
+    git --git-dir "$bare" worktree add --orphan -b "$branch" "$worktree" ||
+      fail "could not create unborn worktree $worktree (checkout is at $staging)"
+  fi
 
   while IFS= read -r item || [ -n "$item" ]; do
     [ -n "$item" ] || continue
