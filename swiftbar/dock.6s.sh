@@ -5,9 +5,17 @@ JSON_PATH="$HOME/.cache/dock_apps.json"
 # --- Main Logic: Get Dock apps and update a cache file ---
 
 # Get the current list of apps from the Dock as a raw string
-dock_apps_raw=$(
+if ! dock_apps_raw=$(
   osascript -e 'tell application "System Events" to get the name of every UI element of list 1 of process "Dock"'
-)
+); then
+  print -u2 "Could not read Dock apps; preserving the existing cache"
+  exit 1
+fi
+
+if [[ -z "$dock_apps_raw" ]]; then
+  print -u2 "Dock returned no apps; preserving the existing cache"
+  exit 1
+fi
 
 # Use zsh parameter expansion to split the string by ", " into an array
 apps_array=("${(@s/, /)dock_apps_raw}")
