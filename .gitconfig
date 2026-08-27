@@ -9,7 +9,7 @@
 [core]
 	excludesfile = ~/global.gitignore
 	hooksPath = ~/.config/git/hooks
-	fsmonitor = true
+	fsmonitor = false
 	untrackedCache = true
 	preloadIndex = true
 	editor = code --wait
@@ -236,3 +236,9 @@
 	repo = /Users/kcw/GitHub/zsh-edit
 	repo = /Users/kcw/GitHub/zsh-history-substring-search
 	repo = /Users/kcw/GitHub/zsh-syntax-highlighting
+[credential "https://github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/opt/homebrew/bin/gh auth git-credential
