@@ -15,6 +15,7 @@
 
 /.claude/*
 !/.claude/CLAUDE.md
+!/.claude/keybindings.json
 !/.claude/skills/
 
 /.config/codex/*
@@ -22,8 +23,12 @@
 
 /.config/opencode/*
 !/.config/opencode/opencode.jsonc
+!/.config/opencode/tui.jsonc
 !/.config/opencode/command/
 !/.config/opencode/tools/
+!/.config/opencode/plugins/
+/.config/opencode/plugins/*
+!/.config/opencode/plugins/report-cwd.js
 
 /.opencode/*
 !/.opencode/skills/
