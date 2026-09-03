@@ -2,17 +2,27 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""One-shot workspace label + subtitle sync, invoked by zsh on cd.
+"""Name herdr spaces by repo and list their checkouts as sidebar rows.
 
-Usage: space-sync <workspace_id> <cwd>
+Usage:
+  space-sync sync <workspace_id> [cwd]   sync one space; cwd = the announcing shell's cwd
+  space-sync sync-all                    sync every open space (startup hook)
+  space-sync on-event                    sync the spaces named in HERDR_PLUGIN_EVENT_JSON
+  space-sync hand-name [workspace_id]    keep the current name; stop managing it
+  space-sync auto-name [workspace_id]    return the space to the managed name
 
-Convention: a checkout at <container>/<dir> with a sibling .bare git dir
-gets name PREFIX+container and one subtitle row per unique checkout in
-the space, "dir | container" ($checkout1..$checkout6 tokens); elsewhere
-PREFIX+"~" or the repo/dir name with no subtitle. The prefix marks a name
-as managed: a hand-renamed space (no prefix, not auto-looking) is never
-touched. Applies twice (herdr's silent cwd retitler may race the first
-write); exits quietly when the server is gone.
+Convention: a checkout at <container>/<dir> next to a .bare git dir. A managed
+space is named PREFIX + container of its first checkout. Every space, managed or
+hand-named, gets one row per unique checkout across its panes: "dir" when the
+name already shows the container, else "dir | container". PREFIX marks a name
+as managed. A name without it is hand-named and is left alone; only its rows
+are updated. Exception: a name equal to the checkout dir or repo name is the
+one herdr or wt-new-open gave before the first sync, so it counts as managed.
+Revisit that rule when herdr exposes whether a label is custom. Actions read
+the workspace from HERDR_WORKSPACE_ID when the argument is omitted.
+
+Limit: rows stop at MAX_ROWS checkouts, the row count declared in config.toml.
+Revisit when a space holds more checkouts than that.
 """
 
 import json
@@ -20,15 +30,16 @@ import os
 import socket
 import subprocess
 import sys
-import time
 from pathlib import Path
 
-SOCK = os.path.expanduser("~/.config/herdr/herdr.sock")
-MARK = ""  # nerd font git branch glyph
+SOCK = os.environ.get("HERDR_SOCKET_PATH") or os.path.expanduser("~/.config/herdr/herdr.sock")
+MARK = "\ue0a0"  # nerd font git branch glyph, written as an escape so editors cannot drop it
 PREFIX = MARK + " "
-OLD_MARKS = ("»",)  # prior markers still recognized as managed labels
-AUTO_LABELS = {".bare", "~"}
+AUTO_LABELS = {".bare", "~"}  # names herdr or wt-new-open give a space before the first sync
 SOURCE = "yarden.spaces"
+MAX_ROWS = 6  # $checkout1..$checkout6 rows in config.toml [ui.sidebar.spaces]
+
+Checkout = tuple[str, str]  # (container, dir)
 
 
 def request(method: str, params: dict) -> dict:
@@ -57,8 +68,8 @@ def git(cwd: str, *args: str) -> str | None:
     return proc.stdout.strip() if proc.returncode == 0 else None
 
 
-def checkout_of(cwd: str) -> tuple[str, str] | None:
-    """(container, checkout dir) when cwd is inside a bare+container checkout."""
+def checkout_of(cwd: str) -> Checkout | None:
+    """(container, dir) when cwd is inside a bare+container checkout."""
     toplevel = git(cwd, "rev-parse", "--show-toplevel")
     common = git(cwd, "rev-parse", "--path-format=absolute", "--git-common-dir")
     if toplevel and common and common.endswith("/.bare"):
@@ -69,69 +80,136 @@ def checkout_of(cwd: str) -> tuple[str, str] | None:
     return None
 
 
-def pane_cwds(ws_id: str, cwd: str, pane_id: str | None) -> list[str]:
-    """The announcing shell's cwd first, then every other pane's, deduplicated."""
-    cwds = [cwd]
+def space_cwds(ws_id: str, announced: str | None) -> list[str]:
+    """Every pane cwd in the space, deduplicated. An announcing shell's cwd goes
+    first and replaces its own pane's cwd, which herdr may not have polled yet."""
+    own_pane = os.environ.get("HERDR_PANE_ID") if announced else None
+    cwds = [announced] if announced else []
     for pane in request("pane.list", {"workspace_id": ws_id}).get("panes", []):
-        other = pane.get("cwd")
-        if pane.get("pane_id") != pane_id and other and other not in cwds:
-            cwds.append(other)
+        cwd = pane.get("cwd")
+        if pane.get("pane_id") != own_pane and cwd and cwd not in cwds:
+            cwds.append(cwd)
     return cwds
 
 
-MAX_ROWS = 6  # sidebar rows $checkout1..$checkout6 in config.toml
-
-
-def desired(cwds: list[str]) -> tuple[str, list[str]]:
-    """Name from the first checkout's container; one subtitle line per unique
-    checkout in the space, "dir | container", in pane order."""
-    groups: dict[str, list[str]] = {}
+def checkouts_in(cwds: list[str]) -> list[Checkout]:
+    found: list[Checkout] = []
     for cwd in cwds:
-        if found := checkout_of(cwd):
-            container, checkout = found
-            if checkout not in groups.setdefault(container, []):
-                groups[container].append(checkout)
-    if groups:
-        name = PREFIX + next(iter(groups))
-        lines = [f"{ch} | {repo}" for repo, chs in groups.items() for ch in chs]
-        return name, lines[:MAX_ROWS]
+        checkout = checkout_of(cwd)
+        if checkout and checkout not in found:
+            found.append(checkout)
+    return found
+
+
+def managed_name(cwds: list[str], checkouts: list[Checkout]) -> str:
+    if checkouts:
+        return PREFIX + checkouts[0][0]
     cwd = cwds[0]
     if cwd == str(Path.home()):
-        return PREFIX + "~", []
+        return PREFIX + "~"
     toplevel = git(cwd, "rev-parse", "--show-toplevel")
-    return PREFIX + Path(toplevel).name if toplevel else PREFIX + Path(cwd).name, []
+    return PREFIX + Path(toplevel or cwd).name
 
 
-def apply(ws_id: str, cwd: str, name: str, lines: list[str]) -> None:
-    ws = request("workspace.get", {"workspace_id": ws_id})["workspace"]
-    label = ws["label"]
-    toplevel = git(cwd, "rev-parse", "--show-toplevel")
-    auto = AUTO_LABELS | {Path(cwd).name} | ({Path(toplevel).name} if toplevel else set())
-    if not (label.startswith((MARK, *OLD_MARKS)) or label in auto):
-        return  # hand-named space
-    if label != name:
-        request("workspace.rename", {"workspace_id": ws_id, "label": name})
-    tokens = {f"checkout{i + 1}": (lines[i] if i < len(lines) else None)
-              for i in range(MAX_ROWS)}
+def rows(checkouts: list[Checkout], label: str) -> list[str]:
+    shown = label[len(PREFIX):] if label.startswith(PREFIX) else None
+    return [d if container == shown else f"{d} | {container}"
+            for container, d in checkouts][:MAX_ROWS]
+
+
+def is_managed(label: str, cwds: list[str]) -> bool:
+    """A name with the mark, or a name herdr or wt-new-open gave before the first sync."""
+    toplevel = git(cwds[0], "rev-parse", "--show-toplevel")
+    auto = AUTO_LABELS | {Path(cwds[0]).name} | ({Path(toplevel).name} if toplevel else set())
+    return label.startswith(PREFIX) or label in auto
+
+
+def report_rows(ws: dict, lines: list[str]) -> None:
+    tokens = {f"checkout{i + 1}": (lines[i] if i < len(lines) else None) for i in range(MAX_ROWS)}
     current = ws.get("tokens") or {}
     if any(current.get(k) != v for k, v in tokens.items()):
-        request("workspace.report_metadata", {
-            "workspace_id": ws_id, "source": SOURCE, "tokens": tokens,
-        })
+        request("workspace.report_metadata",
+                {"workspace_id": ws["workspace_id"], "source": SOURCE, "tokens": tokens})
 
 
-def main() -> None:
-    if len(sys.argv) != 3:
-        sys.exit("usage: space-sync <workspace_id> <cwd>")
-    ws_id, cwd = sys.argv[1], sys.argv[2]
-    pane_id = os.environ.get("HERDR_PANE_ID")  # set by the zsh hook, not by the startup hook
-    try:
-        name, lines = desired(pane_cwds(ws_id, cwd, pane_id))
-        apply(ws_id, cwd, name, lines)
-        time.sleep(1.5)  # herdr's cwd retitler may overwrite the first apply
-        apply(ws_id, cwd, name, lines)
-    except (OSError, RuntimeError, json.JSONDecodeError):
-        pass  # server gone; nothing to sync
+def rename(ws: dict, name: str) -> None:
+    if ws["label"] != name:
+        request("workspace.rename", {"workspace_id": ws["workspace_id"], "label": name})
+        ws["label"] = name
 
 
-main()
+def sync(ws_id: str, announced: str | None = None, *, force_name: bool = False) -> None:
+    ws = request("workspace.get", {"workspace_id": ws_id})["workspace"]
+    cwds = space_cwds(ws_id, announced)
+    if not cwds:
+        return
+    checkouts = checkouts_in(cwds)
+    if force_name or is_managed(ws["label"], cwds):
+        rename(ws, managed_name(cwds, checkouts))
+    report_rows(ws, rows(checkouts, ws["label"]))
+
+
+def hand_name(ws_id: str) -> None:
+    ws = request("workspace.get", {"workspace_id": ws_id})["workspace"]
+    if ws["label"].startswith(PREFIX):
+        rename(ws, ws["label"][len(PREFIX):])
+        report_rows(ws, rows(checkouts_in(space_cwds(ws_id, None)), ws["label"]))
+    print(f"{ws_id}: hand-named {ws['label']!r}")
+
+
+def sync_all() -> None:
+    for ws in request("workspace.list", {}).get("workspaces", []):
+        sync(ws["workspace_id"])
+
+
+def event_workspace_ids(event: object) -> set[str]:
+    """Every *workspace_id value anywhere in the event payload."""
+    ids: set[str] = set()
+    if isinstance(event, dict):
+        for key, value in event.items():
+            if key.endswith("workspace_id") and isinstance(value, str):
+                ids.add(value)
+            ids |= event_workspace_ids(value)
+    elif isinstance(event, list):
+        for item in event:
+            ids |= event_workspace_ids(item)
+    return ids
+
+
+def on_event() -> None:
+    event = json.loads(os.environ.get("HERDR_PLUGIN_EVENT_JSON") or "{}")
+    for ws_id in sorted(event_workspace_ids(event)):
+        try:
+            sync(ws_id)
+        except RuntimeError as err:  # the event may have closed the space
+            print(err, file=sys.stderr)
+
+
+def workspace_arg(args: list[str]) -> str:
+    ws_id = args[0] if args else os.environ.get("HERDR_WORKSPACE_ID")
+    if not ws_id:
+        sys.exit("space-sync: workspace id required (argument or HERDR_WORKSPACE_ID)")
+    return ws_id
+
+
+def main(argv: list[str]) -> None:
+    command, args = (argv[0], argv[1:]) if argv else ("", [])
+    match command, len(args):
+        case "sync", 1 | 2:
+            sync(args[0], args[1] if len(args) == 2 else None)
+        case "sync-all", 0:
+            sync_all()
+        case "on-event", 0:
+            on_event()
+        case "hand-name", 0 | 1:
+            hand_name(workspace_arg(args))
+        case "auto-name", 0 | 1:
+            sync(workspace_arg(args), force_name=True)
+        case _:
+            sys.exit(__doc__.split("\n\n")[1])
+
+
+try:
+    main(sys.argv[1:])
+except OSError as err:
+    sys.exit(f"space-sync: herdr socket {SOCK}: {err}")

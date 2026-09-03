@@ -5,7 +5,7 @@
 [[ -n ${HERDR_WORKSPACE_ID-} ]] || return 0
 
 _herdr_space_sync() {
-    "$DOTFILES/.config/herdr/plugins/spaces/space-sync" "$HERDR_WORKSPACE_ID" "$PWD" &>/dev/null &!
+    "$DOTFILES/.config/herdr/plugins/spaces/space-sync" sync "$HERDR_WORKSPACE_ID" "$PWD" &>/dev/null &!
 }
 autoload -Uz add-zsh-hook
 add-zsh-hook chpwd _herdr_space_sync

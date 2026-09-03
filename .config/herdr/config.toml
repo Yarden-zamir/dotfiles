@@ -124,8 +124,9 @@ prompt_new_workspace_name = false
 show_agent_labels_on_pane_borders = false
 status_indicators = "dots"
 
-# Space rows (plugin yarden.spaces): name (" container"), then one row per unique checkout in the space ("dir | container",
-# tokens $checkout1..$checkout6); empty rows collapse.
+# Space rows (plugin yarden.spaces): name (" container" when managed), then one
+# row per unique checkout in the space: "dir", or "dir | container" when the name
+# does not show that container (tokens $checkout1..$checkout6; empty rows collapse).
 [ui.sidebar.spaces]
 rows = [
   ["state_icon", "workspace"],
