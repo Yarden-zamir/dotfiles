@@ -1,0 +1,47 @@
+#!/bin/sh
+# herdr-open-path — focus the herdr space that works in a path, or create
+# one. With a command, open a tab in that space and run the command there.
+# Replaces iterm-focus-path (navgator actions, Raycast launcher).
+# Usage: herdr-open-path <absolute-path> [command...]
+set -eu
+
+if [ $# -lt 1 ] || [ -z "$1" ]; then
+    echo "usage: herdr-open-path <absolute-path> [command...]" >&2
+    exit 2
+fi
+path=$(cd "$1" && pwd -P)
+shift
+herdr=${HERDR_BIN_PATH:-herdr}
+
+# Match on pane cwd, never on labels: space-sync rewrites labels. An exact
+# cwd match wins; a pane deeper inside the path is the fallback.
+workspace=$("$herdr" pane list | jq -r --arg path "$path" '
+    [.result.panes[] | select(.cwd == $path)][0].workspace_id
+    // [.result.panes[] | select(.cwd | startswith($path + "/"))][0].workspace_id
+    // empty')
+
+if [ $# -eq 0 ]; then
+    if [ -n "$workspace" ]; then
+        "$herdr" workspace focus "$workspace" >/dev/null
+    else
+        "$herdr" workspace create --cwd "$path" --focus >/dev/null
+    fi
+else
+    if [ -n "$workspace" ]; then
+        created=$("$herdr" tab create --workspace "$workspace" --cwd "$path" --focus)
+    else
+        created=$("$herdr" workspace create --cwd "$path" --focus)
+    fi
+    pane=$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id')
+    # Wait for the shell prompt so the command is not echoed before it.
+    # The prompt shows the cwd basename. If the prompt format changes,
+    # drop this wait: pane run still works, the text is only echoed twice.
+    "$herdr" pane wait-output "$pane" --match "$(basename "$path")" --timeout 3000 >/dev/null 2>&1 || true
+    "$herdr" pane run "$pane" "$@" >/dev/null
+fi
+
+# Outside herdr (the Raycast launcher window) bring the herdr window forward
+# after the launcher closes. Inside herdr the popup pane closes itself.
+if [ -z "${HERDR_ENV-}" ]; then
+    (sleep 0.4 && open -a Ghostty) >/dev/null 2>&1 &
+fi

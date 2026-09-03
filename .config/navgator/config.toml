@@ -38,58 +38,85 @@ type = "command"
 command = "open"
 args = ["{path}"]
 
+# herdr actions: focus the space that works in the path or create one.
+# The claude/opencode variants open a tab in that space and run the tool.
 [[actions.items]]
-id = "open-iterm"
-label = "Open iTerm"
-icon = ""
+id = "open-herdr"
+label = "Open in herdr"
+icon = ""
 type = "command"
-command = "/Users/kcw/Github/dotfiles/main/bin/iterm-focus-path"
+command = "/Users/kcw/Github/dotfiles/main/bin/herdr-open-path"
 args = ["{path}"]
 
 [[actions.items]]
-id = "open-claude-iterm"
-label = "Open Claude in iTerm"
+id = "open-claude-herdr"
+label = "Open Claude in herdr"
 icon = "󰚩"
 type = "command"
-command = "osascript"
-args = [
-    "-e",
-    '''
-on run argv
-    set projectPath to item 1 of argv
-    set toolCommand to item 2 of argv
-    set shellCommand to "cd " & quoted form of projectPath & " && exec " & quoted form of toolCommand
-
-    tell application "iTerm2"
-        create window with default profile command shellCommand
-        activate
-    end tell
-end run
-''',
-    "{path}",
-    "claude",
-]
+command = "/Users/kcw/Github/dotfiles/main/bin/herdr-open-path"
+args = ["{path}", "claude"]
 
 [[actions.items]]
-id = "open-opencode-iterm"
-label = "Open OpenCode in iTerm"
+id = "open-opencode-herdr"
+label = "Open OpenCode in herdr"
 icon = "󰘦"
 type = "command"
-command = "osascript"
-args = [
-    "-e",
-    '''
-on run argv
-    set projectPath to item 1 of argv
-    set toolCommand to item 2 of argv
-    set shellCommand to "cd " & quoted form of projectPath & " && exec " & quoted form of toolCommand
+command = "/Users/kcw/Github/dotfiles/main/bin/herdr-open-path"
+args = ["{path}", "opencode"]
 
-    tell application "iTerm2"
-        create window with default profile command shellCommand
-        activate
-    end tell
-end run
-''',
-    "{path}",
-    "opencode",
-]
+# include_defaults stays false: the built-in "New branch + worktree" would
+# otherwise sit next to the override below with the same label. "New
+# project" is a copy of the built-in.
+# The built-in worktree recipe runs `git worktree add ../{branch}`, which
+# nests slashed branch names and skips the bare+container rules. This one
+# calls bin/wt-new (the only door to worktree creation) and opens the new
+# checkout as a herdr space. success_path stays on the selected path so
+# the current pane does not cd into the new checkout.
+[create]
+include_defaults = false
+
+[[create.items]]
+label = "New project"
+icon = "󰉋"
+shell = 'mkdir -p "$NAVGATOR_CREATE_PARENT/$NAVGATOR_CREATE_NAME"'
+success_path = "{parent}/{name}"
+
+[[create.items.prompts]]
+name = "name"
+label = "Project name"
+type = "text"
+required = true
+
+[[create.items.prompts]]
+name = "parent"
+label = "Parent folder"
+type = "path"
+default = "~/Github"
+required = true
+
+[[create.items]]
+label = "New branch + worktree"
+icon = ""
+current_dir = "{path}"
+success_path = "{path}"
+shell = '''
+out=$("$HOME/Github/dotfiles/main/bin/wt-new" "$NAVGATOR_CREATE_BRANCH" "$NAVGATOR_CREATE_BASE")
+printf '%s\n' "$out"
+line=$(printf '%s\n' "$out" | tail -n 1)
+path=${line#wt-new: }
+path=${path% \[*}
+"$HOME/Github/dotfiles/main/bin/herdr-open-path" "$path"
+'''
+
+[[create.items.prompts]]
+name = "branch"
+label = "Branch name"
+type = "text"
+required = true
+
+[[create.items.prompts]]
+name = "base"
+label = "Base branch"
+type = "text"
+default = "main"
+required = true
