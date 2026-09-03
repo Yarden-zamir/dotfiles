@@ -14,12 +14,14 @@ platforms = ["macos", "linux"]
 [[actions]]
 id = "projects"
 title = "Open project in herdr (navgator)"
+description = "Pick a project with navgator, then open it as a space, or open Claude or OpenCode in a tab there"
 contexts = ["workspace", "tab", "pane"]
 command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.gators --entrypoint projects"]
 
 [[actions]]
 id = "sessions"
 title = "Resume AI session (sessiongator)"
+description = "Pick a Claude, OpenCode, Codex or Copilot session; open it as a tab in its cwd, or focus the pane that already runs it"
 contexts = ["workspace", "tab", "pane"]
 command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.gators --entrypoint sessions"]
 
