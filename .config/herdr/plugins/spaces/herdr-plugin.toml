@@ -22,6 +22,7 @@ command = ["uv", "run", "--script", "space-sync", "sync"]
 [[actions]]
 id = "sync-all"
 title = "Sync every space"
+description = "Refresh the name and checkout rows of every open space"
 contexts = ["workspace", "tab", "pane"]
 command = ["uv", "run", "--script", "space-sync", "sync-all"]
 
