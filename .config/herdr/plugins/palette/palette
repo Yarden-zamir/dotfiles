@@ -33,7 +33,7 @@ from common import ACCENT, BOLD, DIM, RESET
 ICON = {"recent": "", "action": "", "api": ""}
 RECENT_LIMIT = 8
 USAGE_LIMIT = 200
-TITLE_WIDTH = 42
+TITLE_WIDTH = 36
 OWN_ACTION = "yarden.palette.open"  # opening the palette from the palette is useless
 
 # Native [keys] actions that an API method reproduces. The method row
@@ -271,7 +271,9 @@ def pick(rows: list[Row], preview_dir: Path) -> Row | None:
     cmd = common.fzf_args("") + [
         "--delimiter=\t", "--with-nth=2", "--tiebreak=begin,index",
         "--header=enter run · ctrl-/ preview · esc close",
-        "--preview=cat {3}", "--preview-window=right,45%,wrap,border-left",
+        "--preview=cat {3}",
+        # Preview on the right; below the list when the popup is narrower than 100 columns.
+        "--preview-window=right,40%,wrap,border-left,<100(down,45%,wrap,border-top)",
         "--bind=ctrl-/:toggle-preview",
     ]
     proc = subprocess.run(cmd, input="\n".join(lines), capture_output=True, text=True)
