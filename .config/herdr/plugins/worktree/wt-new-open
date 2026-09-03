@@ -1,0 +1,22 @@
+#!/bin/sh
+# Create a worktree with bin/wt-new, then open the checkout as a plain
+# herdr workspace. Herdr never creates the checkout itself; it only
+# adopts what wt-new made. Not `herdr worktree open`: that force-creates
+# a repo parent workspace for .bare, and closing that parent cascades
+# into the child. Space-sync labels the new space on shell startup.
+set -eu
+dotfiles=$(cd "$(dirname "$0")/../../../.." && pwd)
+# As a plugin pane the cwd is the plugin dir; wt-new needs the repo of
+# the pane the user was in: from the plugin context when present, else
+# the server's focused pane.
+pane_cwd=$(printf '%s' "${HERDR_PLUGIN_CONTEXT_JSON-}" | jq -r '.focused_pane_cwd // .workspace_cwd // empty' 2>/dev/null || true)
+[ -n "$pane_cwd" ] || pane_cwd=$("${HERDR_BIN_PATH:-herdr}" pane current 2>/dev/null | jq -r '.result.pane.cwd // empty')
+[ -n "$pane_cwd" ] && cd "$pane_cwd"
+# Keep the popup open on failure so the error is readable.
+trap 'status=$?; if [ $status -ne 0 ]; then printf "\n(failed, status %s) press enter\n" "$status"; read -r _; fi' EXIT
+out=$("$dotfiles/bin/wt-new" "$@")
+printf '%s\n' "$out"
+line=$(printf '%s\n' "$out" | tail -n 1)
+path=${line#wt-new: }
+path=${path% \[*}
+herdr workspace create --cwd "$path" --label "$(basename "$path")" --focus

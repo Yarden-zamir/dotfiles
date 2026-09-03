@@ -1,0 +1,260 @@
+#!/usr/bin/env -S uv run --script --quiet
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""Run one herdr socket API method interactively: api-run <method>.
+
+Walks the method's parameter schema from `herdr api schema --json` and
+prompts for each field: fzf pickers for object ids (the current pane,
+workspace, and tab from the popup env are the top rows), fzf for enums,
+booleans, and oneOf variants, plain input for strings and numbers.
+Optional fields are offered once as a multi-select. The response is
+piped to the `output` shell command from palette.toml next to it (default:
+`jq . | pbcopy`). Esc in any picker aborts.
+
+Used by the palette popup, which lists every API method. Stdlib only.
+"""
+import json
+import os
+import socket
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
+
+HERDR = os.path.expanduser("~/.local/bin/herdr")
+SOCK = os.path.expanduser("~/.config/herdr/herdr.sock")
+CONFIG = Path(__file__).resolve().parent / "palette.toml"
+DEFAULT_OUTPUT = ("herdr notification show \"$API_METHOD · $API_STATUS\" "
+                  "--body \"$API_SUMMARY\" --plugin-action yarden.palette.show-output")
+
+
+def output_command() -> str:
+    if not CONFIG.exists():
+        return DEFAULT_OUTPUT
+    with CONFIG.open("rb") as fh:
+        cmd = tomllib.load(fh).get("output", DEFAULT_OUTPUT)
+    if not isinstance(cmd, str) or not cmd.strip():
+        sys.exit(f"{CONFIG}: 'output' must be a non-empty shell command string")
+    return cmd
+
+
+def herdr(*args: str) -> dict:
+    out = subprocess.run([HERDR, *args], capture_output=True, text=True, check=True)
+    return json.loads(out.stdout)["result"]
+
+
+def fzf(rows: list[str], prompt: str, multi: bool = False) -> list[str]:
+    cmd = ["fzf", "--reverse", "--no-info", f"--prompt={prompt} > "]
+    if multi:
+        cmd += ["--multi", "--bind", "enter:accept", "--header=tab marks, enter confirms, esc skips"]
+    proc = subprocess.run(cmd, input="\n".join(rows), capture_output=True, text=True)
+    lines = [line for line in proc.stdout.splitlines() if line]
+    if proc.returncode != 0 or not lines:
+        if multi:
+            return []
+        sys.exit(0)  # cancelled or nothing selected
+    return lines
+
+
+def current_tab_id() -> str | None:
+    pane = os.environ.get("HERDR_ACTIVE_PANE_ID")
+    if not pane:
+        return None
+    try:
+        return herdr("pane", "get", pane)["pane"]["tab_id"]
+    except (subprocess.CalledProcessError, KeyError, json.JSONDecodeError):
+        return None
+
+
+def pick_id(kind: str, free_text: bool = False) -> str:
+    rows: list[str] = []
+    current = {
+        "pane": os.environ.get("HERDR_ACTIVE_PANE_ID"),
+        "workspace": os.environ.get("HERDR_WORKSPACE_ID"),
+        "tab": current_tab_id(),
+    }.get(kind)
+    if current:
+        rows.append(f"{current}\t(current {kind})")
+    if kind == "workspace":
+        rows += [f"{w['workspace_id']}\t{w['label']}"
+                 for w in herdr("workspace", "list")["workspaces"]]
+    elif kind == "tab":
+        labels = {w["workspace_id"]: w["label"]
+                  for w in herdr("workspace", "list")["workspaces"]}
+        rows += [f"{t['tab_id']}\t{t['label']}  [{labels.get(t['workspace_id'], '?')}]"
+                 for t in herdr("tab", "list")["tabs"]]
+    elif kind == "pane":
+        rows += [f"{p['pane_id']}\t{p.get('terminal_title_stripped') or ''}  {p['cwd']}"
+                 for p in herdr("pane", "list")["panes"]]
+    elif kind == "agent":
+        labels = {w["workspace_id"]: w["label"]
+                  for w in herdr("workspace", "list")["workspaces"]}
+        rows += [f"{a['pane_id']}\t{a.get('agent') or '?'} "
+                 f"{a.get('agent_status') or ''}  [{labels.get(a.get('workspace_id'), '?')}]"
+                 for a in herdr("agent", "list").get("agents", [])]
+    if free_text:  # rows are suggestions; a typed non-matching query passes through
+        proc = subprocess.run(
+            ["fzf", "--reverse", "--no-info", f"--prompt={kind} > ", "--print-query",
+             "--header=enter picks the row, or passes your typed text through"],
+            input="\n".join(rows), capture_output=True, text=True)
+        lines = proc.stdout.splitlines()
+        if proc.returncode == 0 and len(lines) > 1:
+            return lines[1].split("\t", 1)[0]
+        if lines and lines[0].strip():
+            return lines[0].strip()
+        sys.exit(0)
+    sel = fzf(rows, kind)
+    return sel[0].split("\t", 1)[0]
+
+
+ID_KINDS = {"pane_id": "pane", "target_pane_id": "pane", "workspace_id": "workspace",
+            "tab_id": "tab", "agent_id": "agent", "current_workspace_id": "workspace",
+            "current_tab_id": "tab"}
+# Semantic string fields with no *_id name: selector strings where a picker
+# helps but typed text (an alias, "@idle") must pass through.
+FREE_KINDS = {"target": "agent"}
+
+
+class Walker:
+    def __init__(self, defs: dict):
+        self.defs = defs
+
+    def deref(self, node: dict) -> dict:
+        while "$ref" in node:
+            node = self.defs[node["$ref"].rsplit("/", 1)[-1]]
+        return node
+
+    def variant_label(self, node: dict) -> str:
+        node = self.deref(node)
+        const = node.get("properties", {}).get("type", {}).get("const")
+        return const or " ".join(node.get("required", [])) or node.get("type", "?")
+
+    def prompt(self, node: dict, name: str):
+        node = self.deref(node)
+        if "const" in node:
+            return node["const"]
+        if "enum" in node:
+            return fzf(node["enum"], name)[0]
+        variants = node.get("oneOf") or node.get("anyOf")
+        if variants:
+            labels = [f"{i}\t{self.variant_label(v)}" for i, v in enumerate(variants)]
+            idx = int(fzf(labels, name)[0].split("\t", 1)[0])
+            return self.prompt(variants[idx], name)
+        types = node.get("type")
+        types = types if isinstance(types, list) else [types]
+        if types == ["null"]:
+            return None
+        if "object" in types:
+            return self.prompt_object(node, name)
+        if "array" in types:
+            return self.prompt_array(node, name, nullable="null" in types)
+        if "boolean" in types:
+            return fzf(["true", "false"], name)[0] == "true"
+        if "string" in types and name in ID_KINDS:
+            return pick_id(ID_KINDS[name])
+        if "string" in types and name in FREE_KINDS:
+            return pick_id(FREE_KINDS[name], free_text=True)
+        raw = input(f"{name} ({'/'.join(str(t) for t in types)}): ").strip()
+        if not raw and "null" in types:
+            return None
+        if "number" in types or "integer" in types:
+            return json.loads(raw)
+        if "string" in types:
+            return raw
+        return json.loads(raw)  # anything else: literal JSON
+
+    def prompt_array(self, node: dict, name: str, nullable: bool):
+        items = self.deref(node.get("items", {}))
+        if "enum" in items:  # multi-select in one shot
+            sel = fzf(items["enum"], name, multi=True)
+            return None if not sel and nullable else sel
+        kind = ID_KINDS.get(name.removesuffix("s"))
+        out = []
+        if kind:  # e.g. workspace_ids: repeated picker, esc ends the list
+            while True:
+                try:
+                    out.append(pick_id(kind))
+                except SystemExit:
+                    break
+            return out
+        print(f"{name}: one item per line, empty line ends")
+        while raw := input(f"{name}[{len(out)}]: ").strip():
+            out.append(raw if items.get("type") == "string" else json.loads(raw))
+        return None if not out and nullable else out
+
+    def prompt_object(self, node: dict, name: str) -> dict:
+        props = node.get("properties", {})
+        required = node.get("required", [])
+        out = {}
+        for field in required:
+            out[field] = self.prompt(props[field], field)
+        optional = [f for f in props if f not in required]
+        if optional:
+            for field in fzf(optional, f"{name}: optional fields", multi=True):
+                out[field] = self.prompt(props[field], field)
+        extra = node.get("additionalProperties")
+        if not props and isinstance(extra, (dict, bool)):  # a map like tokens/env
+            value_schema = extra if isinstance(extra, dict) else {"type": "string"}
+            print(f"{name}: key=value per line, empty line ends")
+            while raw := input(f"{name} entry: ").strip():
+                if "=" not in raw:
+                    print("expected key=value")
+                    continue
+                key, _, val = raw.partition("=")
+                vtypes = self.deref(value_schema).get("type", "string")
+                out[key] = val if "string" in (vtypes if isinstance(vtypes, list) else [vtypes]) \
+                    else json.loads(val)
+        return out
+
+
+def main() -> None:
+    if len(sys.argv) != 2:
+        sys.exit("usage: api-run <method>")
+    method = sys.argv[1]
+    schema = json.loads(subprocess.run(
+        [HERDR, "api", "schema", "--json"], capture_output=True, text=True,
+        check=True).stdout)["schemas"]["request"]
+    entry = next((e for e in schema["oneOf"]
+                  if e.get("properties", {}).get("method", {}).get("const") == method), None)
+    if entry is None:
+        sys.exit(f"unknown method: {method}")
+    walker = Walker(schema.get("$defs", {}))
+    params = walker.prompt(entry["properties"].get("params", {"type": "object"}), "params")
+
+    with socket.socket(socket.AF_UNIX) as sock:
+        sock.connect(SOCK)
+        sock.sendall((json.dumps(
+            {"id": "palette", "method": method, "params": params}) + "\n").encode())
+        sock.shutdown(socket.SHUT_WR)
+        chunks = []
+        while data := sock.recv(65536):
+            chunks.append(data)
+    response = b"".join(chunks)
+
+    # Save every response so the yarden.palette show-output popup can page
+    # it later (the default output command sends a toast that opens it).
+    out_file = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) \
+        / "herdr-palette" / "last.json"
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_bytes(response)
+    try:
+        parsed = json.loads(response)
+    except json.JSONDecodeError:
+        parsed = {}
+    error = parsed.get("error") if isinstance(parsed, dict) else None
+    result = parsed.get("result") if isinstance(parsed, dict) else None
+    summary = (error.get("message") if isinstance(error, dict) else None) \
+        or (result.get("type") if isinstance(result, dict) else None) or "done"
+    env = {
+        **os.environ,
+        "API_METHOD": method,
+        "API_STATUS": "error" if error else "ok",
+        "API_SUMMARY": str(summary),
+        "API_OUTPUT_FILE": str(out_file),
+    }
+    subprocess.run(["bash", "-c", output_command()], input=response, env=env)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,24 @@
+id = "yarden.archive"
+name = "Archive"
+version = "0.1.0"
+min_herdr_version = "0.8.0"
+description = "Move panes to an archive workspace instead of closing them"
+platforms = ["macos", "linux"]
+
+[[actions]]
+id = "archive"
+title = "Archive pane"
+contexts = ["pane"]
+command = ["uv", "run", "--script", "archive.py", "archive"]
+
+[[actions]]
+id = "restore-last"
+title = "Restore last archived pane"
+contexts = ["workspace", "tab", "pane"]
+command = ["uv", "run", "--script", "archive.py", "restore-last"]
+
+[[actions]]
+id = "clear"
+title = "Close all archived panes"
+contexts = ["workspace", "tab", "pane"]
+command = ["uv", "run", "--script", "archive.py", "clear"]

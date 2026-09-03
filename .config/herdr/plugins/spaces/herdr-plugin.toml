@@ -1,0 +1,34 @@
+id = "yarden.spaces"
+name = "Spaces"
+version = "0.2.0"
+min_herdr_version = "0.8.2"
+description = "Name spaces by repo and list every checkout in them as sidebar rows"
+platforms = ["macos", "linux"]
+
+# space-sync is the whole logic: name = " <container>", one $checkoutN
+# token per unique checkout across the space's panes. Three triggers:
+# the zsh chpwd hook (zshrc/post-init/herdr.zsh) on every cd, this
+# startup hook after a server start or live handoff (tokens are not
+# persisted), and the event hooks below when panes come and go.
+[[startup]]
+command = ["sh", "resync.sh"]
+
+[[events]]
+on = "pane.created"
+command = ["sh", "on-event.sh"]
+
+[[events]]
+on = "pane.closed"
+command = ["sh", "on-event.sh"]
+
+[[events]]
+on = "pane.exited"
+command = ["sh", "on-event.sh"]
+
+[[events]]
+on = "pane.moved"
+command = ["sh", "on-event.sh"]
+
+[[events]]
+on = "tab.closed"
+command = ["sh", "on-event.sh"]

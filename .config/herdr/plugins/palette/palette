@@ -1,0 +1,27 @@
+#!/bin/sh
+# Command palette popup (plugin pane "palette", cmd+shift+p): fuzzy-pick
+# and run an action. Rows: every installed plugin action (the worktree
+# and archive plugins appear here by themselves) and every socket API
+# method (api-run prompts for parameters from the API schema, with
+# pickers for object ids). Fully dynamic; nothing to maintain here.
+set -eu
+
+tab=$(printf '\t')
+bin=$(cd "$(dirname "$0")" && pwd)
+
+list=$(
+    herdr plugin action list | jq -r '
+        .result.actions[]
+        | "\(.title)  [\(.plugin_id)]\therdr plugin action invoke \(.plugin_id).\(.action_id)"'
+    herdr api schema --json | jq -r --arg bin "$bin" '
+        .schemas.request as $r
+        | $r.oneOf[]
+        | (.properties.method.const // empty) as $m
+        | (.properties.params["$ref"] // "" | split("/")[-1]) as $d
+        | ($r["$defs"][$d].required // []) as $req
+        | "\($m)  (\($req | join(", ")))  [api]\texec \($bin)/api-run \($m)"'
+)
+
+sel=$(printf '%s\n' "$list" | fzf --delimiter="$tab" --with-nth=1 \
+    --prompt='action > ' --reverse --no-info) || exit 0
+sh -c "${sel#*"$tab"}"

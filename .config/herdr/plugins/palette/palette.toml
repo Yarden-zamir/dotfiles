@@ -1,0 +1,17 @@
+# Settings for the command palette plugin (palette, api-run).
+
+# Shell command that receives the API response JSON on stdin after an
+# action runs. api-run also saves the response to $API_OUTPUT_FILE and
+# sets $API_METHOD, $API_STATUS (ok|error), and $API_SUMMARY.
+# Default: a toast; clicking it opens the response in a popup
+# (yarden.palette show-output; needs the fork build of herdr).
+output = "herdr notification show \"$API_METHOD · $API_STATUS\" --body \"$API_SUMMARY\" --plugin-action yarden.palette.show-output"
+
+# Copy the response to the clipboard; the popup closes silently:
+# output = "jq . | pbcopy"
+
+# Show it in the popup instead (colorized, paged; q closes):
+# output = "jq -C . | less -R"
+
+# Show it and copy it:
+# output = "tee >(jq . | pbcopy) | jq -C . | less -R"

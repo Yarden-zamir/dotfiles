@@ -1,0 +1,41 @@
+id = "yarden.palette"
+name = "Palette"
+version = "0.2.0"
+min_herdr_version = "0.8.2"
+description = "Command palette over every plugin action and socket API method"
+platforms = ["macos", "linux"]
+
+# `open` shows the palette popup (bind it: cmd+shift+p). Selecting an API
+# method runs api-run, which saves the response to
+# ~/.cache/herdr-palette/last.json and, by default (palette.toml), sends
+# a toast whose click invokes `show-output` (fork feature:
+# notification.show action.plugin_action).
+[[actions]]
+id = "open"
+title = "Open command palette"
+contexts = ["workspace", "tab", "pane"]
+command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.palette --entrypoint palette"]
+
+[[actions]]
+id = "show-output"
+title = "Show last palette output"
+contexts = ["workspace", "tab", "pane"]
+command = ["sh", "show-output.sh"]
+
+[[panes]]
+id = "palette"
+title = "Command palette"
+platforms = ["macos", "linux"]
+placement = "popup"
+width = "60%"
+height = "50%"
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec sh palette"]
+
+[[panes]]
+id = "output"
+title = "Palette output"
+platforms = ["macos", "linux"]
+placement = "popup"
+width = "70%"
+height = "70%"
+command = ["sh", "output.sh"]

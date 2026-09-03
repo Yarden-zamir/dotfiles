@@ -1,0 +1,137 @@
+#!/usr/bin/env -S uv run --script --quiet
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""One-shot workspace label + subtitle sync, invoked by zsh on cd.
+
+Usage: space-sync <workspace_id> <cwd>
+
+Convention: a checkout at <container>/<dir> with a sibling .bare git dir
+gets name PREFIX+container and one subtitle row per unique checkout in
+the space, "dir | container" ($checkout1..$checkout6 tokens); elsewhere
+PREFIX+"~" or the repo/dir name with no subtitle. The prefix marks a name
+as managed: a hand-renamed space (no prefix, not auto-looking) is never
+touched. Applies twice (herdr's silent cwd retitler may race the first
+write); exits quietly when the server is gone.
+"""
+
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+SOCK = os.path.expanduser("~/.config/herdr/herdr.sock")
+MARK = ""  # nerd font git branch glyph
+PREFIX = MARK + " "
+OLD_MARKS = ("»",)  # prior markers still recognized as managed labels
+AUTO_LABELS = {".bare", "~"}
+SOURCE = "yarden.spaces"
+
+
+def request(method: str, params: dict) -> dict:
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        sock.connect(SOCK)
+        sock.settimeout(5)
+        sock.sendall(json.dumps({"id": "space-sync", "method": method,
+                                 "params": params}).encode() + b"\n")
+        buf = b""
+        while b"\n" not in buf:
+            data = sock.recv(65536)
+            if not data:
+                raise OSError("socket closed")
+            buf += data
+    finally:
+        sock.close()
+    reply = json.loads(buf.split(b"\n", 1)[0])
+    if "error" in reply:
+        raise RuntimeError(f"{method}: {reply['error']}")
+    return reply.get("result", {})
+
+
+def git(cwd: str, *args: str) -> str | None:
+    proc = subprocess.run(["git", "-C", cwd, *args], capture_output=True, text=True)
+    return proc.stdout.strip() if proc.returncode == 0 else None
+
+
+def checkout_of(cwd: str) -> tuple[str, str] | None:
+    """(container, checkout dir) when cwd is inside a bare+container checkout."""
+    toplevel = git(cwd, "rev-parse", "--show-toplevel")
+    common = git(cwd, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    if toplevel and common and common.endswith("/.bare"):
+        checkout = Path(toplevel)
+        container = Path(common).parent
+        if checkout.parent == container:
+            return container.name, checkout.name
+    return None
+
+
+def pane_cwds(ws_id: str, cwd: str, pane_id: str | None) -> list[str]:
+    """The announcing shell's cwd first, then every other pane's, deduplicated."""
+    cwds = [cwd]
+    for pane in request("pane.list", {"workspace_id": ws_id}).get("panes", []):
+        other = pane.get("cwd")
+        if pane.get("pane_id") != pane_id and other and other not in cwds:
+            cwds.append(other)
+    return cwds
+
+
+MAX_ROWS = 6  # sidebar rows $checkout1..$checkout6 in config.toml
+
+
+def desired(cwds: list[str]) -> tuple[str, list[str]]:
+    """Name from the first checkout's container; one subtitle line per unique
+    checkout in the space, "dir | container", in pane order."""
+    groups: dict[str, list[str]] = {}
+    for cwd in cwds:
+        if found := checkout_of(cwd):
+            container, checkout = found
+            if checkout not in groups.setdefault(container, []):
+                groups[container].append(checkout)
+    if groups:
+        name = PREFIX + next(iter(groups))
+        lines = [f"{ch} | {repo}" for repo, chs in groups.items() for ch in chs]
+        return name, lines[:MAX_ROWS]
+    cwd = cwds[0]
+    if cwd == str(Path.home()):
+        return PREFIX + "~", []
+    toplevel = git(cwd, "rev-parse", "--show-toplevel")
+    return PREFIX + Path(toplevel).name if toplevel else PREFIX + Path(cwd).name, []
+
+
+def apply(ws_id: str, cwd: str, name: str, lines: list[str]) -> None:
+    ws = request("workspace.get", {"workspace_id": ws_id})["workspace"]
+    label = ws["label"]
+    toplevel = git(cwd, "rev-parse", "--show-toplevel")
+    auto = AUTO_LABELS | {Path(cwd).name} | ({Path(toplevel).name} if toplevel else set())
+    if not (label.startswith((MARK, *OLD_MARKS)) or label in auto):
+        return  # hand-named space
+    if label != name:
+        request("workspace.rename", {"workspace_id": ws_id, "label": name})
+    tokens = {f"checkout{i + 1}": (lines[i] if i < len(lines) else None)
+              for i in range(MAX_ROWS)}
+    current = ws.get("tokens") or {}
+    if any(current.get(k) != v for k, v in tokens.items()):
+        request("workspace.report_metadata", {
+            "workspace_id": ws_id, "source": SOURCE, "tokens": tokens,
+        })
+
+
+def main() -> None:
+    if len(sys.argv) != 3:
+        sys.exit("usage: space-sync <workspace_id> <cwd>")
+    ws_id, cwd = sys.argv[1], sys.argv[2]
+    pane_id = os.environ.get("HERDR_PANE_ID")  # set by the zsh hook, not by the startup hook
+    try:
+        name, lines = desired(pane_cwds(ws_id, cwd, pane_id))
+        apply(ws_id, cwd, name, lines)
+        time.sleep(1.5)  # herdr's cwd retitler may overwrite the first apply
+        apply(ws_id, cwd, name, lines)
+    except (OSError, RuntimeError, json.JSONDecodeError):
+        pass  # server gone; nothing to sync
+
+
+main()

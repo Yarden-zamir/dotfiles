@@ -1,0 +1,41 @@
+#!/bin/sh
+# wt-new — add a worktree to a bare+container repo (.bare/, _shared/, main/).
+# Usage: wt-new [branch] [base-ref]
+# The checkout dir is the branch's final path component, as a sibling of main/.
+# Pure git; the global post-checkout hook links _shared/. Herdr integration
+# lives in .config/herdr/plugins/worktree/wt-new-open, which wraps this script.
+set -eu
+
+common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || {
+    echo "wt-new: not inside a git repository" >&2
+    exit 1
+}
+case "$common" in
+*/.bare) container=$(dirname "$common") ;;
+*)
+    echo "wt-new: $common is not a .bare container layout (see wt-migrate)" >&2
+    exit 1
+    ;;
+esac
+
+branch=${1-}
+if [ -z "$branch" ]; then
+    printf "branch name: " >&2
+    read -r branch
+fi
+[ -n "$branch" ] || { echo "wt-new: branch name required" >&2; exit 1; }
+base=${2-}
+
+dir=${branch##*/}
+path="$container/$dir"
+if [ -e "$path" ]; then
+    echo "wt-new: $path already exists" >&2
+    exit 1
+fi
+
+if git show-ref --verify --quiet "refs/heads/$branch"; then
+    git worktree add "$path" "$branch"
+else
+    git worktree add "$path" -b "$branch" "${base:-HEAD}"
+fi
+echo "wt-new: $path [$branch]"

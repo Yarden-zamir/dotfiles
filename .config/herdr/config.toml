@@ -1,0 +1,152 @@
+onboarding = false
+# Herdr config. Management keys live on cmd; ctrl stays with ZLE widgets.
+# The prefix is for rare actions only (detach, help: cmd+b then ?).
+
+[keys]
+prefix = "cmd+b"
+new_tab = "cmd+t"
+close_pane = "cmd+shift+w"
+split_vertical = "cmd+d"
+split_horizontal = "cmd+shift+d"
+next_tab = "cmd+alt+right"
+previous_tab = "cmd+alt+left"
+next_workspace = "cmd+alt+down"
+previous_workspace = "cmd+alt+up"
+new_workspace = "cmd+alt+t"
+new_worktree = []
+close_workspace = "cmd+alt+w"
+workspace_picker = "cmd+alt+p"
+rename_tab = "cmd+r"
+rename_workspace = "cmd+alt+r"
+goto = "cmd+p"
+focus_pane_left = "cmd+ctrl+left"
+focus_pane_right = "cmd+ctrl+right"
+focus_pane_up = "cmd+ctrl+up"
+focus_pane_down = "cmd+ctrl+down"
+zoom = "cmd+shift+enter"
+toggle_sidebar = "cmd+e"
+
+# Ghostty delivers cmd+1-9 as alt+digit and cmd+alt+1-9 as ctrl+alt+digit
+# (see ghostty config).
+[keys.indexed]
+tabs = "alt"
+workspaces = "ctrl+alt"
+
+# cmd+w archives instead of closing; cmd+shift+w (close_pane above) closes.
+[[keys.command]]
+key = "cmd+w"
+type = "plugin_action"
+command = "yarden.archive.archive"
+description = "archive pane"
+
+[[keys.command]]
+key = "cmd+shift+t"
+type = "plugin_action"
+command = "yarden.archive.restore-last"
+description = "restore archived pane"
+
+# Command palette popup (plugin yarden.palette; Ghostty releases the key).
+[[keys.command]]
+key = "cmd+shift+p"
+type = "plugin_action"
+command = "yarden.palette.open"
+description = "command palette"
+
+# New worktree for the repo of the focused pane (plugin yarden.worktree).
+[[keys.command]]
+key = "cmd+alt+n"
+type = "plugin_action"
+command = "yarden.worktree.new"
+description = "new worktree"
+
+# ZLE transports herdr cannot forward natively: herdr drops the super
+# modifier when it legacy-encodes arrow and delete keys for child panes
+# (xterm_modifier lacks the super bit). Each binding sends the sequence
+# that zle-editor.zsh already listens for. Limit: spawns one shell per
+# keypress; revisit when herdr encodes super in legacy sequences.
+
+[[keys.command]]
+key = "cmd+left"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" pane send-text \"$HERDR_ACTIVE_PANE_ID\" \"$(printf '\\033[1;9D')\""
+description = "zle: line start"
+
+[[keys.command]]
+key = "cmd+right"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" pane send-text \"$HERDR_ACTIVE_PANE_ID\" \"$(printf '\\033[1;9C')\""
+description = "zle: line end"
+
+[[keys.command]]
+key = "cmd+up"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" pane send-text \"$HERDR_ACTIVE_PANE_ID\" \"$(printf '\\033[1;9A')\""
+description = "zle: buffer start"
+
+[[keys.command]]
+key = "cmd+down"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" pane send-text \"$HERDR_ACTIVE_PANE_ID\" \"$(printf '\\033[1;9B')\""
+description = "zle: buffer end"
+
+[[keys.command]]
+key = "cmd+shift+left"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" pane send-text \"$HERDR_ACTIVE_PANE_ID\" \"$(printf '\\033[1;10D')\""
+description = "zle: select to line start"
+
+[[keys.command]]
+key = "cmd+shift+right"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" pane send-text \"$HERDR_ACTIVE_PANE_ID\" \"$(printf '\\033[1;10C')\""
+description = "zle: select to line end"
+
+[[keys.command]]
+key = "cmd+shift+up"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" pane send-text \"$HERDR_ACTIVE_PANE_ID\" \"$(printf '\\033[1;10A')\""
+description = "zle: select to buffer start"
+
+[[keys.command]]
+key = "cmd+shift+down"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" pane send-text \"$HERDR_ACTIVE_PANE_ID\" \"$(printf '\\033[1;10B')\""
+description = "zle: select to buffer end"
+
+[ui]
+agent_panel_sort = "spaces"
+# Long checkout dirs in the space subtitle; default cap is 36.
+sidebar_max_width = 44
+# No modal name prompts on cmd+t/cmd+n; rename later with prefix+, if needed.
+prompt_new_tab_name = false
+prompt_new_workspace_name = false
+
+show_agent_labels_on_pane_borders = false
+status_indicators = "dots"
+
+# Space rows (plugin yarden.spaces): name (" container"), then one row per unique checkout in the space ("dir | container",
+# tokens $checkout1..$checkout6); empty rows collapse.
+[ui.sidebar.spaces]
+rows = [
+  ["state_icon", "workspace"],
+  ["$checkout1", "git_status"],
+  ["$checkout2"],
+  ["$checkout3"],
+  ["$checkout4"],
+  ["$checkout5"],
+  ["$checkout6"],
+]
+
+[ui.toast]
+delivery = "herdr"
+
+[theme]
+name = "catppuccin-latte"
+auto_switch = false
+
+# Native worktree creation is disabled: checkouts must go through
+# bin/wt-new (plugin yarden.worktree, cmd+alt+n), which enforces the
+# bare+container layout.
+# This path cannot exist, so any bypass fails loudly.
+[worktrees]
+directory = "/dev/null/herdr-native-worktrees-disabled"

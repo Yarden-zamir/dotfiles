@@ -1,0 +1,24 @@
+id = "yarden.worktree"
+name = "Worktree"
+version = "0.1.0"
+min_herdr_version = "0.8.2"
+description = "New worktree in the bare+container layout, opened as a space"
+platforms = ["macos", "linux"]
+
+# The only door to worktree creation: bin/wt-new (plain git) wrapped so
+# the checkout opens as a plain space. Native herdr worktree.create is
+# poisoned in config.toml. Bind `new` to cmd+alt+n.
+[[actions]]
+id = "new"
+title = "New worktree"
+contexts = ["workspace", "tab", "pane"]
+command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.worktree --entrypoint new"]
+
+[[panes]]
+id = "new"
+title = "New worktree"
+platforms = ["macos", "linux"]
+placement = "popup"
+width = "60%"
+height = "30%"
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec sh wt-new-open"]
