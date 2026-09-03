@@ -1,6 +1,8 @@
 font-size=20
 theme="Light Owl"
-fullscreen=false
+# Pseudo fullscreen like the iTerm hotkey window: cover the whole
+# screen, Dock and menu bar included, without a macOS Space.
+fullscreen=true
 font-family="JetBrains Mono Nerd Font"
 foreground=#000000
 background=#FFFFFF
@@ -12,97 +14,91 @@ font-thicken=true
 font-thicken-strength=0
 window-colorspace = display-p3
 window-theme=ghostty
-macos-titlebar-style = tabs
+macos-titlebar-style = hidden
 
 shell-integration-features=no-title
 
-macos-non-native-fullscreen = false
+macos-non-native-fullscreen = padded-notch
+window-save-state = never
 macos-option-as-alt = true
 
-# Split creation
-# keybind=cmd+d=new_split:right
-# keybind=cmd+s=new_split:down
-# keybind=cmd+a=new_split:left
+# Every Ghostty window is a herdr client. Raycast launchers override
+# command with --config-entry, so they stay plain windows.
+command = /Users/kcw/.local/bin/herdr
 
-# Route tab-style shortcuts to Zellij with single key events
-keybind=cmd+t=esc:n
-keybind=cmd+shift+t=new_tab
-keybind=cmd+r=esc:r
-keybind=cmd+shift+r=esc:R
-keybind=cmd+w=esc:w
-keybind=cmd+shift+w=close_surface
-keybind=cmd+shift+digit_1=goto_tab:1
-keybind=cmd+shift+digit_2=goto_tab:2
-keybind=cmd+shift+digit_3=goto_tab:3
-keybind=cmd+shift+digit_4=goto_tab:4
-keybind=cmd+shift+digit_5=goto_tab:5
-keybind=cmd+shift+digit_6=goto_tab:6
-keybind=cmd+shift+digit_7=goto_tab:7
-keybind=cmd+shift+digit_8=goto_tab:8
-keybind=cmd+shift+digit_9=goto_tab:9
-keybind=cmd+digit_1=esc:1
-keybind=cmd+digit_2=esc:2
-keybind=cmd+digit_3=esc:3
-keybind=cmd+digit_4=esc:4
-keybind=cmd+digit_5=esc:5
-keybind=cmd+digit_6=esc:6
-keybind=cmd+digit_7=esc:7
-keybind=cmd+digit_8=esc:8
-keybind=cmd+digit_9=esc:9
-keybind=cmd+1=esc:1
-keybind=cmd+2=esc:2
-keybind=cmd+3=esc:3
-keybind=cmd+4=esc:4
-keybind=cmd+5=esc:5
-keybind=cmd+6=esc:6
-keybind=cmd+7=esc:7
-keybind=cmd+8=esc:8
-keybind=cmd+9=esc:9
+# Herdr owns tabs, splits and panes. Unbind Ghostty defaults so the keys
+# reach herdr through the kitty keyboard protocol. Keybinds for herdr and
+# for the ZLE editor live in .config/herdr/config.toml and
+# zshrc/post-init/zle-kitty-protocol.zsh.
+keybind=super+t=unbind
+keybind=super+shift+t=unbind
+keybind=super+shift+p=unbind
+keybind=super+w=unbind
+keybind=super+shift+w=unbind
+keybind=super+alt+w=unbind
+keybind=super+d=unbind
+keybind=super+shift+d=unbind
+keybind=super+b=unbind
+keybind=super+p=unbind
+keybind=super+e=unbind
+keybind=super+r=unbind
+# macOS Ghostty swallows unbound physical super+digits and its esc: binds
+# do not fire for them; send the alt+digit CSI-u press herdr accepts.
+keybind=super+physical:one=text:\x1b[49;3u
+keybind=super+physical:two=text:\x1b[50;3u
+keybind=super+physical:three=text:\x1b[51;3u
+keybind=super+physical:four=text:\x1b[52;3u
+keybind=super+physical:five=text:\x1b[53;3u
+keybind=super+physical:six=text:\x1b[54;3u
+keybind=super+physical:seven=text:\x1b[55;3u
+keybind=super+physical:eight=text:\x1b[56;3u
+keybind=super+physical:nine=text:\x1b[57;3u
+keybind=super+alt+physical:one=text:\x1b[49;7u
+keybind=super+alt+physical:two=text:\x1b[50;7u
+keybind=super+alt+physical:three=text:\x1b[51;7u
+keybind=super+alt+physical:four=text:\x1b[52;7u
+keybind=super+alt+physical:five=text:\x1b[53;7u
+keybind=super+alt+physical:six=text:\x1b[54;7u
+keybind=super+alt+physical:seven=text:\x1b[55;7u
+keybind=super+alt+physical:eight=text:\x1b[56;7u
+keybind=super+alt+physical:nine=text:\x1b[57;7u
+keybind=super+alt+arrow_left=unbind
+keybind=super+alt+arrow_right=unbind
+keybind=super+alt+arrow_up=unbind
+keybind=super+alt+arrow_down=unbind
+keybind=super+ctrl+arrow_left=unbind
+keybind=super+ctrl+arrow_right=unbind
+keybind=super+ctrl+arrow_up=unbind
+keybind=super+ctrl+arrow_down=unbind
+keybind=super+shift+enter=unbind
 
-# Split navigation
-keybind=cmd+shift+d=goto_split:right
-keybind=cmd+shift+s=goto_split:down
-keybind=cmd+shift+a=goto_split:left
+# Editor keys go to ZLE (through herdr), not to Ghostty.
+keybind=super+a=unbind
+keybind=super+c=unbind
+keybind=super+z=unbind
+keybind=super+shift+z=unbind
+keybind=super+arrow_left=unbind
+keybind=super+arrow_right=unbind
+keybind=super+arrow_up=unbind
+keybind=super+arrow_down=unbind
+keybind=super+shift+arrow_left=unbind
+keybind=super+shift+arrow_right=unbind
+keybind=super+shift+arrow_up=unbind
+keybind=super+shift+arrow_down=unbind
+keybind=super+backspace=unbind
+# Herdr has no forward-delete key name; send ^K (delete to line end) directly.
+keybind=super+delete=text:\x0b
+keybind=super+shift+c=copy_to_clipboard
 
-# Global shortcut
+# Global shortcuts. § is a logical codepoint trigger: the physical name
+# intl_backslash validates but does not register as a global hotkey.
+# The bind consumes § system-wide (acceptable: never typed). If § stops
+# to work under a non-Latin input source, that is the known Ghostty
+# logical-trigger quirk; f17 is the fallback.
 keybind=global:f17=toggle_visibility
+keybind=global:§=toggle_visibility
 
-# Copy b§§§ehavior
 copy-on-select=clipboard
-keybind=cmd+c=csi:99~
 
-# Shift+Enter inserts a literal newline (zsh quoted-insert)
-keybind=shift+enter=text:\x16\n
-
-# Line/document movement for zsh
-#keybind=cmd+arrow_left=text:\x01
-#keybind=cmd+arrow_right=text:\x05
-#keybind=cmd+arrow_up=esc:<
-#keybind=cmd+arrow_down=esc:>
-## Copy zsh selection#use cmd+shift+c for terminal selection
-#keybind=cmd+c=csi:99~
-#keybind=cmd+shift+c=copy_to_clipboard:mixed
-
-## Word movement
-#keybind=opt+arrow_left=esc:b
-#keybind=opt+arrow_right=esc:f
-## Selection to line/document bounds (handled by zsh)
-#keybind=cmd+shift+arrow_left=csi:1#10D
-#keybind=cmd+shift+arrow_right=csi:1#10C
-#keybind=cmd+shift+arrow_up=csi:1#10A
-#keybind=cmd+shift+arrow_down=csi:1#10B
-
-## Allow zsh to handle Shift+arrows for selection
-#keybind=shift+arrow_left=unbind
-#keybind=shift+arrow_right=unbind
-#keybind=shift+arrow_up=unbind
-#keybind=shift+arrow_down=unbind
-
-## Deletion
-#keybind=backspace=text:\x7f
-#keybind=delete=csi:3~
-#keybind=opt+backspace=esc:\x7f
-#keybind=opt+delete=esc:d
-#keybind=cmd+backspace=text:\x15
 
 confirm-close-surface=false
