@@ -1,27 +1,340 @@
-#!/bin/sh
-# Command palette popup (plugin pane "palette", cmd+shift+p): fuzzy-pick
-# and run an action. Rows: every installed plugin action (the worktree
-# and archive plugins appear here by themselves) and every socket API
-# method (api-run prompts for parameters from the API schema, with
-# pickers for object ids). Fully dynamic; nothing to maintain here.
-set -eu
+#!/usr/bin/env -S uv run --script --quiet
+# /// script
+# requires-python = ">=3.11"
+# ///
+"""Command palette popup (plugin pane "palette", cmd+shift+p).
 
-tab=$(printf '\t')
-bin=$(cd "$(dirname "$0")" && pwd)
+Rows: every installed plugin action and every socket API method. Each
+row shows the title, the plugin (or `api`), and the bound key. The
+preview pane shows the action description and command, or the method
+parameter schema. Rows used before sort to the top by frecency
+(usage.json in the plugin state dir). Fully dynamic; nothing to
+maintain when plugins or API methods change.
 
-list=$(
-    herdr plugin action list | jq -r '
-        .result.actions[]
-        | "\(.title)  [\(.plugin_id)]\therdr plugin action invoke \(.plugin_id).\(.action_id)"'
-    herdr api schema --json | jq -r --arg bin "$bin" '
-        .schemas.request as $r
-        | $r.oneOf[]
-        | (.properties.method.const // empty) as $m
-        | (.properties.params["$ref"] // "" | split("/")[-1]) as $d
-        | ($r["$defs"][$d].required // []) as $req
-        | "\($m)  (\($req | join(", ")))  [api]\texec \($bin)/api-run \($m)"'
-)
+usage: palette             open the picker and run the selection
+       palette --print     print the selected row id instead of running it
+Stdlib only.
+"""
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import time
+import tomllib
+from dataclasses import dataclass
+from pathlib import Path
 
-sel=$(printf '%s\n' "$list" | fzf --delimiter="$tab" --with-nth=1 \
-    --prompt='action > ' --reverse --no-info) || exit 0
-sh -c "${sel#*"$tab"}"
+import common
+from common import ACCENT, BOLD, DIM, RESET
+
+# Nerd Font glyphs. Limit: Ghostty runs "JetBrains Mono Nerd Font"; swap
+# for ASCII if the palette ever runs in a terminal without it.
+ICON = {"recent": "", "action": "", "api": ""}
+RECENT_LIMIT = 8
+USAGE_LIMIT = 200
+TITLE_WIDTH = 42
+OWN_ACTION = "yarden.palette.open"  # opening the palette from the palette is useless
+
+# Native [keys] actions that an API method reproduces. The method row
+# shows the effective key so the palette doubles as a key cheat sheet.
+METHOD_NATIVE_KEYS = {
+    "tab.create": ["new_tab"], "tab.close": ["close_tab"], "tab.rename": ["rename_tab"],
+    "workspace.create": ["new_workspace"], "workspace.close": ["close_workspace"],
+    "workspace.rename": ["rename_workspace"],
+    "worktree.create": ["new_worktree"], "worktree.open": ["open_worktree"],
+    "worktree.remove": ["remove_worktree"],
+    "pane.split": ["split_vertical", "split_horizontal"], "pane.close": ["close_pane"],
+    "pane.rename": ["rename_pane"], "pane.zoom": ["zoom"],
+    "pane.edit_scrollback": ["edit_scrollback"],
+    "server.reload_config": ["reload_config"],
+}
+
+
+@dataclass
+class Row:
+    id: str        # "action:<plugin>.<action>" or "api:<method>"
+    kind: str      # "action" | "api"
+    title: str
+    group: str     # plugin name or "api"
+    key: str       # bound key text, "" when unbound
+    preview: str
+
+
+# --- keybindings -----------------------------------------------------------
+
+def binding_text(value: object, prefix: str) -> str:
+    keys = value if isinstance(value, list) else [value]
+    shown = [str(k).replace("prefix+", f"{prefix} ") for k in keys if k]
+    return " / ".join(shown)
+
+
+def default_keys() -> dict:
+    """Native [keys] defaults from `herdr --default-config` (commented lines)."""
+    text = subprocess.run([common.HERDR, "--default-config"], capture_output=True,
+                          text=True, check=True).stdout
+    keys: dict = {}
+    in_keys = False
+    for line in text.splitlines():
+        bare = line.strip().removeprefix("#").strip()
+        if bare.startswith("["):
+            in_keys = bare == "[keys]"
+            continue
+        if not in_keys or " = " not in bare:
+            continue
+        try:
+            keys.update(tomllib.loads(bare))
+        except tomllib.TOMLDecodeError:
+            continue  # prose comment, not a binding
+    return keys
+
+
+def key_hints(config: dict) -> dict[str, str]:
+    """Row id -> key text, from [keys] (defaults + config) and [[keys.command]]."""
+    native = {**default_keys(), **config.get("keys", {})}
+    prefix = str(native.get("prefix", "ctrl+b"))
+    hints: dict[str, str] = {}
+    for method, names in METHOD_NATIVE_KEYS.items():
+        text = " / ".join(t for n in names if (t := binding_text(native.get(n, ""), prefix)))
+        if text:
+            hints[f"api:{method}"] = text
+    for entry in native.get("command", []):
+        if entry.get("type") == "plugin_action" and entry.get("command"):
+            row_id = f"action:{entry['command']}"
+            text = binding_text(entry.get("key", ""), prefix)
+            hints[row_id] = " / ".join(t for t in (hints.get(row_id), text) if t)
+    return hints
+
+
+# --- schema rendering ------------------------------------------------------
+
+class Schema:
+    def __init__(self, request_schema: dict):
+        self.defs = request_schema.get("$defs", {})
+        self.methods: dict[str, dict] = {}
+        for entry in request_schema["oneOf"]:
+            method = entry.get("properties", {}).get("method", {}).get("const")
+            if method:
+                self.methods[method] = entry["properties"].get("params", {})
+
+    def deref(self, node: dict) -> dict:
+        while "$ref" in node:
+            node = self.defs[node["$ref"].rsplit("/", 1)[-1]]
+        return node
+
+    def type_label(self, node: dict, depth: int = 0) -> str:
+        name = node.get("$ref", "").rsplit("/", 1)[-1]
+        node = self.deref(node)
+        if "const" in node:
+            return json.dumps(node["const"])
+        if "enum" in node:
+            return " | ".join(str(v) for v in node["enum"])
+        variants = node.get("oneOf") or node.get("anyOf")
+        if variants:
+            present = [v for v in variants if self.deref(v).get("type") != "null"]
+            labels = [self.type_label(v, depth + 1) for v in present]
+            suffix = "?" if len(present) < len(variants) else ""
+            return " | ".join(dict.fromkeys(labels)) + suffix  # dedupe, keep order
+        types = node.get("type")
+        types = types if isinstance(types, list) else [types or "any"]
+        base = [t for t in types if t != "null"]
+        suffix = "?" if "null" in types else ""
+        if base == ["object"]:
+            props = node.get("properties", {})
+            tag = props.get("type", {}).get("const")  # tagged variant, e.g. focus_pane
+            if tag:
+                inner = f"{tag}({', '.join(k for k in props if k != 'type')})"
+            elif props:
+                inner = name or "{" + ", ".join(props) + "}"
+            elif isinstance(node.get("additionalProperties"), dict):
+                inner = "{string: " + self.type_label(node["additionalProperties"], depth + 1) + "}"
+            else:
+                inner = name or "object"
+            return inner + suffix
+        if base == ["array"]:
+            return "[" + self.type_label(node.get("items", {}), depth + 1) + "]" + suffix
+        return "/".join(base) + suffix
+
+    def describe(self, method: str, key: str) -> str:
+        params = self.deref(self.methods[method])
+        props = params.get("properties", {})
+        required = params.get("required", [])
+        lines = [f"{BOLD}{method}{RESET}" + (f"   {ACCENT}{key}{RESET}" if key else "")]
+        if desc := params.get("description"):
+            lines += ["", desc]
+        for label, names in (("required", required), ("optional", [p for p in props if p not in required])):
+            if not names:
+                continue
+            lines += ["", f"{DIM}{label}{RESET}"]
+            width = max(len(n) for n in names)
+            for name in names:
+                node = props[name]
+                text = self.type_label(node)
+                meta = {**self.deref(node), **node}  # default/description sit beside a $ref
+                if "default" in meta:
+                    text += f" = {json.dumps(meta['default'])}"
+                if field_desc := meta.get("description"):
+                    text += f"\n{'':{width + 4}}{DIM}{field_desc}{RESET}"
+                lines.append(f"  {name:<{width}}  {text}")
+        if not props:
+            lines += ["", f"{DIM}no parameters{RESET}"]
+        return "\n".join(lines)
+
+
+# --- rows ------------------------------------------------------------------
+
+def action_rows(hints: dict[str, str]) -> list[Row]:
+    names = {p["plugin_id"]: p["name"] for p in common.call("plugin.list")["plugins"]}
+    rows = []
+    for action in common.call("plugin.action.list")["actions"]:
+        qualified = f"{action['plugin_id']}.{action['action_id']}"
+        if qualified == OWN_ACTION:
+            continue
+        row_id = f"action:{qualified}"
+        key = hints.get(row_id, "")
+        preview = [f"{BOLD}{action['title']}{RESET}" + (f"   {ACCENT}{key}{RESET}" if key else ""),
+                   f"{DIM}{qualified}{RESET}", "",
+                   action.get("description") or f"{DIM}no description in the plugin manifest{RESET}",
+                   "", f"{DIM}contexts{RESET}  {', '.join(action.get('contexts', [])) or 'any'}",
+                   f"{DIM}command{RESET}   {' '.join(action['command'])}"]
+        rows.append(Row(row_id, "action", action["title"],
+                        names.get(action["plugin_id"], action["plugin_id"]), key, "\n".join(preview)))
+    rows.sort(key=lambda r: (r.group, r.title))
+    return rows
+
+
+def api_rows(schema: Schema, hints: dict[str, str]) -> list[Row]:
+    rows = []
+    for method in schema.methods:
+        row_id = f"api:{method}"
+        key = hints.get(row_id, "")
+        rows.append(Row(row_id, "api", method, "api", key, schema.describe(method, key)))
+    return rows
+
+
+# --- usage (frecency) ------------------------------------------------------
+
+def usage_path() -> Path:
+    return common.state_dir() / "usage.json"
+
+
+def usage_load() -> dict[str, dict]:
+    try:
+        data = json.loads(usage_path().read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def usage_record(row_id: str) -> None:
+    usage = usage_load()
+    entry = usage.get(row_id, {"count": 0, "last": 0})
+    usage[row_id] = {"count": int(entry.get("count", 0)) + 1, "last": time.time()}
+    if len(usage) > USAGE_LIMIT:  # drop the coldest entries
+        for stale in sorted(usage, key=lambda k: frecency(usage[k]))[:len(usage) - USAGE_LIMIT]:
+            del usage[stale]
+    tmp = usage_path().with_suffix(".tmp")
+    tmp.write_text(json.dumps(usage))
+    os.replace(tmp, usage_path())
+
+
+def frecency(entry: dict) -> float:
+    """Use count, halved for every week since the last use."""
+    age_days = max(0.0, time.time() - float(entry.get("last", 0))) / 86400
+    return int(entry.get("count", 0)) * 0.5 ** (age_days / 7)
+
+
+def ordered(rows: list[Row]) -> list[tuple[str, Row]]:
+    """(icon, row) pairs: frecent rows first, then the rest in their own order."""
+    by_id = {r.id: r for r in rows}
+    usage = usage_load()
+    hot = sorted((i for i in usage if i in by_id), key=lambda i: -frecency(usage[i]))[:RECENT_LIMIT]
+    out = [(ICON["recent"], by_id[i]) for i in hot]
+    out += [(ICON[r.kind], r) for r in rows if r.id not in hot]
+    return out
+
+
+# --- picker and dispatch ---------------------------------------------------
+
+def display(icon: str, row: Row) -> str:
+    title = row.title if len(row.title) <= TITLE_WIDTH else row.title[:TITLE_WIDTH - 1] + "…"
+    key = f"  {ACCENT}{row.key}{RESET}" if row.key else ""
+    return f"{icon} {title:<{TITLE_WIDTH}} {DIM}{row.group}{RESET}{key}"
+
+
+def pick(rows: list[Row], preview_dir: Path) -> Row | None:
+    lines = []
+    for n, (icon, row) in enumerate(ordered(rows)):
+        path = preview_dir / f"{n}.txt"
+        path.write_text(row.preview)
+        lines.append(f"{row.id}\t{display(icon, row)}\t{path}")
+    cmd = common.fzf_args("") + [
+        "--delimiter=\t", "--with-nth=2", "--tiebreak=begin,index",
+        "--header=enter run · ctrl-/ preview · esc close",
+        "--preview=cat {3}", "--preview-window=right,45%,wrap,border-left",
+        "--bind=ctrl-/:toggle-preview",
+    ]
+    proc = subprocess.run(cmd, input="\n".join(lines), capture_output=True, text=True)
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return None
+    chosen = proc.stdout.strip().split("\t", 1)[0]
+    return next(r for r in rows if r.id == chosen)
+
+
+def invocation_context(schema: Schema) -> dict:
+    """Forward the popup's plugin context so the action targets the pane the user was in."""
+    allowed = schema.deref({"$ref": "#/schemas/request/$defs/PluginInvocationContext"}).get("properties", {})
+    raw = os.environ.get("HERDR_PLUGIN_CONTEXT_JSON") or "{}"
+    try:
+        context = json.loads(raw)
+    except json.JSONDecodeError:
+        context = {}
+    context = {k: v for k, v in context.items() if k in allowed and v is not None}
+    context["invocation_source"] = "palette"
+    return context
+
+
+def invoke_action(qualified: str, schema: Schema) -> None:
+    """Invoke and, if the command fails quickly, keep the popup open with its stderr."""
+    result = common.call("plugin.action.invoke",
+                         {"action_id": qualified, "context": invocation_context(schema)})
+    log = result.get("log") or {}
+    if not log.get("log_id"):
+        return
+    for _ in range(10):  # ~1.5 s: enough for a shell action that exits at once
+        time.sleep(0.15)
+        logs = common.call("plugin.log.list", {"plugin_id": log["plugin_id"], "limit": 20})
+        entry = next((l for l in logs.get("logs", []) if l.get("log_id") == log["log_id"]), None)
+        if entry is None or not entry.get("finished_unix_ms"):
+            continue
+        if entry.get("status") == "failed":
+            print(f"{qualified} failed (exit {entry.get('exit_code')})\n{entry.get('stderr', '')}")
+            input("press enter to close")
+        return
+
+
+def main() -> None:
+    print_only = sys.argv[1:] == ["--print"]
+    if sys.argv[1:] and not print_only:
+        sys.exit("usage: palette [--print]")
+    request_schema = json.loads(subprocess.run(
+        [common.HERDR, "api", "schema", "--json"], capture_output=True, text=True,
+        check=True).stdout)["schemas"]["request"]
+    schema = Schema(request_schema)
+    hints = key_hints(common.herdr_config())
+    rows = action_rows(hints) + api_rows(schema, hints)
+    with tempfile.TemporaryDirectory(prefix="herdr-palette-") as tmp:
+        row = pick(rows, Path(tmp))
+    if row is None:
+        return
+    if print_only:
+        print(row.id)
+        return
+    usage_record(row.id)
+    if row.kind == "api":
+        os.execv(common.PLUGIN_DIR / "api-run", ["api-run", row.title])
+    invoke_action(row.id.removeprefix("action:"), schema)
+
+
+if __name__ == "__main__":
+    main()

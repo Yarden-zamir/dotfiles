@@ -1,6 +1,6 @@
 id = "yarden.palette"
 name = "Palette"
-version = "0.2.0"
+version = "0.3.0"
 min_herdr_version = "0.8.2"
 description = "Command palette over every plugin action and socket API method"
 platforms = ["macos", "linux"]
@@ -13,12 +13,14 @@ platforms = ["macos", "linux"]
 [[actions]]
 id = "open"
 title = "Open command palette"
+description = "Fuzzy-run any plugin action or socket API method; shows bound keys and a schema preview"
 contexts = ["workspace", "tab", "pane"]
 command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.palette --entrypoint palette"]
 
 [[actions]]
 id = "show-output"
 title = "Show last palette output"
+description = "Page the JSON response of the last API method run from the palette"
 contexts = ["workspace", "tab", "pane"]
 command = ["sh", "show-output.sh"]
 
@@ -27,9 +29,9 @@ id = "palette"
 title = "Command palette"
 platforms = ["macos", "linux"]
 placement = "popup"
-width = "60%"
-height = "50%"
-command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec sh palette"]
+width = "80%"
+height = "60%"
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec ./palette"]
 
 [[panes]]
 id = "output"

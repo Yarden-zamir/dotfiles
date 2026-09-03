@@ -10,21 +10,21 @@ workspace, and tab from the popup env are the top rows), fzf for enums,
 booleans, and oneOf variants, plain input for strings and numbers.
 Optional fields are offered once as a multi-select. The response is
 piped to the `output` shell command from palette.toml next to it (default:
-`jq . | pbcopy`). Esc in any picker aborts.
+a toast that opens the show-output popup). Esc in any picker aborts.
 
 Used by the palette popup, which lists every API method. Stdlib only.
 """
 import json
 import os
-import socket
 import subprocess
 import sys
 import tomllib
 from pathlib import Path
 
-HERDR = os.path.expanduser("~/.local/bin/herdr")
-SOCK = os.path.expanduser("~/.config/herdr/herdr.sock")
-CONFIG = Path(__file__).resolve().parent / "palette.toml"
+import common
+
+HERDR = common.HERDR
+CONFIG = common.PLUGIN_DIR / "palette.toml"
 DEFAULT_OUTPUT = ("herdr notification show \"$API_METHOD · $API_STATUS\" "
                   "--body \"$API_SUMMARY\" --plugin-action yarden.palette.show-output")
 
@@ -45,7 +45,7 @@ def herdr(*args: str) -> dict:
 
 
 def fzf(rows: list[str], prompt: str, multi: bool = False) -> list[str]:
-    cmd = ["fzf", "--reverse", "--no-info", f"--prompt={prompt} > "]
+    cmd = common.fzf_args(f"{prompt} ›")
     if multi:
         cmd += ["--multi", "--bind", "enter:accept", "--header=tab marks, enter confirms, esc skips"]
     proc = subprocess.run(cmd, input="\n".join(rows), capture_output=True, text=True)
@@ -95,8 +95,8 @@ def pick_id(kind: str, free_text: bool = False) -> str:
                  for a in herdr("agent", "list").get("agents", [])]
     if free_text:  # rows are suggestions; a typed non-matching query passes through
         proc = subprocess.run(
-            ["fzf", "--reverse", "--no-info", f"--prompt={kind} > ", "--print-query",
-             "--header=enter picks the row, or passes your typed text through"],
+            common.fzf_args(f"{kind} ›") + [
+                "--print-query", "--header=enter picks the row, or passes your typed text through"],
             input="\n".join(rows), capture_output=True, text=True)
         lines = proc.stdout.splitlines()
         if proc.returncode == 0 and len(lines) > 1:
@@ -222,15 +222,7 @@ def main() -> None:
     walker = Walker(schema.get("$defs", {}))
     params = walker.prompt(entry["properties"].get("params", {"type": "object"}), "params")
 
-    with socket.socket(socket.AF_UNIX) as sock:
-        sock.connect(SOCK)
-        sock.sendall((json.dumps(
-            {"id": "palette", "method": method, "params": params}) + "\n").encode())
-        sock.shutdown(socket.SHUT_WR)
-        chunks = []
-        while data := sock.recv(65536):
-            chunks.append(data)
-    response = b"".join(chunks)
+    response = common.call_raw(method, params)
 
     # Save every response so the yarden.palette show-output popup can page
     # it later (the default output command sends a toast that opens it).
