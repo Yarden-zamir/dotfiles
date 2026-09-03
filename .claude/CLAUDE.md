@@ -49,7 +49,7 @@ Make sure to parallelize tasks and runs where task dependencies allow it
 
 Worktree workflow preferences:
 - Every repo is a container directory holding `.bare/` (the git dir), `_shared/` (local-only files), and one folder per checked-out branch: `main/`, plus e.g. `qcdi-1234-auth/` for branch `feat/api/qcdi-1234-auth`.
-- Use the `worktree-repo` skill whenever creating a new project, cloning, converting an existing clone, or adding a worktree. Convert an existing clone with `$DOTFILES/bin/wt-migrate` (dry-run by default, `--yes` to apply); nothing in `bin/` is on `$PATH`, so call it by path.
+- Use the `worktree-repo` skill whenever creating a new project, cloning, converting an existing clone, or adding a worktree. Convert an existing clone with `$DOTFILES/bin/wt-migrate` (dry-run by default, `--yes` to apply). Add a worktree with `$DOTFILES/bin/wt-new <branch> [base]` (plain git; in herdr, cmd+alt+n runs the wrapper that also opens it as a workspace). Nothing in `bin/` is on `$PATH`, so call these by path.
 - Local-only files (secrets, env) live in `_shared/`, mirroring their path in the worktree. A global `post-checkout` hook symlinks them in on every checkout; do not create those symlinks by hand.
 
 Commit and branch preferences:
