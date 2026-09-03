@@ -166,9 +166,5 @@ shift-down = ['volume set 0', 'mode main']
 
 
 [[on-window-detected]]
-if.app-name-regex-substring = 'iTerm2'
-run = 'layout floating'
-
-[[on-window-detected]]
 if.app-name-regex-substring = 'finder'
 run = 'layout floating'

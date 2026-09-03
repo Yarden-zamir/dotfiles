@@ -52,17 +52,11 @@ are never duplicated across worktrees or committed.
 3. Open a new shell. `.zshenv` → `.zprofile` → `.zshrc` source their phase
    directories and everything loads from there.
 
-4. On macOS, open iTerm with the profile that should provide rich local editing,
-   then install and verify the managed profile setup:
-
-   ```sh
-   make iterm-setup
-   ```
-
-   This requires `curl`, iTerm, and `uv`. It installs the checksum-pinned stable
-   zsh integration, applies the managed key transports to the invoking profile,
-   creates the `ZLE Portable` dynamic profile, and verifies one full automatic-
-   switching round trip with an isolated SSH process.
+4. On macOS, open Ghostty. Ghostty runs `herdr` as its command, and the ZLE
+   editor negotiates its key transports with the kitty keyboard protocol
+   (`zshrc/post-init/zle-kitty-protocol.zsh`). No terminal profile setup is
+   required. Terminal config lives in `.config/ghostty/config` and
+   `.config/herdr/config.toml`.
 
 Runtime state (`.claude`, `.agents`, `.config/codex`, …) is stowed as folded
 symlinks so it accumulates inside the `main/` worktree; `.gitignore` keeps that
@@ -99,55 +93,18 @@ Placement rule: add new behavior as a focused file in the correct phase director
 
 Frequently used optional tools in this setup include `gh`, `fzf`, `bat`, `rg`, `fd`, `atuin`, `starship`, and `cargo`.
 
-## iTerm editor profiles
+## Terminal key transports
 
-`bin/iterm-zle-profile-sync` is the source of truth for terminal key transports
-and the generated portable profile. Run it from an iTerm session using the rich
-local profile you want to manage.
+`zshrc/post-init/zle-kitty-protocol.zsh` is the source of truth for terminal
+key transports. It loads only inside Ghostty or a herdr pane. ZLE pushes the
+kitty keyboard protocol disambiguate flag while it edits and pops it before a
+command runs, so Command and modified keys arrive as CSI-u sequences. Remote
+shells that load these dotfiles negotiate the same way through `ssh`, so no
+per-host profile switching is needed. `tests/zle-editor.zsh` exercises the
+widgets with `zsh/zpty` and does not need a terminal emulator.
 
-The rich profile contract:
-
-- Preserve unrelated profile settings and keyboard mappings.
-- Add the Command, Option, Shift, and Control transports consumed by the ZLE
-  editor, OpenCode, Claude Code, Navgator, and Sessiongator.
-- Keep `Ctrl-Enter` as the multiline editor transport.
-- Keep physical `Ctrl-K` on standard ZLE line-end deletion, with no iTerm
-  override or VS Code widget.
-- Disable iTerm's deprecated global CSI-u mode.
-
-The generated `ZLE Portable` contract:
-
-- Inherit appearance and non-keyboard settings from the rich profile.
-- Remove Command-modified mappings, `Ctrl-Enter`, and physical `Ctrl-K`
-  overrides while retaining conservative Control, Option, and Shift transports.
-- Switch non-sticky for foreground `ssh`, `mosh`, `vi`, `vim`, `nvim`, and
-  `tmux` jobs, then revert when the job exits.
-- Disable inherited hotkey behavior and global CSI-u mode.
-
-Shell integration is installed by `bin/iterm-shell-integration-install` and
-loaded from `~/.iterm2_shell_integration.zsh` by
-`zshrc/post-init/iterm-shell-integration.zsh`. The installer accepts the two
-known-compatible version-14 checksums, downloads the pinned official copy for a
-fresh or incompatible installation, verifies its checksum, and backs up an
-incompatible existing copy before replacement. Existing shells need
-`exec zsh -l` after this configuration changes.
-
-Profile commands:
-
-```sh
-iterm-zle-profile-sync --dry-run   # inspect drift
-iterm-zle-profile-sync --apply     # apply with verification and rollback
-iterm-zle-profile-sync --verify-aps # isolated SSH switch and reversion test
-make iterm-setup                   # apply and run the APS test
-make iterm-verify                  # run only the APS test
-```
-
-The APS verifier checks the complete generated rule/profile contract and tests
-the shared switching mechanism end to end with `ssh`; it does not launch every
-matched program. The dynamic profile lives at
-`~/Library/Application Support/iTerm2/DynamicProfiles/zle-portable.json` and is
-recreated by `--apply`. Failed synchronization restores the prior shared,
-session-local, and dynamic-profile state.
+iTerm2 stays installed as a fallback application. No file in this repo depends
+on it.
 
 ## Stow workflow
 

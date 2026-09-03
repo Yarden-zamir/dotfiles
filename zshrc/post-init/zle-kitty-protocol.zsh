@@ -1,5 +1,5 @@
-# Kitty keyboard protocol for ZLE. Replaces the iTerm profile transports
-# (bin/iterm-zle-profile-sync) for Ghostty and herdr panes.
+# Kitty keyboard protocol for ZLE. Provides the key transports for Ghostty
+# and herdr panes; no terminal profile is needed.
 #
 # ZLE pushes the disambiguate flag while it edits and pops it before a
 # command runs. Terminals and herdr then deliver Command and modified keys

@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # Integration tests for zshrc/post-init/zle-editor.zsh.
-# Uses zsh/zpty to exercise real ZLE widgets without depending on iTerm.
+# Uses zsh/zpty to exercise real ZLE widgets without depending on a terminal emulator.
 
 emulate -L zsh
 setopt errexit nounset pipefail
