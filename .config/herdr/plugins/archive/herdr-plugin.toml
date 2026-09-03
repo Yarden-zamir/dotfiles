@@ -1,24 +1,62 @@
 id = "yarden.archive"
 name = "Archive"
-version = "0.1.0"
-min_herdr_version = "0.8.0"
+version = "0.2.0"
+min_herdr_version = "0.8.2"
 description = "Move panes to an archive workspace instead of closing them"
 platforms = ["macos", "linux"]
+
+# archive.py holds the whole logic; see its docstring. Config knobs live in
+# $HERDR_PLUGIN_CONFIG_DIR/archive.toml (label, max_age_days, toasts,
+# focus_on_restore). Toast clicks need the fork build (notification action).
+
+# Reap old panes and move the archive workspace to the sidebar end.
+[[startup]]
+command = ["uv", "run", "--script", "--quiet", "archive.py", "startup"]
+
+# Keep the archive workspace last when spaces are created or reordered.
+[[events]]
+on = "workspace.created"
+command = ["uv", "run", "--script", "--quiet", "archive.py", "pin-last"]
+
+[[events]]
+on = "workspace.moved"
+command = ["uv", "run", "--script", "--quiet", "archive.py", "pin-last"]
 
 [[actions]]
 id = "archive"
 title = "Archive pane"
 contexts = ["pane"]
-command = ["uv", "run", "--script", "archive.py", "archive"]
+command = ["uv", "run", "--script", "--quiet", "archive.py", "archive"]
 
 [[actions]]
 id = "restore-last"
 title = "Restore last archived pane"
 contexts = ["workspace", "tab", "pane"]
-command = ["uv", "run", "--script", "archive.py", "restore-last"]
+command = ["uv", "run", "--script", "--quiet", "archive.py", "restore-last"]
+
+[[actions]]
+id = "restore-pick"
+title = "Restore an archived pane (pick)"
+contexts = ["workspace", "tab", "pane"]
+command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.archive --entrypoint pick"]
 
 [[actions]]
 id = "clear"
 title = "Close all archived panes"
 contexts = ["workspace", "tab", "pane"]
-command = ["uv", "run", "--script", "archive.py", "clear"]
+command = ["uv", "run", "--script", "--quiet", "archive.py", "clear"]
+
+[[actions]]
+id = "reap"
+title = "Close archived panes older than max_age_days"
+contexts = ["workspace", "tab", "pane"]
+command = ["uv", "run", "--script", "--quiet", "archive.py", "reap"]
+
+[[panes]]
+id = "pick"
+title = "Restore archived pane"
+platforms = ["macos", "linux"]
+placement = "popup"
+width = "60%"
+height = "50%"
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec uv run --script --quiet archive.py restore-pick"]
