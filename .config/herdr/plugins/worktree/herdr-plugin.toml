@@ -11,6 +11,7 @@ platforms = ["macos", "linux"]
 [[actions]]
 id = "new"
 title = "New worktree"
+description = "Create a branch worktree with bin/wt-new from the focused pane cwd and open it as a space"
 contexts = ["workspace", "tab", "pane"]
 command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.worktree --entrypoint new"]
 
