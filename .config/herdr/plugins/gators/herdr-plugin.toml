@@ -1,0 +1,42 @@
+id = "yarden.gators"
+name = "Gators"
+version = "0.1.0"
+min_herdr_version = "0.8.2"
+description = "navgator projects and sessiongator sessions as herdr popups"
+platforms = ["macos", "linux"]
+
+# `projects`: navgator with the herdr actions only (Enter opens the action
+# picker). `sessions`: sessiongator; Enter opens the session as a tab in
+# its cwd or focuses the pane that already runs it. Both need the release
+# binaries built by gh_source (zshrc/init/{navgator,sessiongator}.zsh).
+# sessiongator-resume.sh lives on the sessiongator main checkout once
+# branch feat/herdr is merged.
+[[actions]]
+id = "projects"
+title = "Open project in herdr (navgator)"
+contexts = ["workspace", "tab", "pane"]
+command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.gators --entrypoint projects"]
+
+[[actions]]
+id = "sessions"
+title = "Resume AI session (sessiongator)"
+contexts = ["workspace", "tab", "pane"]
+command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.gators --entrypoint sessions"]
+
+[[panes]]
+id = "projects"
+title = "Projects"
+platforms = ["macos", "linux"]
+placement = "popup"
+width = "70%"
+height = "60%"
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec \"$HOME/Github/navgator/main/target/release/navgator\" --config-entry 'actions.picker=[\"open-herdr\",\"open-claude-herdr\",\"open-opencode-herdr\",\"open-vs-code\",\"open-intellij\",\"open-github-desktop\",\"open-repo-online\",\"open-finder\"]' --config-entry 'keybindings.navigator.enter=\"actions\"'"]
+
+[[panes]]
+id = "sessions"
+title = "AI sessions"
+platforms = ["macos", "linux"]
+placement = "popup"
+width = "70%"
+height = "60%"
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec sh \"$HOME/Github/sessiongator/main/scripts/sessiongator-resume.sh\" herdr-pick"]
