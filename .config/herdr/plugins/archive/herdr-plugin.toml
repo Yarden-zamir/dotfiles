@@ -25,30 +25,35 @@ command = ["uv", "run", "--script", "--quiet", "archive.py", "pin-last"]
 [[actions]]
 id = "archive"
 title = "Archive pane"
+description = "Move the focused pane to the archive space instead of closing it."
 contexts = ["pane"]
 command = ["uv", "run", "--script", "--quiet", "archive.py", "archive"]
 
 [[actions]]
 id = "restore-last"
 title = "Restore last archived pane"
+description = "Move the newest archived pane back to its origin space."
 contexts = ["workspace", "tab", "pane"]
 command = ["uv", "run", "--script", "--quiet", "archive.py", "restore-last"]
 
 [[actions]]
 id = "restore-pick"
 title = "Restore an archived pane (pick)"
+description = "Pick an archived pane in a popup and move it back to its origin space."
 contexts = ["workspace", "tab", "pane"]
 command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.archive --entrypoint pick"]
 
 [[actions]]
 id = "clear"
 title = "Close all archived panes"
+description = "Close the archive space and every pane in it."
 contexts = ["workspace", "tab", "pane"]
 command = ["uv", "run", "--script", "--quiet", "archive.py", "clear"]
 
 [[actions]]
 id = "reap"
 title = "Close archived panes older than max_age_days"
+description = "Close archived panes older than max_age_days from archive.toml."
 contexts = ["workspace", "tab", "pane"]
 command = ["uv", "run", "--script", "--quiet", "archive.py", "reap"]
 
