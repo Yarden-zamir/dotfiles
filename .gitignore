@@ -38,3 +38,14 @@
 /zshenv/init/shelf/
 /zshrc/init/*.secret.zsh
 zshenv/init/sde.zsh
+
+# herdr runtime state. On a host where stow folds .config/herdr into one
+# symlink (the VPS), the server writes these inside the repo checkout.
+/.config/herdr/plugins/github/
+/.config/herdr/plugins/config/
+/.config/herdr/plugins.json
+/.config/herdr/.plugins.lock
+/.config/herdr/session.json
+/.config/herdr/sessions/
+/.config/herdr/*.log
+/.config/herdr/*.sock
