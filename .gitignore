@@ -38,6 +38,10 @@
 /zshenv/init/shelf/
 /zshrc/init/*.secret.zsh
 zshenv/init/sde.zsh
+.claude/skills/arch-001-detailed-design-author/references/grill-me.md
+.claude/skills/arch-001-detailed-design-author/SKILL.md
+.claude/skills/gateway-host-setup/SKILL.md
+.claude/skills/install-practice-card/SKILL.md
 
 # herdr runtime state. On a host where stow folds .config/herdr into one
 # symlink (the VPS), the server writes these inside the repo checkout.
@@ -49,3 +53,4 @@ zshenv/init/sde.zsh
 /.config/herdr/sessions/
 /.config/herdr/*.log
 /.config/herdr/*.sock
+.claude/skills/sde
