@@ -1,0 +1,392 @@
+{
+  "git.enableSmartCommit": true,
+  "explorer.confirmDragAndDrop": false,
+  "cSpell.userWords": [
+    "actionables",
+    "Agentctl",
+    "asyncapi",
+    "autofetch",
+    "automl",
+    "belayer",
+    "checkpointer",
+    "chunksize",
+    "configurator",
+    "DATALAKE",
+    "DATAMART",
+    "datasources",
+    "DIAAS",
+    "direnv",
+    "dotfiles",
+    "Elven",
+    "enigmatica",
+    "frictionification",
+    "gamemode",
+    "Gameplay",
+    "hackernews",
+    "isin",
+    "iterrows",
+    "lakehouse",
+    "langchain",
+    "Menlo",
+    "minimalistic",
+    "modpack",
+    "Modrinth",
+    "nats",
+    "nixos",
+    "northiwind",
+    "northwind",
+    "nurdle",
+    "opensearch",
+    "persistentapps",
+    "polybase",
+    "Precog",
+    "proto",
+    "pytest",
+    "QCDI",
+    "qlik",
+    "quickuse",
+    "Rebalance",
+    "recentapps",
+    "reddis",
+    "repsrc",
+    "sderc",
+    "sdes",
+    "shellcheck",
+    "stopwords",
+    "substate",
+    "systest",
+    "testconnection",
+    "tomlkit",
+    "trumpcard",
+    "Typer",
+    "upsolver",
+    "upsovler",
+    "uvicorn",
+    "Vallack",
+    "waseem",
+    "Worktree",
+    "Yarden"
+  ],
+  "git.autofetch": true,
+  "editor.suggest.showStatusBar": true,
+  "editor.lineNumbers": "on",
+  "explorer.confirmDelete": false,
+  "security.workspace.trust.untrustedFiles": "open",
+  "editor.fontSize": 14,
+  "terminal.integrated.fontFamily": "MesloLGS NF",
+  "editor.inlineSuggest.enabled": true,
+  "editor.acceptSuggestionOnEnter": "on",
+  "github.copilot.enable": {
+    "*": true,
+    "plaintext": true,
+    "markdown": true,
+    "scminput": false,
+    "yaml": false,
+    "javascript": true
+  },
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 4,
+  "gitlens.advanced.messages": {
+    "suppressLineUncommittedWarning": true,
+    "suppressIntegrationRequestTimedOutWarning": true
+  },
+  "task.allowAutomaticTasks": "on",
+  "task.problemMatchers.neverPrompt": {
+    "shell": true
+  },
+  "python.analysis.inlayHints.pytestParameters": true,
+  "python.analysis.inlayHints.functionReturnTypes": true,
+  "python.analysis.packageIndexDepths": [
+    {
+      "name": "",
+      "depth": 10,
+      "includeAllSymbols": true
+    }
+  ],
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.formatOnSaveMode": "modificationsIfAvailable",
+  },
+  "git.openRepositoryInParentFolders": "always",
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "markdown.suggest.paths.includeWorkspaceHeaderCompletions": "onSingleOrDoubleHash",
+  "markdown.validate.enabled": true,
+  "memo.links.preview.imageMaxHeight": 100,
+  "linter-actionlint.config": {
+    "capabilities": [],
+    "command": [
+      "actionlint",
+      "-format",
+      "'{{json .}}'",
+      "--stdin-filename",
+      "$file",
+      "-"
+    ],
+    "configFiles": [
+      "actionlint.yaml",
+      "actionlint.yml"
+    ],
+    "enabled": true,
+    "languages": [
+      "yaml",
+      "github-actions-workflow",
+      "github actions workflow",
+      "github-actions"
+    ],
+    "name": "actionlint",
+    "url": "https://github.com/rhysd/actionlint"
+  },
+  "direnv.restart.automatic": true,
+  "direnv.status.showChangesCount": true,
+  //   "emeraldwalk.runonsave": {
+  //     "commands": [
+  //       {
+  //         "match": ".yaml",
+  //         "cmd": "say $(basename ${folder})"
+  //       }
+  //     ]
+  //   },
+  "search.exclude": {
+    ".direnv/**": true
+  },
+  "terminal.integrated.enableMultiLinePasteWarning": "never",
+  "prettier.proseWrap": "always",
+  "prettier.quoteProps": "consistent",
+  "extensions.ignoreRecommendations": true,
+  "terminal.external.osxExec": "Ghostty.app",
+  "editor.multiCursorModifier": "ctrlCmd",
+  "editor.multiCursorLimit": 100000,
+  "[sql]": {
+    "editor.defaultFormatter": "adpyke.vscode-sql-formatter"
+  },
+  "vs-kubernetes": {
+    "vs-kubernetes.crd-code-completion": "enabled"
+  },
+  "direnv.path.executable": "/opt/homebrew/bin/direnv",
+  "liveshare.accessibility.voiceEnabled": false,
+  "go.toolsManagement.autoUpdate": true,
+  "[proto3]": {
+    "editor.defaultFormatter": "kalifun.vscode-proto3-tools"
+  },
+  "proto3.clang-format_BasedOnStyle": "LLVM",
+  "errorLens.delayMode": "debounce",
+  "python.analysis.diagnosticMode": "workspace",
+  "protolint.path": "protolint",
+  "protolint.configPath": "protolint.yaml",
+  "shellcheck.enableQuickFix": true,
+  "shellcheck.useWorkspaceRootAsCwd": true,
+  "errorLens.excludeBySource": [
+    "cSpell"
+  ],
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format",
+    "editor.formatOnSave": true,
+  },
+  "shellcheck.ignorePatterns": {
+    "**/*.zsh": false,
+    "**/*.zsh*": false,
+    "**/.git/*.sh": false,
+    "**/folder/**/*.sh": false
+  },
+  "editor.fontLigatures": "'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06', 'ss07', 'ss08', 'calt', 'dlig'",
+  "editor.accessibilitySupport": "off",
+  "githubPullRequests.pullBranch": "never",
+  "supermaven.enable": {
+    "*": true
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  },
+  "supermaven.allowGitignore": true,
+  "workbench.editor.empty.hint": "hidden",
+  "github.copilot.editor.enableAutoCompletions": true,
+  "gitlens.codeLens.scopes": [
+    "document",
+    "containers"
+  ],
+  "diffEditor.ignoreTrimWhitespace": true,
+  "explorer.confirmPasteNative": false,
+  "shellcheck.exclude": [
+    "1008"
+  ],
+  "editor.minimap.enabled": false,
+  "editor.cursorSurroundingLines": 8,
+  "diffEditor.experimental.showMoves": true,
+  "editor.minimap.autohide": "mouseover",
+  "editor.quickSuggestions": {
+    "comments": "on",
+    "strings": "on"
+  },
+  "editor.suggest.localityBonus": true,
+  "editor.suggest.matchOnWordStartOnly": false,
+  "editor.suggest.preview": true,
+  "workbench.commandPalette.experimental.suggestCommands": true,
+  "workbench.commandPalette.history": 90,
+  "workbench.commandPalette.preserveInput": true,
+  "workbench.layoutControl.type": "menu",
+  "workbench.layoutControl.enabled": false,
+  "workbench.list.smoothScrolling": true,
+  "workbench.localHistory.maxFileSize": 25600,
+  "workbench.startupEditor": "readme",
+  "workbench.colorTheme": "XD Theme - Two Tone",
+  "zenMode.fullScreen": false,
+  "window.autoDetectColorScheme": true,
+  "explorer.fileNesting.enabled": true,
+  "terminal.explorerKind": "external",
+  "telemetry.telemetryLevel": "off",
+  "workbench.editor.limit.enabled": true,
+  "workbench.editor.limit.perEditorGroup": true,
+  "scm.experimental.showHistoryGraph": true,
+  "aws.telemetry": false,
+  "aws.suppressPrompts": {
+    "fileViewerEdit": true
+  },
+  "files.associations": {
+    "*.jinja": "jinja"
+  },
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "zig.path": "zig",
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nixd",
+  "[nix]": {},
+  "python.analysis.inlayHints.variableTypes": true,
+  "python.analysis.autoFormatStrings": true,
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeEvaluation.enableReachabilityAnalysis": true,
+  "editor.mouseWheelScrollSensitivity": 0.4,
+  "workbench.editorAssociations": {
+    "*.nbt": "default",
+    "git-rebase-todo": "gitlens.rebase"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "python.defaultInterpreterPath": "/Users/kcw/.local/share/uv/python/cpython-3.14-macos-aarch64-none/bin/python3.14",
+  "errorLens.fontSize": "10",
+  "errorLens.fontWeight": "500",
+  "errorLens.codeLensEnabled": false,
+  "errorLens.enabledInMergeConflict": false,
+  "errorLens.decorations": {
+    "errorMessage": {
+      "textDecoration": ";border:1.2px dashed #e4545470;text-shadow:1px 1px 2px #e4545470;border-radius:0.3em;padding:0 0.5ch;",
+    },
+    "errorRange": {},
+    "warningRange": {},
+    "infoRange": {},
+    "hintRange": {},
+    "warningMessage": {},
+    "infoMessage": {},
+    "hintMessage": {},
+  },
+  "errorLens.messageTemplate": "$severity $message",
+  "errorLens.severityText": [
+    "▣",
+    "◈",
+    "◉",
+    "⛆",
+  ],
+  "errorLens.statusBarMessageEnabled": true,
+  "errorLens.statusBarCommand": "goToProblem",
+  "errorLens.followCursor": "closestProblem",
+  "window.zoomLevel": 3,
+  "supermaven.enableJumpSuggestions": false,
+  "markiscodecoverage.searchCriteria": "*.lcov",
+  "errorLens.messageEnabled": true,
+  "autopep8.args": [
+    "--max-line-length",
+    "120",
+    "--experimental"
+  ],
+  "gitlens.home.preview.enabled": false,
+  "git.blame.editorDecoration.enabled": false,
+  "debugpy.showPythonInlineValues": true,
+  "terminal.integrated.env.osx": {
+    "Q_NEW_SESSION": "1"
+  },
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+  },
+  "application.shellEnvironmentResolutionTimeout": 30,
+  "chat.agent.enabled": true,
+  "docker.extension.enableComposeLanguageServer": false,
+  "diffEditor.renderSideBySide": false,
+  "githubPullRequests.fileListLayout": "flat",
+  "[dockercompose]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "advanced",
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": false,
+      "strings": true
+    },
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "chat.mcp.discovery.enabled": {
+    "claude-desktop": true
+  },
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "dataWrangler.experiments.copilot.enabled": true,
+  "github.copilot.chat.generateTests.codeLens": true,
+  "gitlens.mode.active": "review",
+  "workbench.secondarySideBar.defaultVisibility": "hidden",
+  "zig.zls.enabled": "on",
+  "claudeCode.preferredLocation": "sidebar",
+  "editor.fontFamily": "JetBrainsMono NF, Monaco, 'Courier New', monospace",
+  "excalidraw.theme": "light",
+  "claudeCode.selectedModel": "default",
+  "git.confirmSync": false,
+  "json.schemaDownload.trustedDomains": {
+    "https://opencode.ai/": true,
+    "https://models.dev/": true
+  },
+  "resharper.region.region": "MiddleEast",
+  "resharper.dataSharing.allowDataSharing": false,
+  "workbench.sideBar.location": "right",
+  "workbench.tips.enabled": false,
+  "workbench.editor.editorActionsLocation": "titleBar",
+  "workbench.editor.pinnedTabsOnSeparateRow": true,
+  "workbench.editor.scrollToSwitchTabs": true,
+  "workbench.editor.showTabIndex": true,
+  "workbench.editor.tabActionCloseVisibility": false,
+  "workbench.editor.tabActionUnpinVisibility": false,
+  "workbench.editor.tabSizing": "fixed",
+  "workbench.editor.tabSizingFixedMaxWidth": 1600,
+  "workbench.editor.useModal": "off",
+  "workbench.settings.alwaysShowAdvancedSettings": true,
+  "problems.showCurrentInStatus": true,
+  "editor.formatOnSave": true,
+  "githubPullRequests.autoRepositoryDetection": true,
+  "githubPullRequests.queries": [
+    {
+      "label": "Local Pull Request Branches",
+      "query": "default"
+    },
+    {
+      "label": "Waiting For My Review",
+      "query": "repo:${owner}/${repository} is:open review-requested:${user}"
+    },
+    {
+      "label": "Created By Me",
+      "query": "repo:${owner}/${repository} is:open author:${user}"
+    },
+    {
+      "label": "All Open",
+      "query": "default"
+    }
+  ],
+  "workbench.browser.showInTitleBar": false,
+  "chat.titleBar.openInAgentsWindow.enabled": false,
+  "gitlens.rebaseEditor.ordering": "asc",
+  "git.detectWorktrees": true,
+  "window.title": "${activeEditorShort}${separator}${activeRepositoryName}${separator}${activeRepositoryBranchName}${separator}${profileName} (${folderPath})",
+  "editor.renderControlCharacters": false,
+  "gitlens.ai.model": "vscode",
+  "gitlens.ai.vscode.model": "copilotcli:claude-sonnet-5",
+  "chat.tools.terminal.autoApprove": {
+    "sde": true
+  },
+}
