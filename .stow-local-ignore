@@ -21,6 +21,8 @@ README\.md
 LICENSE\.md
 Makefile
 AGENTS\.md
+tests
+bin/share
 
 # Shell phase source trees — sourced via $DOTFILES, never symlinked into $HOME
 zshenv
