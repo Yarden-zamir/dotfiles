@@ -9,5 +9,6 @@
     "input_buffer_end": "end,super+down",
     "input_select_buffer_home": "shift+home,super+shift+up",
     "input_select_buffer_end": "shift+end,super+shift+down"
-  }
+  },
+  "plugin": ["./herdr-tui-session.js"]
 }

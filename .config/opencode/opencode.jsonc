@@ -4,4 +4,11 @@
     "auto": false,
     "prune": true
   },
+  "mcp": {
+    "jira": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "enabled": true
+    },
+  }
 }
