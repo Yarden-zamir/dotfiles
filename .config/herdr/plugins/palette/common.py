@@ -57,7 +57,16 @@ def fzf_args(prompt: str, light: bool | None = None) -> list[str]:
         "fzf", "--reverse", "--ansi", "--cycle", "--info=inline-right",
         f"--prompt={prompt} ", "--pointer=▌", "--marker=✓",
         f"--color={scheme},hl:4,hl+:4,pointer:4,prompt:4,marker:4,header:8,info:8,border:8",
+        "--bind=ctrl-p:toggle-preview,ctrl-/:toggle-preview",
     ]
+
+
+def fzf(args: list[str], rows: list[str]) -> subprocess.CompletedProcess:
+    """Run fzf on the rows. The user's FZF_DEFAULT_OPTS is dropped: the popup
+    inherits the server's copy, whose emoji prompt and border label arrive
+    byte-mangled, and its layout flags fight the palette's own."""
+    env = {k: v for k, v in os.environ.items() if k != "FZF_DEFAULT_OPTS"}
+    return subprocess.run(args, input="\n".join(rows), capture_output=True, text=True, env=env)
 
 
 def call_raw(method: str, params: dict | None) -> bytes:

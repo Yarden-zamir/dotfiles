@@ -48,7 +48,7 @@ def fzf(rows: list[str], prompt: str, multi: bool = False) -> list[str]:
     cmd = common.fzf_args(f"{prompt} ›")
     if multi:
         cmd += ["--multi", "--bind", "enter:accept", "--header=tab marks, enter confirms, esc skips"]
-    proc = subprocess.run(cmd, input="\n".join(rows), capture_output=True, text=True)
+    proc = common.fzf(cmd, rows)
     lines = [line for line in proc.stdout.splitlines() if line]
     if proc.returncode != 0 or not lines:
         if multi:
@@ -94,10 +94,8 @@ def pick_id(kind: str, free_text: bool = False) -> str:
                  f"{a.get('agent_status') or ''}  [{labels.get(a.get('workspace_id'), '?')}]"
                  for a in herdr("agent", "list").get("agents", [])]
     if free_text:  # rows are suggestions; a typed non-matching query passes through
-        proc = subprocess.run(
-            common.fzf_args(f"{kind} ›") + [
-                "--print-query", "--header=enter picks the row, or passes your typed text through"],
-            input="\n".join(rows), capture_output=True, text=True)
+        proc = common.fzf(common.fzf_args(f"{kind} ›") + [
+            "--print-query", "--header=enter picks the row, or passes your typed text through"], rows)
         lines = proc.stdout.splitlines()
         if proc.returncode == 0 and len(lines) > 1:
             return lines[1].split("\t", 1)[0]

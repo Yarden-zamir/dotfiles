@@ -28,12 +28,12 @@ from pathlib import Path
 import common
 from common import ACCENT, BOLD, DIM, RESET
 
-# Nerd Font glyphs. Limit: Ghostty runs "JetBrains Mono Nerd Font"; swap
-# for ASCII if the palette ever runs in a terminal without it.
-ICON = {"recent": "", "action": "", "api": ""}
+# Row markers. Plain BMP glyphs only: the popup terminal does not render
+# Nerd Font private-use icons.
+ICON = {"recent": "↻", "action": " ", "api": " "}
 RECENT_LIMIT = 8
 USAGE_LIMIT = 200
-TITLE_WIDTH = 36
+TITLE_WIDTH_MAX = 44  # longer titles are cut with an ellipsis
 OWN_ACTION = "yarden.palette.open"  # opening the palette from the palette is useless
 
 # Native [keys] actions that an API method reproduces. The method row
@@ -256,27 +256,28 @@ def ordered(rows: list[Row]) -> list[tuple[str, Row]]:
 
 # --- picker and dispatch ---------------------------------------------------
 
-def display(icon: str, row: Row) -> str:
-    title = row.title if len(row.title) <= TITLE_WIDTH else row.title[:TITLE_WIDTH - 1] + "…"
+def display(icon: str, row: Row, title_width: int, group_width: int) -> str:
+    title = row.title if len(row.title) <= title_width else row.title[:title_width - 1] + "…"
     key = f"  {ACCENT}{row.key}{RESET}" if row.key else ""
-    return f"{icon} {title:<{TITLE_WIDTH}} {DIM}{row.group}{RESET}{key}"
+    return f"{icon} {title:<{title_width}}  {DIM}{row.group:<{group_width}}{RESET}{key}"
 
 
 def pick(rows: list[Row], preview_dir: Path) -> Row | None:
+    title_width = min(max(len(r.title) for r in rows), TITLE_WIDTH_MAX)
+    group_width = max(len(r.group) for r in rows)
     lines = []
     for n, (icon, row) in enumerate(ordered(rows)):
         path = preview_dir / f"{n}.txt"
         path.write_text(row.preview)
-        lines.append(f"{row.id}\t{display(icon, row)}\t{path}")
+        lines.append(f"{row.id}\t{display(icon, row, title_width, group_width)}\t{path}")
     cmd = common.fzf_args("") + [
         "--delimiter=\t", "--with-nth=2", "--tiebreak=begin,index",
-        "--header=enter run · ctrl-/ preview · esc close",
+        "--header=enter run · ctrl-p preview · esc close",
         "--preview=cat {3}",
         # Preview on the right; below the list when the popup is narrower than 100 columns.
         "--preview-window=right,40%,wrap,border-left,<100(down,45%,wrap,border-top)",
-        "--bind=ctrl-/:toggle-preview",
     ]
-    proc = subprocess.run(cmd, input="\n".join(lines), capture_output=True, text=True)
+    proc = common.fzf(cmd, lines)
     if proc.returncode != 0 or not proc.stdout.strip():
         return None
     chosen = proc.stdout.strip().split("\t", 1)[0]
