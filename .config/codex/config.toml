@@ -9,6 +9,7 @@ source_type = "local"
 source = "/Users/kcw/Github/dotfiles/main/.config/codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [features]
+hooks = true
 js_repl = false
 
 [mcp_servers.node_repl]
