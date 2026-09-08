@@ -9,8 +9,8 @@ platforms = ["macos", "linux"]
 # picker). `sessions`: sessiongator; Enter opens the session as a tab in
 # its cwd or focuses the pane that already runs it. Both need the release
 # binaries built by gh_source (zshrc/init/{navgator,sessiongator}.zsh).
-# sessiongator-resume.sh lives on the sessiongator main checkout once
-# branch feat/herdr is merged.
+# sessions-open needs scripts/resume-command.sh and the live-ids hook from
+# sessiongator branch feat/herdr on the main checkout.
 [[actions]]
 id = "projects"
 title = "Open project in herdr (navgator)"
@@ -41,4 +41,4 @@ platforms = ["macos", "linux"]
 placement = "popup"
 width = "70%"
 height = "60%"
-command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec sh \"$HOME/Github/sessiongator/main/scripts/sessiongator-resume.sh\" herdr-pick"]
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec sh sessions-open pick"]

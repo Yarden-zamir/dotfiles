@@ -1,0 +1,83 @@
+#!/bin/sh
+# sessions-open — herdr side of sessiongator.
+#   sessions-open live-ids          native ids of sessions live in a herdr pane
+#   sessions-open open <selection>  focus the live pane, else open a tab in the
+#                                   session cwd and run the resume command
+#   sessions-open pick              run the picker, then open (plugin popup)
+# The zsh init exports SESSIONGATOR_RESUME_HANDLER and
+# SESSIONGATOR_LIVE_IDS_COMMAND to point here inside herdr panes.
+set -eu
+herdr=${HERDR_BIN_PATH:-herdr}
+sessiongator_dir=${SESSIONGATOR_DIR:-$HOME/Github/sessiongator/main}
+self=$(cd "$(dirname "$0")" && pwd)/$(basename "$0")
+
+live_ids() {
+    "$herdr" agent list 2>/dev/null | jq -r '.result.agents[] | .agent_session.value // empty'
+}
+
+# The pane id of the live agent for a native session id, else empty.
+live_pane() {
+    "$herdr" agent list 2>/dev/null | jq -r --arg id "$1" \
+        '[.result.agents[] | select(.agent_session.value == $id)][0].pane_id // empty'
+}
+
+open_selection() {
+    selection=$1
+    kind=${selection%%	*}
+    rest=${selection#*	}
+    tool=${rest%%	*}
+    rest=${rest#*	}
+    id=${rest%%	*}
+    dir=${rest#*	}
+    case "$kind" in
+    resume) ;;
+    resume-here) dir=$PWD ;;
+    *)
+        echo "sessions-open: unsupported selection: $kind" >&2
+        return 1
+        ;;
+    esac
+    pane=$(live_pane "$id")
+    if [ -n "$pane" ]; then
+        "$herdr" agent focus "$pane" >/dev/null
+        return 0
+    fi
+    if [ -n "$dir" ] && [ ! -d "$dir" ]; then
+        echo "session directory gone: $dir; opening in \$HOME" >&2
+        dir=$HOME
+    fi
+    command=$("$sessiongator_dir/scripts/resume-command.sh" "$tool" "$id")
+    created=$("$herdr" tab create --workspace "${HERDR_WORKSPACE_ID:-}" --cwd "${dir:-$PWD}" --focus)
+    pane=$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id')
+    # Wait for the prompt so the command is not echoed before it. The prompt
+    # shows the cwd basename; if that changes, drop the wait.
+    "$herdr" pane wait-output "$pane" --match "$(basename "${dir:-$PWD}")" --timeout 3000 >/dev/null 2>&1 || true
+    "$herdr" pane run "$pane" "$command" >/dev/null
+}
+
+pick() {
+    bin=$sessiongator_dir/target/release/sessiongator
+    [ -x "$bin" ] || bin=$(command -v sessiongator) || {
+        echo "sessiongator binary not found" >&2
+        return 127
+    }
+    tmp=$(mktemp -t sessiongator.XXXXXX)
+    SESSIONGATOR_LIVE_IDS_COMMAND="$self live-ids" GATOR_OUTPUT=$tmp "$bin" </dev/tty >/dev/tty 2>/dev/tty || {
+        rm -f "$tmp"
+        return 1
+    }
+    selection=$(cat "$tmp")
+    rm -f "$tmp"
+    [ -n "$selection" ] || return 0
+    open_selection "$selection"
+}
+
+case "${1-}" in
+live-ids) live_ids ;;
+open) open_selection "$2" ;;
+pick) pick ;;
+*)
+    echo "usage: sessions-open live-ids | open <selection> | pick" >&2
+    exit 2
+    ;;
+esac
