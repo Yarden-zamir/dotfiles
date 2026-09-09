@@ -59,6 +59,7 @@ class Row:
     group: str     # plugin name or "api"
     key: str       # bound key text, "" when unbound
     preview: str
+    keywords: str  # extra match text (ids, description); shown dim at the row end
 
 
 # --- keybindings -----------------------------------------------------------
@@ -198,7 +199,8 @@ def action_rows(hints: dict[str, str]) -> list[Row]:
                    "", f"{DIM}contexts{RESET}  {', '.join(action.get('contexts', [])) or 'any'}",
                    f"{DIM}command{RESET}   {' '.join(action['command'])}"]
         rows.append(Row(row_id, "action", action["title"],
-                        names.get(action["plugin_id"], action["plugin_id"]), key, "\n".join(preview)))
+                        names.get(action["plugin_id"], action["plugin_id"]), key, "\n".join(preview),
+                        " ".join(filter(None, [qualified, action.get("description")]))))
     rows.sort(key=lambda r: (r.group, r.title))
     return rows
 
@@ -208,7 +210,9 @@ def api_rows(schema: Schema, hints: dict[str, str]) -> list[Row]:
     for method in schema.methods:
         row_id = f"api:{method}"
         key = hints.get(row_id, "")
-        rows.append(Row(row_id, "api", method, "api", key, schema.describe(method, key)))
+        desc = schema.deref(schema.methods[method]).get("description", "")
+        rows.append(Row(row_id, "api", method, "api", key, schema.describe(method, key),
+                        " ".join(filter(None, [method.replace(".", " "), desc]))))
     return rows
 
 
@@ -259,7 +263,9 @@ def ordered(rows: list[Row]) -> list[tuple[str, Row]]:
 def display(icon: str, row: Row, title_width: int, group_width: int) -> str:
     title = row.title if len(row.title) <= title_width else row.title[:title_width - 1] + "…"
     key = f"  {ACCENT}{row.key}{RESET}" if row.key else ""
-    return f"{icon} {title:<{title_width}}  {DIM}{row.group:<{group_width}}{RESET}{key}"
+    # fzf matches the whole line, so keywords past the visible width still count.
+    return (f"{icon} {title:<{title_width}}  {DIM}{row.group:<{group_width}}{RESET}{key}"
+            f"  {DIM}{row.keywords}{RESET}")
 
 
 def pick(rows: list[Row], preview_dir: Path) -> Row | None:
