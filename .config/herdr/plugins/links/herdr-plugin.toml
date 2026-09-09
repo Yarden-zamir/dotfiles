@@ -1,0 +1,43 @@
+id = "yarden.links"
+name = "Links"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Open URLs, files and folders from pane text: Ctrl-click on file:// links, or a hint picker"
+platforms = ["macos", "linux"]
+
+# Ctrl-click on an OSC 8 `file://` link lands in `open` through the link
+# handler below (herdr matches the clicked URL, not the visible text).
+# Plain http(s) links stay with herdr: it opens them in the browser.
+# `pick` lists the visible URLs and existing paths of the focused pane in a
+# popup; the pick opens the same way. Directories become a herdr space
+# (bin/herdr-open-path), files open in the editor from links.toml
+# (default: `code -g`), URLs go to the browser.
+# Bind `pick` to cmd+shift+o (free in Ghostty and herdr).
+[[actions]]
+id = "open"
+title = "Open link target"
+description = "Open a clicked file:// link: directory as a herdr space, file in the editor (links.toml), URL in the browser"
+contexts = ["workspace", "tab", "pane"]
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\" exec ./links open"]
+
+[[actions]]
+id = "pick"
+title = "Open URL, file or folder from screen"
+description = "Pick a visible URL or path of the focused pane; folders open as a space, files in the editor, URLs in the browser"
+contexts = ["workspace", "tab", "pane"]
+command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.links --entrypoint pick"]
+
+[[panes]]
+id = "pick"
+title = "Open from screen"
+platforms = ["macos", "linux"]
+placement = "popup"
+width = "70%"
+height = "50%"
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\" exec ./links pick"]
+
+[[link_handlers]]
+id = "file"
+title = "Open file link"
+pattern = "^file://"
+action = "open"
