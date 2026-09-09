@@ -130,12 +130,12 @@ status_indicators = "dots"
 [ui.sidebar.spaces]
 rows = [
   ["state_icon", "workspace"],
-  ["$checkout1", "git_status"],
-  ["$checkout2"],
-  ["$checkout3"],
-  ["$checkout4"],
-  ["$checkout5"],
-  ["$checkout6"],
+  [{ token = "$checkout1", dim = true }, "git_status"],
+  [{ token = "$checkout2", dim = true }],
+  [{ token = "$checkout3", dim = true }],
+  [{ token = "$checkout4", dim = true }],
+  [{ token = "$checkout5", dim = true }],
+  [{ token = "$checkout6", dim = true }],
 ]
 
 [ui.toast]

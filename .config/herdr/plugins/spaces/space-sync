@@ -14,7 +14,9 @@ Usage:
 Convention: a checkout at <container>/<dir> next to a .bare git dir. A managed
 space is named PREFIX + container of its first checkout. Every space, managed or
 hand-named, gets one row per unique checkout across its panes: "dir" when the
-name already shows the container, else "dir | container". PREFIX marks a name
+name already shows the container, else "dir | container". A checkout whose
+branch basename differs from its dir shows "dir (branch)", or "dir (detached)",
+so a checkout on the wrong branch is visible. PREFIX marks a name
 as managed. A name without it is hand-named and is left alone; only its rows
 are updated. Exception: a name equal to the checkout dir or repo name is the
 one herdr or wt-new-open gave before the first sync, so it counts as managed.
@@ -39,7 +41,7 @@ AUTO_LABELS = {".bare", "~"}  # names herdr or wt-new-open give a space before t
 SOURCE = "yarden.spaces"
 MAX_ROWS = 6  # $checkout1..$checkout6 rows in config.toml [ui.sidebar.spaces]
 
-Checkout = tuple[str, str]  # (container, dir)
+Checkout = tuple[str, str, str | None]  # (container, dir, branch or None when detached)
 
 
 def request(method: str, params: dict) -> dict:
@@ -69,14 +71,15 @@ def git(cwd: str, *args: str) -> str | None:
 
 
 def checkout_of(cwd: str) -> Checkout | None:
-    """(container, dir) when cwd is inside a bare+container checkout."""
+    """(container, dir, branch) when cwd is inside a bare+container checkout."""
     toplevel = git(cwd, "rev-parse", "--show-toplevel")
     common = git(cwd, "rev-parse", "--path-format=absolute", "--git-common-dir")
     if toplevel and common and common.endswith("/.bare"):
         checkout = Path(toplevel)
         container = Path(common).parent
         if checkout.parent == container:
-            return container.name, checkout.name
+            branch = git(cwd, "symbolic-ref", "--short", "-q", "HEAD")  # None when detached
+            return container.name, checkout.name, branch
     return None
 
 
@@ -113,8 +116,14 @@ def managed_name(cwds: list[str], checkouts: list[Checkout]) -> str:
 
 def rows(checkouts: list[Checkout], label: str) -> list[str]:
     shown = label[len(PREFIX):] if label.startswith(PREFIX) else None
-    return [d if container == shown else f"{d} | {container}"
-            for container, d in checkouts][:MAX_ROWS]
+    lines = []
+    for container, d, branch in checkouts:
+        # wt-new names the dir after the branch basename; older checkouts used the
+        # full branch with "/" as "-". Any other branch is a surprise worth showing.
+        expected = {branch.rsplit("/", 1)[-1], branch.replace("/", "-")} if branch else set()
+        text = d if d in expected else f"{d} ({branch.rsplit('/', 1)[-1] if branch else 'detached'})"
+        lines.append(text if container == shown else f"{text} | {container}")
+    return lines[:MAX_ROWS]
 
 
 def is_managed(label: str, cwds: list[str]) -> bool:
