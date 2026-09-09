@@ -1,5 +1,8 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  // "system" paints no cell background, so Collie's light mode (which
+  // inverts the mirror) does not show black bars behind opencode text.
+  "theme": "system",
   "compaction": {
     "auto": false,
     "prune": true
