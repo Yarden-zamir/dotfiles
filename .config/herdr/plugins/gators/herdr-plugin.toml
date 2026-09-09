@@ -25,6 +25,22 @@ description = "Pick a Claude, OpenCode, Codex or Copilot session; open it as a t
 contexts = ["workspace", "tab", "pane"]
 command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.gators --entrypoint sessions"]
 
+[[actions]]
+id = "checkouts"
+title = "Go to checkout of this repo"
+description = "Pick a sibling checkout of the focused pane's repo; jump to the space that holds it or open one"
+contexts = ["workspace", "tab", "pane"]
+command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.gators --entrypoint checkouts"]
+
+[[panes]]
+id = "checkouts"
+title = "Checkouts"
+platforms = ["macos", "linux"]
+placement = "popup"
+width = "60%"
+height = "40%"
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec sh checkouts"]
+
 [[panes]]
 id = "projects"
 title = "Projects"

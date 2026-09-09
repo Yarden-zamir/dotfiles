@@ -1,0 +1,97 @@
+#!/bin/sh
+# checkouts — pick a sibling checkout of the focused pane's repo and jump to
+# it: the space that already holds it, else a new space (bin/herdr-open-path).
+# Rows: "● dir (branch)  <space label>" when a space holds the checkout, "○ dir"
+# when none does. "(branch)" only shows when the dir name does not match
+# the branch (same rule as the spaces plugin: dir == branch basename, or
+# dir == branch with '/' as '-').
+# Usage: checkouts [repo-path]   (default: the focused pane's cwd)
+set -eu
+dotfiles=$(cd "$(dirname "$0")/../../../.." && pwd)
+herdr=${HERDR_BIN_PATH:-herdr}
+fzf=${FZF:-fzf}
+
+start=${1-}
+if [ -z "$start" ]; then
+    start=$(printf '%s' "${HERDR_PLUGIN_CONTEXT_JSON-}" | jq -r '.focused_pane_cwd // .workspace_cwd // empty' 2>/dev/null || true)
+fi
+[ -n "$start" ] || start=$("$herdr" pane current 2>/dev/null | jq -r '.result.pane.cwd // empty')
+[ -n "$start" ] || { echo "checkouts: no focused pane cwd" >&2; exit 1; }
+
+common=$(git -C "$start" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || {
+    echo "checkouts: $start is not inside a git repository" >&2
+    exit 1
+}
+case "$common" in
+*/.bare) ;;
+*)
+    echo "checkouts: $common is not a .bare container layout" >&2
+    exit 1
+    ;;
+esac
+
+# Pane cwds once; label lookup matches herdr-open-path (exact, then deeper).
+panes=$("$herdr" pane list)
+spaces=$("$herdr" workspace list)
+space_for() {
+    workspace=$(printf '%s' "$panes" | jq -r --arg path "$1" '
+        [.result.panes[] | select(.cwd == $path)][0].workspace_id
+        // [.result.panes[] | select(.cwd | startswith($path + "/"))][0].workspace_id
+        // empty')
+    [ -n "$workspace" ] || return 0
+    printf '%s' "$spaces" | jq -r --arg id "$workspace" '.result.workspaces[] | select(.workspace_id == $id) | .label // $id'
+}
+
+branch_matches_dir() {
+    dir=$1
+    branch=$2
+    [ "$dir" = "${branch##*/}" ] && return 0
+    [ "$dir" = "$(printf '%s' "$branch" | tr '/' '-')" ] && return 0
+    return 1
+}
+
+# A case statement inside $( ) trips the shell parser; keep the parser in
+# a function and substitute the call.
+emit_row() {
+    [ -n "$path" ] && [ -z "$bare" ] || return 0
+    dir=${path##*/}
+    label=$dir
+    [ -z "$branch" ] || branch_matches_dir "$dir" "$branch" || label="$dir ($branch)"
+    space=$(space_for "$path")
+    if [ -n "$space" ]; then
+        printf '%s\t● %s  %s\n' "$path" "$label" "$space"
+    else
+        printf '%s\t○ %s\n' "$path" "$label"
+    fi
+}
+
+list_rows() {
+    path=""
+    branch=""
+    bare=""
+    # No pipe: a piped while runs in a subshell and loses the last entry.
+    porcelain=$(git --git-dir "$common" worktree list --porcelain)
+    while IFS= read -r line; do
+        case "$line" in
+        "worktree "*)
+            emit_row
+            path=${line#"worktree "}
+            branch=""
+            bare=""
+            ;;
+        "branch refs/heads/"*) branch=${line#"branch refs/heads/"} ;;
+        bare) bare=1 ;;
+        esac
+    done <<PORCELAIN
+$porcelain
+PORCELAIN
+    emit_row
+}
+
+rows=$(list_rows)
+[ -n "$rows" ] || { echo "checkouts: no checkouts found" >&2; exit 1; }
+
+picked=$(printf '%s\n' "$rows" | "$fzf" --delimiter '\t' --with-nth 2.. --prompt 'checkout> ' --no-multi) || exit 0
+target=${picked%%	*}
+[ -n "$target" ] || exit 0
+exec "$dotfiles/bin/herdr-open-path" "$target"
