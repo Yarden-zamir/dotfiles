@@ -22,9 +22,31 @@ if [ -n "$pane" ]; then
     [ -n "$tab" ] && on_click="$on_click || $(quote "$herdr") tab focus $(quote "$tab")"
 fi
 
+# Print the last text line of the last Claude reply in this pane. Read only
+# the transcript tail, because transcripts grow to megabytes.
+# Limit: Claude only. Add a reader when another agent needs the last line.
+last_reply_line() {
+    [ -n "$pane" ] && [ "${HERDR_NOTIFICATION_AGENT:-}" = claude ] || return 0
+    session=$("$herdr" agent get "$pane" | jq -r '.result.agent.agent_session.value // empty')
+    [ -n "$session" ] || return 0
+    for transcript in "$HOME"/.claude/projects/*/"$session".jsonl; do
+        [ -f "$transcript" ] || continue
+        tail -n 200 "$transcript" |
+            jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "text") | .text' |
+            grep -v '^[[:space:]]*$' | tail -n 1
+        return 0
+    done
+}
+
+context=${HERDR_NOTIFICATION_BODY:-}
+reply=$(last_reply_line 2>/dev/null) || reply=
+# terminal-notifier drops a message that starts with "["; escape it.
+case $reply in "["*) reply="\\$reply" ;; esac
+
 exec "$notifier" \
     -title "$HERDR_NOTIFICATION_TITLE" \
-    -message "${HERDR_NOTIFICATION_BODY:-}" \
+    -subtitle "${reply:+$context}" \
+    -message "${reply:-$context}" \
     -group "herdr-${pane:-$HERDR_NOTIFICATION_KIND}" \
     -execute "$on_click" \
     -activate com.mitchellh.ghostty
