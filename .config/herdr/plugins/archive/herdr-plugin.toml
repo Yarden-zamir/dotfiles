@@ -1,40 +1,41 @@
 id = "yarden.archive"
 name = "Archive"
-version = "0.2.0"
+version = "0.2.1"
 min_herdr_version = "0.8.2"
 description = "Move panes to an archive workspace instead of closing them"
 platforms = ["macos", "linux"]
 
-# archive.py holds the whole logic; see its docstring. Config knobs live in
+# archive.py holds the whole logic; see its docstring. run.sh sets PATH and
+# starts it with uv (see run.sh for why). Config knobs live in
 # $HERDR_PLUGIN_CONFIG_DIR/archive.toml (label, max_age_days, toasts,
 # focus_on_restore). Toast clicks need the fork build (notification action).
 
 # Reap old panes and move the archive workspace to the sidebar end.
 [[startup]]
-command = ["uv", "run", "--script", "--quiet", "archive.py", "startup"]
+command = ["sh", "run.sh", "startup"]
 
 # Keep the archive workspace last when spaces are created or reordered.
 [[events]]
 on = "workspace.created"
-command = ["uv", "run", "--script", "--quiet", "archive.py", "pin-last"]
+command = ["sh", "run.sh", "pin-last"]
 
 [[events]]
 on = "workspace.moved"
-command = ["uv", "run", "--script", "--quiet", "archive.py", "pin-last"]
+command = ["sh", "run.sh", "pin-last"]
 
 [[actions]]
 id = "archive"
 title = "Archive pane"
 description = "Move the focused pane to the archive space instead of closing it."
 contexts = ["pane"]
-command = ["uv", "run", "--script", "--quiet", "archive.py", "archive"]
+command = ["sh", "run.sh", "archive"]
 
 [[actions]]
 id = "restore-last"
 title = "Restore last archived pane"
 description = "Move the newest archived pane back to its origin space."
 contexts = ["workspace", "tab", "pane"]
-command = ["uv", "run", "--script", "--quiet", "archive.py", "restore-last"]
+command = ["sh", "run.sh", "restore-last"]
 
 [[actions]]
 id = "restore-pick"
@@ -48,14 +49,14 @@ id = "clear"
 title = "Close all archived panes"
 description = "Close the archive space and every pane in it."
 contexts = ["workspace", "tab", "pane"]
-command = ["uv", "run", "--script", "--quiet", "archive.py", "clear"]
+command = ["sh", "run.sh", "clear"]
 
 [[actions]]
 id = "reap"
 title = "Close archived panes older than max_age_days"
 description = "Close archived panes older than max_age_days from archive.toml."
 contexts = ["workspace", "tab", "pane"]
-command = ["uv", "run", "--script", "--quiet", "archive.py", "reap"]
+command = ["sh", "run.sh", "reap"]
 
 [[panes]]
 id = "pick"
@@ -64,4 +65,4 @@ platforms = ["macos", "linux"]
 placement = "popup"
 width = "60%"
 height = "50%"
-command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec uv run --script --quiet archive.py restore-pick"]
+command = ["sh", "run.sh", "restore-pick"]
