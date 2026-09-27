@@ -25,11 +25,6 @@ macos-option-as-alt = true
 # Every Ghostty window is a herdr client. Raycast launchers override
 # command with --config-entry, so they stay plain windows.
 command = /Users/kcw/.local/bin/herdr
-# The herdr client gets launchd's bare PATH, so it cannot find
-# terminal-notifier and falls back to osascript (a click opens Script
-# Editor). Limit: fixed list, not the shell PATH; extend it if the
-# client needs another Homebrew tool.
-env = PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
 # Herdr owns tabs, splits and panes. Unbind Ghostty defaults so the keys
 # reach herdr through the kitty keyboard protocol. Keybinds for herdr and

@@ -138,11 +138,13 @@ rows = [
   [{ token = "$checkout6", dim = true }],
 ]
 
-# Native macOS notifications. herdr calls terminal-notifier (brew),
-# else osascript. Limit: OS notifications drop plugin click actions
+# Native macOS notifications: herdr sends OSC 9 and Ghostty posts it,
+# so a click opens Ghostty. Do not use "system": macOS 26 refuses the
+# ad-hoc signed terminal-notifier, and the osascript fallback opens
+# Script Editor. Limit: OS notifications drop plugin click actions
 # (archive restore, palette output); revert to "herdr" if those matter.
 [ui.toast]
-delivery = "system"
+delivery = "terminal"
 
 [theme]
 name = "catppuccin-latte"
