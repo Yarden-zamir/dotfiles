@@ -138,8 +138,11 @@ rows = [
   [{ token = "$checkout6", dim = true }],
 ]
 
+# Native macOS notifications. herdr calls terminal-notifier (brew),
+# else osascript. Limit: OS notifications drop plugin click actions
+# (archive restore, palette output); revert to "herdr" if those matter.
 [ui.toast]
-delivery = "herdr"
+delivery = "system"
 
 [theme]
 name = "catppuccin-latte"
