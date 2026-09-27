@@ -1,0 +1,16 @@
+id = "yarden.transcripts"
+name = "Transcripts"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Copy Claude transcripts of the agent fleet to _shared so a reboot or cleanup cannot lose them"
+platforms = ["macos", "linux"]
+
+# After the 2026-09-27 reboot every fleet transcript from Sep 3-9 was gone.
+# rsync the dotfiles project transcripts on server start and whenever an
+# agent changes state, at most once per 5 minutes (stamp file in state).
+[[startup]]
+command = ["sh", "backup.sh"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["sh", "backup.sh"]
