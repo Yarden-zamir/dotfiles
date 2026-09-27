@@ -10,52 +10,52 @@ platforms = ["macos", "linux"]
 # after a server start or live handoff (tokens are not persisted), and
 # the event hooks when panes come and go. Actions appear in the palette.
 [[startup]]
-command = ["uv", "run", "--script", "space-sync", "sync-all"]
+command = ["sh", "run.sh", "sync-all"]
 
 [[actions]]
 id = "sync"
 title = "Sync space name and rows"
 description = "Re-read the panes of this space and refresh its name and checkout rows"
 contexts = ["workspace", "tab", "pane"]
-command = ["uv", "run", "--script", "space-sync", "sync"]
+command = ["sh", "run.sh", "sync"]
 
 [[actions]]
 id = "sync-all"
 title = "Sync every space"
 description = "Refresh the name and checkout rows of every open space"
 contexts = ["workspace", "tab", "pane"]
-command = ["uv", "run", "--script", "space-sync", "sync-all"]
+command = ["sh", "run.sh", "sync-all"]
 
 [[actions]]
 id = "hand-name"
 title = "Hand-name space (keep current name)"
 description = "Drop the managed mark; the name stays as it is until auto-name"
 contexts = ["workspace", "tab", "pane"]
-command = ["uv", "run", "--script", "space-sync", "hand-name"]
+command = ["sh", "run.sh", "hand-name"]
 
 [[actions]]
 id = "auto-name"
 title = "Auto-name space (managed by repo)"
 description = "Rename this space to its repo container and keep it in sync"
 contexts = ["workspace", "tab", "pane"]
-command = ["uv", "run", "--script", "space-sync", "auto-name"]
+command = ["sh", "run.sh", "auto-name"]
 
 [[events]]
 on = "pane.created"
-command = ["uv", "run", "--script", "space-sync", "on-event"]
+command = ["sh", "run.sh", "on-event"]
 
 [[events]]
 on = "pane.closed"
-command = ["uv", "run", "--script", "space-sync", "on-event"]
+command = ["sh", "run.sh", "on-event"]
 
 [[events]]
 on = "pane.exited"
-command = ["uv", "run", "--script", "space-sync", "on-event"]
+command = ["sh", "run.sh", "on-event"]
 
 [[events]]
 on = "pane.moved"
-command = ["uv", "run", "--script", "space-sync", "on-event"]
+command = ["sh", "run.sh", "on-event"]
 
 [[events]]
 on = "tab.closed"
-command = ["uv", "run", "--script", "space-sync", "on-event"]
+command = ["sh", "run.sh", "on-event"]
