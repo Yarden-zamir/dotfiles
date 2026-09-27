@@ -138,13 +138,16 @@ rows = [
   [{ token = "$checkout6", dim = true }],
 ]
 
-# Native macOS notifications: herdr sends OSC 9 and Ghostty posts it,
-# so a click opens Ghostty. Do not use "system": macOS 26 refuses the
-# ad-hoc signed terminal-notifier, and the osascript fallback opens
-# Script Editor. Limit: OS notifications drop plugin click actions
-# (archive restore, palette output); revert to "herdr" if those matter.
+# Native macOS notifications through ~/.config/herdr/notify
+# (terminal-notifier): a click focuses the source pane and activates
+# Ghostty. [ui.toast.system] command needs the fork (feat/toast-command).
+# Limit: OS notifications drop plugin click actions (archive restore,
+# palette output); revert to "herdr" if those matter.
 [ui.toast]
-delivery = "terminal"
+delivery = "system"
+
+[ui.toast.system]
+command = "~/.config/herdr/notify"
 
 [theme]
 name = "catppuccin-latte"
