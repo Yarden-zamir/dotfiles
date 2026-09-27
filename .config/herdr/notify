@@ -1,0 +1,30 @@
+#!/bin/sh
+# herdr [ui.toast.system] command: post a macOS notification. A click shows
+# the source pane in herdr and brings Ghostty to the front.
+# herdr passes the notification in HERDR_NOTIFICATION_* variables. Remote
+# (SSH) notifications carry no pane id, so a click only activates Ghostty.
+# Limit: needs terminal-notifier registered with LaunchServices. macOS 26
+# refuses an unregistered copy (exit 3). After a brew reinstall, run
+# lsregister -f on the terminal-notifier.app bundle again.
+set -eu
+
+notifier=/opt/homebrew/bin/terminal-notifier
+herdr=${HERDR_BIN_PATH:-herdr}
+pane=${HERDR_NOTIFICATION_PANE_ID:-}
+tab=${HERDR_NOTIFICATION_TAB_ID:-}
+
+# Quote a value for the sh command line that terminal-notifier runs on click.
+quote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }
+
+on_click=:
+if [ -n "$pane" ]; then
+    on_click="$(quote "$herdr") agent focus $(quote "$pane")"
+    [ -n "$tab" ] && on_click="$on_click || $(quote "$herdr") tab focus $(quote "$tab")"
+fi
+
+exec "$notifier" \
+    -title "$HERDR_NOTIFICATION_TITLE" \
+    -message "${HERDR_NOTIFICATION_BODY:-}" \
+    -group "herdr-${pane:-$HERDR_NOTIFICATION_KIND}" \
+    -execute "$on_click" \
+    -activate com.mitchellh.ghostty
