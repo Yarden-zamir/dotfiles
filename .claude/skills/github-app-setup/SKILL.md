@@ -26,9 +26,11 @@ If a source now says something else, trust the source and update this skill.
 - Some settings are not manifest fields (for example device flow, or user token expiry). Tell the user to change them in the app settings after creation.
 - The app name must be unique across all of GitHub. If the name is taken, the user edits it on the GitHub form before the click.
 - The conversion response is the only time that the API returns the private key and the client secret. If the write fails after the exchange, the user must delete the app and run the flow again. For this reason, the skeleton checks the target files before it opens the browser.
-- For oauth2-proxy, request `emails: read`. If it uses `--github-org` or `--github-team`, also request the org permission `members: read` and install the app on the org. If that is not possible, use an OAuth App, which has no creation API.
+- For oauth2-proxy, request `emails: read`. The manifest uses the settings-form names, which differ from the REST `app-permissions` schema: there the same permission is `email_addresses`, and a manifest with that key fails with "Default permission records resource is not included in the list". Do not "correct" a manifest key from the REST schema. If it uses `--github-org` or `--github-team`, also request the org permission `members: read` and install the app on the org. If that is not possible, use an OAuth App, which has no creation API.
 - A login-only app needs only the client ID and the client secret. The private key is for API calls as the app itself.
 - No API deletes a GitHub App. To delete one, give the user `https://github.com/settings/apps/<slug>/advanced` (for an organization, see the app settings). Deletion also revokes the user sign-ins.
+- A site with a service worker: the worker must not handle the sign-in routes (for oauth2-proxy, `/auth/*`) or a per-visitor "who am I" route. A worker that fetches the sign-in route again cannot follow the redirect to github.com, and Chrome shows `ERR_FAILED`. curl has no worker, so a curl check does not show this fault.
+- Decide who may sign in. Both choices are valid, so ask the user. Choice 1: the proxy blocks all other people at sign-in (`--github-user`, `--github-org`). Choice 2: any GitHub user signs in, and the app checks a whitelist of logins. With choice 2, a stranger signs in and gets no rights, and you add a person with an app config change.
 
 ## Steps
 
@@ -82,7 +84,7 @@ Steps that differ from the local flow:
    PY
    ```
 
-5. Map each value in `compose.yml`, for example `GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:?required}`. KitSHn passes params to Compose only for interpolation. A container does not get a param unless `compose.yml` maps it.
+5. Map each value in `compose.yml`, for example `GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:?required}`. KitSHn passes params to Compose only for interpolation. A container does not get a param unless `compose.yml` maps it. Do not use a repo `.env`: KitSHn runs Compose with `--env-file`, and Compose then does not read `.env`.
 6. The private key: KitSHn has no file params. A login-only app needs only the client ID and the client secret, so leave the key out of GitHub. If the app needs the key, send it base64-encoded (`base64 < github-app.private-key.pem`) as one secret, and decode it in the app. Compose interpolation changes a `$` in a value, and multi-line values are not tested in KitSHn.
 7. After the next deploy, run `kitshn params list OWNER/REPO` to confirm the names. Do not use `--show`.
 8. Delete the scratchpad files.
