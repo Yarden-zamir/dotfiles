@@ -1,132 +1,108 @@
-# personal-toolchain
+# dotfiles
 
-Personal Zsh-first dotfiles for daily terminal work on macOS and Linux.
+Zsh, Ghostty and herdr configuration for daily work on macOS, with the same
+shell on a Linux VPS. Terminal, editor keys, AI agent tooling and the git
+worktree layout all live here.
 
-> **Not a drop-in framework.** This repo is published to read, learn from, and
-> copy pieces out of — the phase loader, individual `zshrc/init/*.zsh` modules,
-> the stow/git split, etc. It hardcodes personal paths and assumptions and is
-> not meant to be installed wholesale on someone else's machine. Lift the parts
-> that are useful; don't `make stow-adopt` it into your `$HOME` expecting it to
-> "just work."
+## How it fits together
+
+```
+Ghostty  runs herdr as its command; relays a few keys, owns the global toggle
+  └─ herdr  workspaces (spaces), tabs, panes, agents; config.toml + plugins
+       └─ zsh  phase-loaded config; ZLE editor with VS Code-like keys
+            └─ claude / opencode / codex / navgator / sessiongator in panes
+```
+
+- `.config/ghostty/config`: runs `~/.local/bin/herdr`, releases the keys
+  herdr binds, relays `cmd+1-9` and `cmd+alt+1-9` as CSI-u, pseudo fullscreen
+  with a padded notch, F17 and § show or hide the window.
+- `.config/herdr/config.toml`: `cmd` manages tabs and panes, `cmd+alt`
+  manages spaces, `ctrl` stays with the shell, `cmd+b` is the prefix for rare
+  actions. Space names come from the repo (` dotfiles`) with one sidebar
+  row per checkout in the space.
+- `.config/herdr/plugins/`: local herdr plugins, linked with
+  `herdr plugin link`.
+
+| plugin | what it does | key |
+| --- | --- | --- |
+| archive | move a pane to an archive space instead of closing it; quits an idle agent and resumes it on restore; reaper after 14 days | `cmd+w`, `cmd+shift+t` |
+| spaces | name spaces by repo, one row per checkout, sync on `cd`, on start and on pane events | |
+| palette | fuzzy palette over every plugin action and socket API method, with key hints and a schema preview | `cmd+shift+p` |
+| worktree | new worktree through `bin/wt-new`, opened as a space | `cmd+alt+n` |
+| gators | navgator projects, sessiongator sessions and sibling checkouts as popups | |
+| links | open URLs, files and folders from pane text | `cmd+shift+o` |
+| transcripts | copy agent transcripts to `_shared` so a reboot cannot lose them | |
+
+herdr itself is a fork build: `github.com/Yarden-zamir/herdr`, branch
+`main`, upstream plus a few generic features (clickable toasts, `pane.seen.set`,
+path links, scrollback search keys).
+
+## Shell
+
+`.zshenv`, `.zprofile` and `.zshrc` each source three phase directories in
+order: `pre-init` (PATH, completion prerequisites), `init` (aliases,
+functions, tools) and `post-init` (widgets, keybindings, hooks). Add behavior
+as one focused file in the right phase directory.
+
+- `zshrc/post-init/zle-editor.zsh`: VS Code-like line editing (word and line
+  movement, selection, undo, cut).
+- `zshrc/post-init/zle-kitty-protocol.zsh`: the ZLE pushes the kitty keyboard
+  protocol while it edits and pops it before a command runs, so modified keys
+  arrive as CSI-u sequences in Ghostty and in herdr panes, local or over ssh.
+- `zshrc/post-init/bindings.zsh`: `ctrl+space` navgator, `ctrl+n` new
+  project, `ctrl+s` AI sessions, and the rest.
+- `zshrc/post-init/herdr.zsh`: tells the spaces plugin about every `cd`.
+- Plugins load with `gh_source`, which bootstraps itself from
+  `zshenv/pre-init/_gh_source.zsh`.
+
+## Repos: bare + container layout
+
+Every repo is a container directory:
+
+```
+~/Github/<project>/
+├── .bare/     the git directory
+├── _shared/   local-only files (secrets, env), symlinked into each checkout
+├── main/      one checkout per branch, named after the branch's last segment
+└── <branch>/
+```
+
+- `bin/wt-migrate <dir>` converts a clone (dry run by default, `--yes` to
+  apply).
+- `bin/wt-new <branch> [base]` adds a checkout; in herdr, `cmd+alt+n` runs
+  it and opens the checkout as a space.
+- `bin/git-shared-link` links `_shared/` files into a checkout; the global
+  `post-checkout` hook runs it on every checkout, clone and `worktree add`.
+- `bin/herdr-open-path <path> [command]` focuses the space that holds a
+  path, or opens one; navgator and Raycast use it.
+
+`bin/` is not on `PATH`; call these by path.
 
 ## Bootstrap
 
-For reference, this is how the setup wires itself onto a fresh machine.
-
-Prerequisites: `zsh`, `git`, and GNU `stow` (macOS: `brew install stow`). The
-`gh_source` plugin helper is self-bootstrapped by the dotfiles themselves
-(`zshenv/pre-init/_gh_source.zsh`), so nothing extra is needed for plugins.
-
-This repo uses a bare + worktree **container** layout (see `bin/wt-migrate`):
-
-    ~/Github/dotfiles/
-    ├── .bare/     the git repository
-    ├── _shared/   local-only files shared across worktrees (secrets), symlinked in
-    └── main/      the working checkout, stow package, and $DOTFILES
-
-Secrets (`zshenv/init/*.secret.zsh`, `*.work.zsh`) live in `_shared/` and are
-symlinked into each worktree by `bin/git-shared-link`, which the global
-`post-checkout` hook runs on every checkout, clone, and `git worktree add`. They
-are never duplicated across worktrees or committed.
-
-1. Clone to the expected location, then convert it to the container layout with
-   the included tool — `$DOTFILES` is hardcoded to `~/Github/dotfiles/main` in
-   `.zshenv` and `.zshrc`:
-
-   ```sh
-   git clone <this-repo> ~/Github/dotfiles
-   cd ~/Github/dotfiles
-   bin/wt-migrate .          # dry run: print the plan
-   bin/wt-migrate --yes .    # apply -> .bare/ + main/ + _shared/
-   ```
-
-2. Preview what stow would link, then adopt (see the Stow workflow section for
-   what `--adopt` does) — run from the `main/` worktree:
-
-   ```sh
-   cd ~/Github/dotfiles/main
-   make stow-adopt-dry-run
-   make stow-adopt
-   ```
-
-3. Open a new shell. `.zshenv` → `.zprofile` → `.zshrc` source their phase
-   directories and everything loads from there.
-
-4. On macOS, open Ghostty. Ghostty runs `herdr` as its command, and the ZLE
-   editor negotiates its key transports with the kitty keyboard protocol
-   (`zshrc/post-init/zle-kitty-protocol.zsh`). No terminal profile setup is
-   required. Terminal config lives in `.config/ghostty/config` and
-   `.config/herdr/config.toml`.
-
-Runtime state (`.claude`, `.agents`, `.config/codex`, …) is stowed as folded
-symlinks so it accumulates inside the `main/` worktree; `.gitignore` keeps that
-state out of history while tracking only the curated config. Stow and git have
-separate jobs here — see `.stow-local-ignore` (keeps repo-internal paths out of
-`$HOME`) versus `.gitignore` (keeps machine state out of git).
-
-## Phase system
-
-Phase-based loader for shell startup.
-The `_dotfiles_source_dir` helper sources `*.zsh` files from phase directories in order.
-
-Startup flow:
-
-- `.zshenv` (always): `zshenv/pre-init` -> `zshenv/init` -> `zshenv/post-init`
-- `.zprofile` (login shells): `zprofile/pre-init` -> `zprofile/init` -> `zprofile/post-init`
-- `.zshrc` (interactive shells): `zshrc/pre-init` -> `zshrc/init` -> `zshrc/post-init`
-
-Phase intent:
-
-- `pre-init`: environment/bootstrap (`PATH`, `FPATH`, completion prerequisites)
-- `init`: aliases, functions, plugin setup, core behavior
-- `post-init`: widgets, keybindings, terminal/UI hooks
-
-Placement rule: add new behavior as a focused file in the correct phase directory instead of expanding entrypoint files.
-
-## Tooling assumptions
-
-- `zsh`
-- `git`
-- `stow`
-- `shellcheck`
-- `gh_source` (for plugin management)
-
-Frequently used optional tools in this setup include `gh`, `fzf`, `bat`, `rg`, `fd`, `atuin`, `starship`, and `cargo`.
-
-## Terminal key transports
-
-`zshrc/post-init/zle-kitty-protocol.zsh` is the source of truth for terminal
-key transports. It loads only inside Ghostty or a herdr pane. ZLE pushes the
-kitty keyboard protocol disambiguate flag while it edits and pops it before a
-command runs, so Command and modified keys arrive as CSI-u sequences. Remote
-shells that load these dotfiles negotiate the same way through `ssh`, so no
-per-host profile switching is needed. `tests/zle-editor.zsh` exercises the
-widgets with `zsh/zpty` and does not need a terminal emulator.
-
-iTerm2 stays installed as a fallback application. No file in this repo depends
-on it.
-
-## Stow workflow
-
-This repo is managed as the `main` GNU Stow package, run from the `main/` worktree;
-the Makefile derives the stow directory as its parent (the container).
-
-- Preview adoption first: `make stow-adopt-dry-run`
-- Adopt and restow files into `~`: `make stow-adopt`
-
-The Makefile derives the stow directory from the repo location and uses `$(HOME)` as the target, so the command does not depend on a hardcoded username.
-
-`stow-adopt` runs the equivalent of:
+Needs `zsh`, `git`, GNU `stow` and a Nerd Font (JetBrains Mono).
 
 ```sh
-stow --verbose --dir "$(dirname "$PWD")" --target "$HOME" "$(basename "$PWD")" --adopt
+git clone https://github.com/Yarden-zamir/dotfiles ~/Github/dotfiles
+cd ~/Github/dotfiles && bin/wt-migrate --yes .
+cd main && make stow-adopt-dry-run && make stow-adopt
 ```
 
-Use `--adopt` carefully: it can move existing files from `~` into this repo before linking them back.
+`$DOTFILES` is `~/Github/dotfiles/main`. Stow links the `main/` checkout into
+`$HOME`; `.stow-local-ignore` keeps repo-internal paths out of `$HOME`, and
+`.gitignore` keeps runtime state (agent caches, herdr sockets and logs) out of
+git. Secrets live in `_shared/` and match `*secret*`, so they never enter git.
 
-## Editing guidelines
+## Also here
 
-- Keep changes modular: add/update a focused file in the proper phase directory.
-- Avoid broad inline `source` blocks in `.zshenv` or `.zshrc`.
-- Follow existing `gh_source` usage for plugin sourcing.
-- Use `gh_source --loaded` only for hard dependencies.
+- `.claude/`: `CLAUDE.md` instructions (the same text as `AGENTS.md`), skills
+  and settings for Claude Code.
+- `.config/opencode`, `.config/codex`, `.config/navgator`,
+  `.config/sessiongator`: agent and tool configs.
+- `raycast/`: script commands (Dock slots, navgator, GatorPad); point
+  Raycast's script directory at `$DOTFILES/raycast`.
+- `Library/Application Support/Code/User/`: VS Code settings and keys.
+- `tests/`: `zle-editor.zsh` drives the ZLE widgets under `zsh/zpty`;
+  `herdr-archive-fake.py` and `herdr-links.sh` test plugins against a fake
+  herdr socket; `wt-migrate.sh` tests the layout conversion. No test sends
+  keystrokes to a real terminal.
