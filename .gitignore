@@ -24,6 +24,7 @@
 /.config/opencode/*
 !/.config/opencode/opencode.jsonc
 !/.config/opencode/tui.jsonc
+!/.config/opencode/cli.json
 !/.config/opencode/command/
 !/.config/opencode/tools/
 
