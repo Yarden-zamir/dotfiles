@@ -264,7 +264,7 @@
   "[javascript]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
-  "python.defaultInterpreterPath": "/Users/kcw/.local/share/uv/python/cpython-3.14-macos-aarch64-none/bin/python3.14",
+  "python.defaultInterpreterPath": "${env:HOME}/.local/share/uv/python/cpython-3.14-macos-aarch64-none/bin/python3.14",
   "errorLens.fontSize": "10",
   "errorLens.fontWeight": "500",
   "errorLens.codeLensEnabled": false,

@@ -20,7 +20,7 @@ if [[ ! -x "$GATORPAD_BIN" ]]; then
     exit 1
 fi
 
-/usr/bin/open -na "/Applications/Ghostty.app" --args \
+/usr/bin/open -na Ghostty --args \
     --config-default-files=false \
     --font-size=28 \
     --maximize=true \

@@ -8,7 +8,9 @@
 # lsregister -f on the terminal-notifier.app bundle again.
 set -eu
 
-notifier=/opt/homebrew/bin/terminal-notifier
+# The server's PATH may lack Homebrew; search the usual install dirs.
+PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+notifier=$(command -v terminal-notifier) || { echo "notify: terminal-notifier not found in PATH" >&2; exit 1; }
 herdr=${HERDR_BIN_PATH:-herdr}
 pane=${HERDR_NOTIFICATION_PANE_ID:-}
 tab=${HERDR_NOTIFICATION_TAB_ID:-}
