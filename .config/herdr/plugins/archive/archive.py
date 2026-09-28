@@ -12,6 +12,14 @@ its own tab, labeled "<origin space> › <pane title>". Restore moves a pane
 back to its origin workspace, or recreates that workspace when the archive
 move closed it (moving the last pane out of a workspace closes it).
 
+With exit_agents_on_archive, archive first quits an idle agent (claude,
+opencode, codex, copilot) with ctrl+c and saves its session id. Restore
+then runs the resume command in the pane.
+
+Stack entries key on the archive pane id (e.g. w49:p3). herdr keeps pane
+ids across a server restart; terminal ids change. Entries written before
+0.3.0 have no pane_id: they match no pane, so reap and restore skip them.
+
 restore-last pops the newest entry. restore-pick runs fzf over every live
 archived pane (run it inside a popup pane). clear closes the whole archive
 workspace. reap closes archived panes older than `max_age_days`; archive
@@ -24,6 +32,7 @@ first run). State: $HERDR_PLUGIN_STATE_DIR/stack.json.
 
 import json
 import os
+import shlex
 import socket
 import subprocess
 import sys
@@ -52,6 +61,10 @@ toasts = true
 # Focus a pane when it is restored. When false, the restore toast still
 # offers a click to jump there.
 focus_on_restore = true
+
+# Quit an idle agent before its pane moves to the archive, and resume its
+# session on restore. A working or blocked agent is never interrupted.
+exit_agents_on_archive = true
 """
 
 
@@ -61,6 +74,7 @@ class Config:
     max_age_days: float
     toasts: bool
     focus_on_restore: bool
+    exit_agents_on_archive: bool
 
 
 def plugin_dir(env_name: str) -> Path:
@@ -81,6 +95,7 @@ def load_config() -> Config:
         max_age_days=float(data.get("max_age_days", 14)),
         toasts=bool(data.get("toasts", True)),
         focus_on_restore=bool(data.get("focus_on_restore", True)),
+        exit_agents_on_archive=bool(data.get("exit_agents_on_archive", True)),
     )
 
 
@@ -171,6 +186,76 @@ def age_text(archived_at: float) -> str:
     return f"{int(hours / 24)}d"
 
 
+# --- agents ---------------------------------------------------------------
+
+# Resume commands per agent, a copy of herdr src/agent_resume.rs plan().
+# Limit: only these four agents. Replace this table when herdr exposes the
+# resume argv on agent_session.
+RESUME_ARGV = {
+    "claude": lambda sid: ["claude", "--resume", sid],
+    "opencode": lambda sid: ["opencode", "--session", sid],
+    "codex": lambda sid: ["codex", "resume", sid],
+    "copilot": lambda sid: ["copilot", f"--resume={sid}"],
+}
+QUIT_STATUSES = {"idle", "done"}  # never interrupt working, blocked or unknown
+QUIT_ATTEMPTS = 3
+QUIT_KEY_GAP = 0.3  # second ctrl+c must land inside the agent's "press again" window
+QUIT_WAIT = 2.0
+POLL = 0.2
+
+
+def resumable_session(pane: dict) -> dict | None:
+    """The pane's native agent session when herdr and RESUME_ARGV know it."""
+    session = pane.get("agent_session")
+    if session is None:
+        return None
+    agent = session["agent"]
+    if agent not in RESUME_ARGV or session["kind"] != "id" or session["source"] != f"herdr:{agent}":
+        return None
+    return session
+
+
+def shell_in_foreground(pane_id: str) -> bool:
+    info = request("pane.process_info", {"pane_id": pane_id})["process_info"]
+    shell_pid = info.get("shell_pid")
+    if shell_pid is None:
+        raise RuntimeError(f"pane {pane_id} has no shell pid")
+    return info.get("foreground_process_group_id") == shell_pid
+
+
+def quit_agent(pane: dict) -> bool:
+    """Quit the idle agent in the pane with ctrl+c. True when the shell is back.
+
+    The first ctrl+c clears a draft; claude, codex and copilot quit on a
+    second ctrl+c; opencode quits on the first. A ctrl+c that reaches the
+    shell does nothing. On timeout the agent stays alive (no kill).
+    """
+    pane_id = pane["pane_id"]
+    if shell_in_foreground(pane_id):
+        return True
+    if pane.get("agent_status") not in QUIT_STATUSES:
+        return False
+    for _ in range(QUIT_ATTEMPTS):
+        request("pane.send_keys", {"pane_id": pane_id, "keys": ["ctrl+c"]})
+        time.sleep(QUIT_KEY_GAP)
+        request("pane.send_keys", {"pane_id": pane_id, "keys": ["ctrl+c"]})
+        deadline = time.monotonic() + QUIT_WAIT
+        while time.monotonic() < deadline:
+            if shell_in_foreground(pane_id):
+                return True
+            time.sleep(POLL)
+    return False
+
+
+def resume_agent(session: dict, pane_id: str) -> bool:
+    """Run the resume command in the pane when its shell is in the foreground."""
+    if not shell_in_foreground(pane_id):
+        return False  # the agent never quit, or something else runs there
+    argv = RESUME_ARGV[session["agent"]](session["value"])
+    request("pane.send_input", {"pane_id": pane_id, "text": shlex.join(argv), "keys": ["Enter"]})
+    return True
+
+
 # --- actions --------------------------------------------------------------
 
 
@@ -206,6 +291,14 @@ def do_archive() -> None:
         return
     origin = next(w for w in workspaces() if w["workspace_id"] == pane["workspace_id"])
     title = pane_title(pane)
+    session = resumable_session(pane)
+    agent_note = ""
+    # Quit only a resumable agent; without a session id the conversation is lost.
+    if CONFIG.exit_agents_on_archive and session is not None:
+        if quit_agent(pane):
+            agent_note = f" · {session['agent']} exited"
+        else:
+            agent_note = f" · {session['agent']} still running ({pane.get('agent_status')})"
     if target:
         destination = {"type": "new_tab", "workspace_id": target["workspace_id"]}
     else:
@@ -219,16 +312,17 @@ def do_archive() -> None:
     })
     state["archive_workspace_id"] = moved["workspace_id"]
     state["stack"].append({
-        "terminal_id": moved["terminal_id"],
+        "pane_id": moved["pane_id"],
         "origin_workspace_id": origin["workspace_id"],
         "origin_label": origin["label"],
         "title": title,
         "archived_at": time.time(),
+        "agent_session": session,
     })
     save_state(state)
     pin_last(state)
     reap(state)
-    toast("Archived", f"{title} · click to restore",
+    toast("Archived", f"{title}{agent_note} · click to restore",
           {"type": "plugin_action", "action_id": f"{PLUGIN_ID}.restore-last"})
 
 
@@ -243,6 +337,9 @@ def restore(entry: dict, pane: dict) -> None:
         "focus": CONFIG.focus_on_restore,
     })["move_result"]["pane"]
     title = entry.get("title") or pane_title(pane)  # entries before 0.2.0 have no title
+    session = entry.get("agent_session")
+    if session is not None and resume_agent(session, moved["pane_id"]):
+        title = f"{title} · {session['agent']} resumed"
     # A focus_pane toast is suppressed while the pane's tab is visible, so
     # it only appears when the restore happened out of view.
     toast("Restored", f"{title} → {entry['origin_label']}",
@@ -250,21 +347,22 @@ def restore(entry: dict, pane: dict) -> None:
 
 
 def archived_panes(state: dict) -> dict[str, dict]:
-    """Live panes in the archive workspace, keyed by terminal id."""
+    """Live panes in the archive workspace, keyed by pane id."""
     target = archive_workspace(state)
     if target is None:
         return {}
-    return {p["terminal_id"]: p for p in panes(target["workspace_id"])}
+    return {p["pane_id"]: p for p in panes(target["workspace_id"])}
 
 
 def untracked_entry(pane: dict) -> dict:
     """Stack entry for a pane that reached the archive without this plugin."""
     return {
-        "terminal_id": pane["terminal_id"],
+        "pane_id": pane["pane_id"],
         "origin_workspace_id": None,
         "origin_label": "restored",
         "title": pane_title(pane),
         "archived_at": None,
+        "agent_session": None,
     }
 
 
@@ -274,7 +372,7 @@ def do_restore_last() -> None:
     stack = state["stack"]
     while stack:
         entry = stack.pop()
-        pane = archived.get(entry["terminal_id"])
+        pane = archived.get(entry.get("pane_id"))
         if pane is None:
             continue  # closed from inside the archive; drop the stale entry
         save_state(state)
@@ -290,14 +388,14 @@ def do_restore_pick() -> None:
     archived = archived_panes(state)
     if not archived:
         sys.exit("archive is empty")
-    tracked = {e["terminal_id"]: e for e in state["stack"]}
-    entries = [tracked.get(tid) or untracked_entry(p) for tid, p in archived.items()]
+    tracked = {e["pane_id"]: e for e in state["stack"] if "pane_id" in e}
+    entries = [tracked.get(pid) or untracked_entry(p) for pid, p in archived.items()]
     entries.sort(key=lambda e: e["archived_at"] or 0, reverse=True)
     rows = []
     for entry in entries:
         age = age_text(entry["archived_at"]) if entry["archived_at"] else "?"
-        title = entry.get("title") or pane_title(archived[entry["terminal_id"]])
-        rows.append(f"{entry['terminal_id']}\t{age:>4}  {entry['origin_label']} › {title}")
+        title = entry.get("title") or pane_title(archived[entry["pane_id"]])
+        rows.append(f"{entry['pane_id']}\t{age:>4}  {entry['origin_label']} › {title}")
     proc = subprocess.run(
         ["fzf", "--delimiter=\t", "--with-nth=2", "--prompt=restore > ",
          "--reverse", "--no-info"],
@@ -305,11 +403,11 @@ def do_restore_pick() -> None:
     )
     if proc.returncode != 0:
         return  # cancelled
-    terminal_id = proc.stdout.split("\t", 1)[0].strip()
-    entry = next(e for e in entries if e["terminal_id"] == terminal_id)
-    state["stack"] = [e for e in state["stack"] if e["terminal_id"] != terminal_id]
+    pane_id = proc.stdout.split("\t", 1)[0].strip()
+    entry = next(e for e in entries if e["pane_id"] == pane_id)
+    state["stack"] = [e for e in state["stack"] if e.get("pane_id") != pane_id]
     save_state(state)
-    restore(entry, archived[terminal_id])
+    restore(entry, archived[pane_id])
 
 
 def reap(state: dict) -> None:
@@ -320,7 +418,7 @@ def reap(state: dict) -> None:
     cutoff = time.time() - CONFIG.max_age_days * DAY_SECONDS
     closed = []
     for entry in state["stack"]:
-        pane = archived.get(entry["terminal_id"])
+        pane = archived.get(entry.get("pane_id"))
         if pane is not None and entry["archived_at"] < cutoff:
             request("pane.close", {"pane_id": pane["pane_id"]})
             closed.append(entry)
