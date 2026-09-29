@@ -29,7 +29,6 @@ fi
     --window-save-state=never \
     --macos-titlebar-style=hidden \
     --confirm-close-surface=false \
-    --quit-after-last-window-closed=true \
     -e "$NAVGATOR_BIN" \
     --config-entry 'ui.theme="dark"' \
     --config-entry 'actions.picker=["open-vs-code","open-intellij","open-rider","open-herdr","open-github-desktop","open-repo-online","open-claude-herdr","open-opencode-herdr", "open-finder"]' \
