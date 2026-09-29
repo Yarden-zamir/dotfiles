@@ -31,6 +31,7 @@ If a source now says something else, trust the source and update this skill.
 - No API deletes a GitHub App. To delete one, give the user `https://github.com/settings/apps/<slug>/advanced` (for an organization, see the app settings). Deletion also revokes the user sign-ins.
 - A site with a service worker: the worker must not handle the sign-in routes (for oauth2-proxy, `/auth/*`) or a per-visitor "who am I" route. A worker that fetches the sign-in route again cannot follow the redirect to github.com, and Chrome shows `ERR_FAILED`. curl has no worker, so a curl check does not show this fault.
 - Decide who may sign in. Both choices are valid, so ask the user. Choice 1: the proxy blocks all other people at sign-in (`--github-user`, `--github-org`). Choice 2: any GitHub user signs in, and the app checks a whitelist of logins. With choice 2, a stranger signs in and gets no rights, and you add a person with an app config change.
+- An app without `"public": true` in the manifest is private. GitHub then answers 404 to every other person on the sign-in page, before the proxy or the whitelist can act. Set `"public": true` for any app that other people sign in to. To change an existing app, use **Make public** on `https://github.com/settings/apps/<slug>/advanced`. That page asks for sudo mode, so the user confirms it first.
 
 ## Steps
 

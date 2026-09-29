@@ -82,7 +82,7 @@ available" until then.
 - Headless Chrome lays out at 500 px minimum; phone checks and screenshots use that width.
 - `recipe auth` reads the git remote, so worktree layouts are fine. The first push deploys.
 - Trip-log editing (optional): list GitHub logins in `trek.json` `"editors"`. Create a GitHub App with the
-  `github-app-setup` skill: callback `https://<hostname>/auth/callback`, permission `emails: read`. Put its
+  `github-app-setup` skill: callback `https://<hostname>/auth/callback`, permission `emails: read`, `"public": true`. Put its
   client id, client secret and a cookie secret in the `prod` environment as `KITSHN_OAUTH2_PROXY_CLIENT_ID`,
   `KITSHN_OAUTH2_PROXY_CLIENT_SECRET` and `KITSHN_OAUTH2_PROXY_COOKIE_SECRET`. Then set `"auth": true` and
   build. `src/build.py` writes `compose.override.yml` with the editors and the oauth2-proxy service; a repo
