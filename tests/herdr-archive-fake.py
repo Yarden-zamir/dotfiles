@@ -172,7 +172,7 @@ def test_idle_agent_quits_and_resumes() -> None:
     assert archived["fg"] == archived["shell_pid"], "agent still in foreground"
     assert entry["agent_session"]["value"] == SID
     assert [k for _, k in env.fake.keys] == ["ctrl+c", "ctrl+c"]
-    assert "claude exited" in env.fake.toasts[-1]
+    assert env.fake.toasts == [], "a normal archive posts no toast"
 
     env.run("restore-last")
     assert env.stack() == []
@@ -188,7 +188,7 @@ def test_working_agent_is_not_interrupted() -> None:
     env.fake.add_pane("w1")
     env.run("archive", pane)
     assert env.fake.keys == []
-    assert "still running (working)" in env.fake.toasts[-1]
+    assert env.fake.toasts[-1].startswith("Archived, agent still running")
     env.run("restore-last")
     assert env.fake.inputs == [], "resume typed into a live agent"
     env.close()

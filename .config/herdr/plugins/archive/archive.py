@@ -55,7 +55,8 @@ label = "archive"
 # The reaper runs on every archive action and on server startup.
 max_age_days = 14
 
-# Show herdr toasts on archive/restore/clear/reap.
+# Show herdr toasts on restore, clear, reap, and when an archived agent
+# keeps running. A normal archive shows none.
 toasts = true
 
 # Focus a pane when it is restored. When false, the restore toast still
@@ -292,13 +293,9 @@ def do_archive() -> None:
     origin = next(w for w in workspaces() if w["workspace_id"] == pane["workspace_id"])
     title = pane_title(pane)
     session = resumable_session(pane)
-    agent_note = ""
     # Quit only a resumable agent; without a session id the conversation is lost.
-    if CONFIG.exit_agents_on_archive and session is not None:
-        if quit_agent(pane):
-            agent_note = f" · {session['agent']} exited"
-        else:
-            agent_note = f" · {session['agent']} still running ({pane.get('agent_status')})"
+    agent_alive = (CONFIG.exit_agents_on_archive and session is not None
+                   and not quit_agent(pane))
     if target:
         destination = {"type": "new_tab", "workspace_id": target["workspace_id"]}
     else:
@@ -322,8 +319,11 @@ def do_archive() -> None:
     save_state(state)
     pin_last(state)
     reap(state)
-    toast("Archived", f"{title}{agent_note} · click to restore",
-          {"type": "plugin_action", "action_id": f"{PLUGIN_ID}.restore-last"})
+    # No toast for a normal archive: the pane leaves the view, and cmd+shift+t
+    # restores it. Warn only when the agent keeps running in the archive.
+    if agent_alive:
+        toast("Archived, agent still running",
+              f"{title} · {session['agent']} was {pane.get('agent_status')}")
 
 
 def restore(entry: dict, pane: dict) -> None:
