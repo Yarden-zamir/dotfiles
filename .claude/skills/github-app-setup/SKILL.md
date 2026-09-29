@@ -31,7 +31,7 @@ If a source now says something else, trust the source and update this skill.
 - No API deletes a GitHub App. To delete one, give the user `https://github.com/settings/apps/<slug>/advanced` (for an organization, see the app settings). Deletion also revokes the user sign-ins.
 - A site with a service worker: the worker must not handle the sign-in routes (for oauth2-proxy, `/auth/*`) or a per-visitor "who am I" route. A worker that fetches the sign-in route again cannot follow the redirect to github.com, and Chrome shows `ERR_FAILED`. curl has no worker, so a curl check does not show this fault.
 - Decide who may sign in. Both choices are valid, so ask the user. Choice 1: the proxy blocks all other people at sign-in (`--github-user`, `--github-org`). Choice 2: any GitHub user signs in, and the app checks a whitelist of logins. With choice 2, a stranger signs in and gets no rights, and you add a person with an app config change.
-- An app without `"public": true` in the manifest is private. GitHub then answers 404 to every other person on the sign-in page, before the proxy or the whitelist can act. Set `"public": true` for any app that other people sign in to. To change an existing app, use **Make public** on `https://github.com/settings/apps/<slug>/advanced`. That page asks for sudo mode, so the user confirms it first.
+- An app without `"public": true` in the manifest is private. GitHub then answers 404 to every other person on the sign-in page, before the proxy or the whitelist can act. The default in this skill is `"public": true`. Make an app private only when the user asks for that. To change an existing app, use **Make public** on `https://github.com/settings/apps/<slug>/advanced`. That page asks for sudo mode, so the user confirms it first.
 
 ## Steps
 
@@ -40,7 +40,7 @@ If a source now says something else, trust the source and update this skill.
    - In the bare + worktree layout (a `.bare/` folder in the container directory), write to `<container>/_shared/`. See the `worktree-repo` skill.
    - Otherwise, write to the git-ignored env file of the project. Confirm with `git check-ignore <file>` before you write a secret.
 3. Ask the user for the owner (personal account or organization) and for each environment that needs a callback URL.
-4. Write the manifest from the manifest docs. Ask for the minimum permissions that the feature needs. Leave `redirect_url` to the skeleton.
+4. Write the manifest from the manifest docs. Ask for the minimum permissions that the feature needs. Set `"public": true` unless the user asks for a private app. Leave `redirect_url` to the skeleton.
 5. Fill in the `TODO` values of the skeleton. Check each URL and response field against the sources.
 6. Run it with the Bash tool in the background, because it waits for the user. Tell the user to click **Create GitHub App** in the browser.
 7. In the worktree layout, run `$DOTFILES/bin/git-shared-link <worktree>` to link the new files. Do not create the links by hand.
@@ -110,7 +110,7 @@ CONVERSION_URL = "https://api.github.com/app-manifests/{code}/conversions"  # TO
 ENV_FILE = Path("/abs/path/_shared/.env.local")  # TODO: from step 2
 PEM_FILE = ENV_FILE.with_name("github-app.private-key.pem")  # own file: many .env loaders reject multi-line values
 ENV_NAMES = {"client_id": "GITHUB_CLIENT_ID", "client_secret": "GITHUB_CLIENT_SECRET"}  # TODO: response field -> project variable
-manifest: dict = {}  # TODO: from step 4
+manifest: dict = {"public": True}  # TODO: the rest from step 4; public, so that other people can sign in
 
 existing_env = ENV_FILE.read_text() if ENV_FILE.exists() else ""
 clashes = [name for name in ENV_NAMES.values() if f"{name}=" in existing_env]
