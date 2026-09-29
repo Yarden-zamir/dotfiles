@@ -23,6 +23,7 @@ picker = [
     "open-vs-code",
     "open-github-desktop",
     "open-intellij",
+    "open-rider",
     "open-claude-session",
     "open-opencode-session",
     "navigate-to",
@@ -38,12 +39,24 @@ type = "command"
 command = "open"
 args = ["{path}"]
 
+# Rider is a JetBrains Toolbox install (~/Applications/Rider.app). Its
+# Toolbox launcher is named `rider1`, is not on PATH, and itself runs
+# `open -na .../Rider.app`, so call open directly. If Rider moves to a
+# `rider` CLI on PATH, switch to it like the built-in `idea` action.
+[[actions.items]]
+id = "open-rider"
+label = "Open in Rider"
+icon = ""
+type = "command"
+command = "open"
+args = ["-na", "Rider", "--args", "{path}"]
+
 # herdr actions: focus the space that works in the path or create one.
 # The claude/opencode variants open a tab in that space and run the tool.
 [[actions.items]]
 id = "open-herdr"
 label = "Open in herdr"
-icon = ""
+icon = "󰆍"
 type = "command"
 command = "/Users/kcw/Github/dotfiles/main/bin/herdr-open-path"
 args = ["{path}"]
@@ -96,7 +109,7 @@ required = true
 
 [[create.items]]
 label = "New branch + worktree"
-icon = ""
+icon = ""
 current_dir = "{path}"
 success_path = "{path}"
 shell = '''

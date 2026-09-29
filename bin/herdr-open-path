@@ -5,6 +5,22 @@
 # Usage: herdr-open-path <absolute-path> [command...]
 set -eu
 
+# The Raycast launcher runs navgator in a Ghostty started by launchd, whose
+# PATH has neither herdr (~/.local/bin) nor Homebrew.
+PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+
+# Outside herdr the launcher window closes when navgator exits, so an error
+# on stderr is never seen. Report it as a notification instead.
+target=${1-}
+if [ -z "${HERDR_ENV-}" ]; then
+    notify_failure() {
+        status=$?
+        [ "$status" -eq 0 ] && return 0
+        osascript -e "display notification \"exit $status for $target\" with title \"herdr-open-path failed\"" >/dev/null 2>&1 || true
+    }
+    trap notify_failure EXIT
+fi
+
 if [ $# -lt 1 ] || [ -z "$1" ]; then
     echo "usage: herdr-open-path <absolute-path> [command...]" >&2
     exit 2
@@ -15,7 +31,10 @@ herdr=${HERDR_BIN_PATH:-herdr}
 
 # Match on pane cwd, never on labels: space-sync rewrites labels. An exact
 # cwd match wins; a pane deeper inside the path is the fallback.
-workspace=$("$herdr" pane list | jq -r --arg path "$path" '
+# A separate assignment so a failed `pane list` stops the script instead of
+# reading as "no space holds this path".
+panes=$("$herdr" pane list)
+workspace=$(printf '%s' "$panes" | jq -r --arg path "$path" '
     [.result.panes[] | select(.cwd == $path)][0].workspace_id
     // [.result.panes[] | select(.cwd | startswith($path + "/"))][0].workspace_id
     // empty')
@@ -41,7 +60,11 @@ else
 fi
 
 # Outside herdr (the Raycast launcher window) bring the herdr window forward
-# after the launcher closes. Inside herdr the popup pane closes itself.
+# after the launcher closes. The launcher pty hangs up this process group
+# when it closes. Ignore SIGHUP before the fork so the delayed call starts
+# with it ignored (nohup inside the child loses that race). Inside herdr the
+# popup pane closes itself.
 if [ -z "${HERDR_ENV-}" ]; then
+    trap '' HUP
     (sleep 0.4 && open -a Ghostty) >/dev/null 2>&1 &
 fi

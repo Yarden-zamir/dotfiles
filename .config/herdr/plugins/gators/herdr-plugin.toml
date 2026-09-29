@@ -48,7 +48,7 @@ platforms = ["macos", "linux"]
 placement = "popup"
 width = "70%"
 height = "60%"
-command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec \"$HOME/Github/navgator/main/target/release/navgator\" --config-entry 'actions.picker=[\"open-herdr\",\"open-claude-herdr\",\"open-opencode-herdr\",\"open-vs-code\",\"open-intellij\",\"open-github-desktop\",\"open-repo-online\",\"open-finder\"]' --config-entry 'keybindings.navigator.enter=\"actions\"'"]
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec \"$HOME/Github/navgator/main/target/release/navgator\" --config-entry 'actions.picker=[\"open-herdr\",\"open-claude-herdr\",\"open-opencode-herdr\",\"open-vs-code\",\"open-intellij\",\"open-rider\",\"open-github-desktop\",\"open-repo-online\",\"open-finder\"]' --config-entry 'keybindings.navigator.enter=\"actions\"'"]
 
 [[panes]]
 id = "sessions"
