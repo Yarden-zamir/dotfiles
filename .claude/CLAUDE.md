@@ -69,6 +69,8 @@ Commit and branch preferences:
 
 In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information. Do not sacrifice clarity for brevity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity
 
+Never give time estimates (hours, days, weeks) for work. Agentic work makes them irrelevant; describe scope, risk and dependencies instead.
+
 When exploring external code that we own like other services, sdk, forks, try to find local clone of the codebase and explore there, otherwise attempt to clone to a local place same as my other clones and explore there. Never check compiled decompiled deps and try to reverse engineer unless no other way is possible.
 
 for any markdown file/documect, code comments or technical text: Rough ASD-STE100 style. Max 20 words per sentence in instructions, 25 in descriptions. Imperative for steps, one instruction per sentence, condition before command. Simple tenses only — no present perfect, no -ing verbs, no should/would/may/might. Active voice. One word per meaning — no synonym rotation. No contractions, keep articles and "that". Delete filler: simply, robust, seamlessly, leverage. Code and identifiers stay exact.
