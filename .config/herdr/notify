@@ -43,10 +43,11 @@ last_reply_line() {
 # Drop Private Use Area glyphs (the Nerd Font icon in space labels):
 # Notification Center has no font for them and shows a "?" box.
 strip_icons() { jq -Rr 'explode | map(select(. < 57344 or . > 63743)) | implode | ltrimstr(" ")'; }
-# Keep the end of a long reply. A banner shows about three lines and cuts
-# the rest, so the start goes and the ending stays. Cut at a word boundary.
-# Limit: 110 characters fits the default banner width; retune if it changes.
-reply_tail() { jq -Rr --argjson n 110 'if length <= $n then . else .[-$n:] | "…" + .[(index(" ") // -1) + 1:] end'; }
+# Keep the end of a long reply. An expanded notification shows about ten
+# lines (measured: 320 characters fit, 350 cut), so the start goes and the
+# ending stays. Cut at a word boundary.
+# Limit: 300 characters; retune if macOS changes the expanded size.
+reply_tail() { jq -Rr --argjson n 300 'if length <= $n then . else .[-$n:] | "…" + .[(index(" ") // -1) + 1:] end'; }
 
 context=$(printf '%s\n' "${HERDR_NOTIFICATION_BODY:-}" | strip_icons)
 reply=$(last_reply_line 2>/dev/null | reply_tail) || reply=
