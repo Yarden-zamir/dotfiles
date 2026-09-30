@@ -45,10 +45,17 @@ reply=$(last_reply_line 2>/dev/null) || reply=
 # terminal-notifier drops a message that starts with "["; escape it.
 case $reply in "["*) reply="\\$reply" ;; esac
 
+# With a reply line: the context is the title and the reply is the message.
+# Without one: herdr's title ("claude finished") and the context.
+if [ -n "$reply" ] && [ -n "$context" ]; then
+    title=$context message=$reply
+else
+    title=$HERDR_NOTIFICATION_TITLE message=${reply:-$context}
+fi
+
 exec "$notifier" \
-    -title "$HERDR_NOTIFICATION_TITLE" \
-    -subtitle "${reply:+$context}" \
-    -message "${reply:-$context}" \
+    -title "$title" \
+    -message "$message" \
     -group "herdr-${pane:-$HERDR_NOTIFICATION_KIND}" \
     -execute "$on_click" \
     -activate com.mitchellh.ghostty
