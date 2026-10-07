@@ -1,0 +1,135 @@
+#!/opt/homebrew/bin/node
+// t3-open-path — open a path in its T3 Code project and start a new thread.
+// Sends the same socket request as `t3 app <path>` (apps/server/src/cli/app.ts
+// in ~/Github/t3code), so no t3 CLI install is needed.
+// Usage: t3-open-path <path>
+//
+// Known limits:
+// - The thread works in the project root (<repo>/main), not in the selected
+//   branch checkout: the request has no worktree field. Revisit if T3 adds one.
+// - A container with no T3 project yet gets a new project titled "main" (T3
+//   names it after the folder). Import or rename it in T3 if that happens.
+// - Protocol version 1 is internal to T3. If requests fail with
+//   "invalid-request" after a T3 update, re-read the files named above.
+// The shebang is absolute: the Raycast launcher runs under launchd, whose
+// PATH has no Homebrew.
+import { execFileSync, spawn } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
+import { existsSync, realpathSync, statSync } from "node:fs";
+import { connect } from "node:net";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
+
+const APP_NAME = "T3 Code (Nightly)";
+const STARTUP_TIMEOUT_MS = 30_000;
+const RESPONSE_TIMEOUT_MS = 20_000;
+
+const target = process.argv[2];
+
+function fail(message) {
+  console.error(`t3-open-path: ${message}`);
+  // Outside herdr the launcher window closes when navgator exits, so stderr
+  // is never seen. Report the error as a notification too.
+  if (!process.env.HERDR_ENV) {
+    const text = JSON.stringify(message);
+    try {
+      execFileSync("osascript", ["-e", `display notification ${text} with title "t3-open-path failed"`]);
+    } catch {}
+  }
+  process.exit(1);
+}
+
+// A bare+container repo is one T3 project rooted at <container>/main, so any
+// path inside the container maps to that root. Other paths are their own root.
+function projectRoot(path) {
+  for (let dir = path; dir !== dirname(dir); dir = dirname(dir)) {
+    if (existsSync(join(dir, ".bare"))) return join(dir, "main");
+  }
+  return path;
+}
+
+// Mirrors resolveDesktopAppControlAddress in packages/shared/src/desktopAppControl.ts
+// for the default T3 home (~/.t3). The app uses os.tmpdir(), which is $TMPDIR;
+// launchd children can lack it, so ask the system for the same directory.
+function socketPath() {
+  const stateHash = createHash("sha256")
+    .update(join(homedir(), ".t3", "userdata"))
+    .digest("hex")
+    .slice(0, 24);
+  const tempDir =
+    process.env.TMPDIR || execFileSync("getconf", ["DARWIN_USER_TEMP_DIR"], { encoding: "utf8" }).trim();
+  return join(tempDir, `t3code-${process.getuid()}`, `${stateHash}.sock`);
+}
+
+// Resolves with the parsed reply line, or rejects with the socket error.
+// The socket stays open until the reply: T3 cancels the request on close.
+function send(address, request) {
+  return new Promise((resolve, reject) => {
+    const socket = connect(address);
+    let buffer = "";
+    socket.setEncoding("utf8");
+    socket.setTimeout(RESPONSE_TIMEOUT_MS, () => {
+      socket.destroy();
+      reject(new Error("T3 Code did not reply in time"));
+    });
+    socket.once("connect", () => socket.write(`${JSON.stringify(request)}\n`));
+    socket.on("data", (chunk) => {
+      buffer += chunk;
+      const newline = buffer.indexOf("\n");
+      if (newline === -1) return;
+      socket.destroy();
+      try {
+        resolve(JSON.parse(buffer.slice(0, newline)));
+      } catch {
+        reject(new Error("T3 Code reply is not valid JSON"));
+      }
+    });
+    socket.once("error", reject);
+    socket.once("end", () => reject(new Error("T3 Code closed the connection without a reply")));
+  });
+}
+
+if (!target) fail("usage: t3-open-path <path>");
+let path;
+try {
+  path = realpathSync(target);
+} catch {
+  fail(`no such path: ${target}`);
+}
+const workspaceRoot = projectRoot(path);
+if (!existsSync(workspaceRoot) || !statSync(workspaceRoot).isDirectory()) {
+  fail(`project root is not a directory: ${workspaceRoot}`);
+}
+
+const address = socketPath();
+const request = {
+  version: 1,
+  requestId: randomUUID(),
+  type: "open-workspace",
+  workspaceRoot,
+  platform: "darwin",
+};
+
+// A missing socket or a refused connection means the app is not running.
+// Start it once, then retry until its socket accepts the request.
+let response;
+let launched = false;
+const deadline = Date.now() + STARTUP_TIMEOUT_MS;
+while (response === undefined) {
+  try {
+    response = await send(address, request);
+  } catch (error) {
+    const appDown = error.code === "ENOENT" || error.code === "ECONNREFUSED";
+    if (!appDown) fail(error.message);
+    if (Date.now() > deadline) fail(`${APP_NAME} did not start (no socket at ${address})`);
+    if (!launched) {
+      spawn("open", ["-a", APP_NAME], { stdio: "ignore" }).on("error", (e) => fail(e.message));
+      launched = true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+}
+
+if (response?.requestId !== request.requestId) fail("T3 Code reply does not match the request");
+if (response.ok !== true) fail(`${response.code}: ${response.message}`);
+console.log(`Opened ${workspaceRoot} in T3 Code.`);

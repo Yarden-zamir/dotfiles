@@ -31,5 +31,5 @@ fi
     --confirm-close-surface=false \
     -e "$NAVGATOR_BIN" \
     --config-entry 'ui.theme="dark"' \
-    --config-entry 'actions.picker=["open-vs-code","open-intellij","open-rider","open-herdr","open-github-desktop","open-repo-online","open-claude-herdr","open-opencode-herdr", "open-finder"]' \
+    --config-entry 'actions.picker=["open-t3","open-vs-code","open-intellij","open-rider","open-herdr","open-github-desktop","open-repo-online","open-claude-herdr","open-opencode-herdr", "open-finder"]' \
     --config-entry 'keybindings.navigator.enter="actions"'

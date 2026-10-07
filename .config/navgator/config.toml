@@ -20,6 +20,7 @@ recents = ["/Users/kcw/Downloads", "/opt/homebrew"]
 [actions]
 include_defaults = true
 picker = [
+    "open-t3",
     "open-vs-code",
     "open-github-desktop",
     "open-intellij",
@@ -37,6 +38,16 @@ label = "Open in Finder"
 icon = "󰉋"
 type = "command"
 command = "open"
+args = ["{path}"]
+
+# T3 Code: open the path in its T3 project and start a new thread.
+# bin/t3-open-path maps a bare+container checkout to <repo>/main.
+[[actions.items]]
+id = "open-t3"
+label = "Open in T3 Code"
+icon = ""
+type = "command"
+command = "/Users/kcw/Github/dotfiles/main/bin/t3-open-path"
 args = ["{path}"]
 
 # Rider is a JetBrains Toolbox install (~/Applications/Rider.app). Its
