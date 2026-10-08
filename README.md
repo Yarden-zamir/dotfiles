@@ -92,6 +92,9 @@ Every repo is a container directory:
   default, `--yes` to apply).
 - [`bin/wt-new <branch> [base]`](bin/wt-new) adds a checkout; in herdr,
   `cmd+alt+n` runs it and opens the checkout as a space.
+- [`bin/wt-fix [--all]`](bin/wt-fix) renames checkouts whose folder no longer
+  matches their branch (dry run by default, `--yes` to apply); the
+  post-checkout hook warns when a branch switch causes that drift.
 - [`bin/git-shared-link`](bin/git-shared-link) links `_shared/` files into a
   checkout; the global
   [`post-checkout`](.config/git/hooks/post-checkout) hook runs it on every
