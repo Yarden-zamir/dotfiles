@@ -1,0 +1,103 @@
+#!/bin/sh
+# wt-fix — find bare+container worktrees whose folder name does not match the
+# branch they hold, and rename the folders with `git worktree move`.
+#
+# Usage:
+#   wt-fix [--yes] [container...]   default: the container of the current dir
+#   wt-fix [--yes] --all            every container under ~/Github
+#   wt-fix --check <worktree>       print one warning line if it drifted; exit 0
+#
+# Dry run by default. --yes applies the moves.
+# A folder matches its branch when the name is the branch's last segment
+# (feat/x/auth -> auth) or the whole branch with "/" as "-" (feat-x-auth).
+# navgator uses the second form when another branch shares the last segment.
+# Worktrees outside the container (other tools' folders) are skipped.
+# Limit: a move breaks shells and herdr panes whose cwd is inside the old
+# folder. Close them first.
+set -eu
+
+# expected_ok <folder> <branch>: succeed when the folder name fits the branch.
+expected_ok() {
+    [ "$1" = "${2##*/}" ] && return 0
+    [ "$1" = "$(printf '%s' "$2" | tr / -)" ] && return 0
+    return 1
+}
+
+# worktrees <container>: print "path<TAB>branch" per linked worktree.
+# A detached worktree prints "path<TAB>" (empty branch).
+worktrees() {
+    git --git-dir "$1/.bare" worktree list --porcelain | awk '
+        /^worktree / { if (p != "") print p "\t" b; p = substr($0, 10); b = "" }
+        /^branch /   { b = substr($0, 8); sub("^refs/heads/", "", b) }
+        /^bare$/     { p = "" }
+        END          { if (p != "") print p "\t" b }'
+}
+
+check_one() {
+    worktree=$1
+    common=$(git -C "$worktree" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || return 0
+    case $common in */.bare) ;; *) return 0 ;; esac
+    # Only folders directly in the container follow the naming rule.
+    [ "$(dirname "$worktree")" = "$(dirname "$common")" ] || return 0
+    branch=$(git -C "$worktree" symbolic-ref --quiet --short HEAD 2>/dev/null) || return 0
+    folder=${worktree##*/}
+    expected_ok "$folder" "$branch" && return 0
+    echo "wt-fix: folder '$folder' now holds branch '$branch'. Run: $0 $(dirname "$worktree")" >&2
+}
+
+fix_container() {
+    container=${1%/}
+    [ -d "$container/.bare" ] || { echo "wt-fix: $container has no .bare/" >&2; return 1; }
+    worktrees "$container" | while IFS="$(printf '\t')" read -r path branch; do
+        folder=${path##*/}
+        # Worktrees that other tools keep elsewhere (Claude Code under
+        # .bare/.claude, T3 under ~/.t3) follow their own naming; leave them.
+        if [ "$(dirname "$path")" != "$container" ]; then
+            continue
+        fi
+        if [ -z "$branch" ]; then
+            echo "skip   $path: detached HEAD"
+            continue
+        fi
+        expected_ok "$folder" "$branch" && continue
+        target="$(dirname "$path")/${branch##*/}"
+        [ -e "$target" ] && target="$(dirname "$path")/$(printf '%s' "$branch" | tr / -)"
+        if [ -e "$target" ]; then
+            echo "skip   $path [$branch]: $target already exists"
+            continue
+        fi
+        if [ "$apply" = 1 ]; then
+            git --git-dir "$container/.bare" worktree move "$path" "$target"
+            echo "moved  $path -> $target"
+        else
+            echo "move   $path -> $target   [$branch]"
+        fi
+    done
+}
+
+apply=0
+case ${1-} in
+--check)
+    [ -n "${2-}" ] || { echo "usage: wt-fix --check <worktree>" >&2; exit 2; }
+    check_one "$2"
+    exit 0
+    ;;
+--yes) apply=1; shift ;;
+esac
+
+if [ "${1-}" = "--all" ]; then
+    set --
+    for c in "$HOME"/Github/*/; do [ -d "$c.bare" ] && set -- "$@" "${c%/}"; done
+elif [ $# -eq 0 ]; then
+    common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || {
+        echo "wt-fix: not inside a git repository; pass a container or --all" >&2
+        exit 1
+    }
+    case $common in
+    */.bare) set -- "$(dirname "$common")" ;;
+    *) echo "wt-fix: $common is not a .bare container layout" >&2; exit 1 ;;
+    esac
+fi
+
+for container in "$@"; do fix_container "$container"; done
+[ "$apply" = 1 ] || echo "(dry run; pass --yes to apply)"

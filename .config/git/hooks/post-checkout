@@ -17,6 +17,10 @@ if [ "${3:-1}" = "1" ]; then
       linker="${DOTFILES:-$HOME/Github/dotfiles/main}/bin/git-shared-link"
       # A checkout must never fail because linking did.
       [ -x "$linker" ] && "$linker" "$worktree" || true
+      # Warn when a branch switch leaves the folder name and branch apart.
+      # A post-checkout hook cannot stop the switch, so it only warns.
+      fixer="${DOTFILES:-$HOME/Github/dotfiles/main}/bin/wt-fix"
+      [ -x "$fixer" ] && "$fixer" --check "$worktree" || true
     fi
   fi
 fi
