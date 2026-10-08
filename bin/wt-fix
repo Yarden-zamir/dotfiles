@@ -42,7 +42,7 @@ check_one() {
     branch=$(git -C "$worktree" symbolic-ref --quiet --short HEAD 2>/dev/null) || return 0
     folder=${worktree##*/}
     expected_ok "$folder" "$branch" && return 0
-    echo "wt-fix: folder '$folder' now holds branch '$branch'. Run: $0 $(dirname "$worktree")" >&2
+    echo "warning: folder '$folder' now holds branch '$branch'. We keep one folder per branch, so prefer to open the worktree for '$branch' unless this switch is temporary." >&2
 }
 
 fix_container() {
