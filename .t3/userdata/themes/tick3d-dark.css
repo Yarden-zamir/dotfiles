@@ -1,0 +1,218 @@
+/* Web fonts for browsers without them installed (phone, other PCs). Installed fonts still win. */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap");
+/* Tick3d Dark: neo-brutalism details that the theme JSON fields do not cover.
+   The JSON sets radius, border width, shadow, fonts and the dots pattern. */
+
+/* Type: bold headings and labels. */
+h1, h2, h3, [data-slot$="-title"], [data-slot="menu-label"] {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+[data-slot="button"] {
+  font-weight: 700;
+}
+
+/* Buttons: press into the shadow on hover and click. */
+[data-slot="button"]:is([data-button-variant="default"], [data-button-variant="outline"]):not(:disabled) {
+  transition: transform 80ms, box-shadow 80ms;
+}
+[data-slot="button"]:is([data-button-variant="default"], [data-button-variant="outline"]):not(:disabled):hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 #B9A8FF;
+}
+[data-slot="button"]:not(:disabled):active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+/* Send button: accent gradient, square shape, hard shadow. */
+[data-chat-composer-send="true"] {
+  background: linear-gradient(135deg, #6C5CE7 0%, #FF5277 100%);
+  color: #FFFFFF;
+  border: 2px solid #F3F0FF;
+  border-radius: 0.25rem;
+  box-shadow: 3px 3px 0 0 #B9A8FF;
+}
+[data-chat-composer-send="true"]:enabled:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+/* Active sidebar thread: a flat colour block with a thick tab on the left,
+   no shadow, like a tabbed index card. */
+[data-thread-item] [aria-current="page"] {
+  background: #6C5CE7 !important;
+  color: #FFFFFF;
+  border: 2px solid #B9A8FF !important;
+  border-left-width: 8px !important;
+  box-shadow: none !important;
+  font-weight: 700;
+}
+
+/* Focus rings: a two-tone hard ring in the accent colours. A true gradient
+   ring needs a mask per element; revisit if one shape fits all controls. */
+/* Text fields skip the ring: the composer frame already shows focus. */
+:focus-visible:not(textarea, input, [contenteditable="true"]) {
+  outline: 2px solid #6C5CE7 !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px #FF527766 !important;
+}
+
+/* Code blocks: framed like cards. */
+pre {
+  border: 2px solid #F3F0FF;
+  box-shadow: 3px 3px 0 0 #B9A8FF;
+}
+
+/* An empty composer disables the send button; keep the gradient, muted. */
+[data-chat-composer-send="true"]:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+/* Details card and sidebar: hard edges like the other surfaces. */
+[data-thread-details-card] {
+  border: 2px solid #B9A8FF;
+}
+[data-slot="sidebar-container"] {
+  border-right: 2px solid #B9A8FF;
+}
+
+/* Faded borders: components draw the border colour at reduced opacity
+   (border-border/50 and similar). Neo-brutalism wants full ink. */
+[class*="border-border/"], [class*="border-sidebar-border/"], [class*="border-input/"],
+[data-slot="sidebar-container"] {
+  border-color: var(--border) !important;
+}
+
+/* Sidebar rows: flat until hover, then a hard card. */
+[data-testid="sidebar-row-card"] {
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  transition: transform 80ms, box-shadow 80ms;
+}
+[data-testid="sidebar-row-card"]:hover {
+  border-color: var(--border);
+  transform: none !important;
+  box-shadow: 3px 3px 0 0 #B9A8FF;
+  transform: translate(-1px, -1px);
+}
+[data-testid="sidebar-row-card"][aria-current]:not([aria-current="false"]) {
+  border-color: var(--border);
+  transform: none;
+  box-shadow: 3px 3px 0 0 #B9A8FF;
+}
+
+/* Sidebar section labels (Working, Settled): small caps, heavy. */
+[data-slot="sidebar-content"] .h-8.cursor-pointer > span.shrink-0 {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.7rem;
+}
+
+/* Chat header: a hard rule under it. */
+[data-chat-header] {
+  border-bottom: 2px solid var(--border);
+}
+
+/* Branding: hide the T3 Code wordmark and the Nightly pill. */
+a[aria-label="Go to threads"], [data-environment-identification="pill"] {
+  display: none !important;
+}
+
+/* Stickers: sidebar status labels as small tilted stickers. */
+[data-sidebar-status]:not([data-sidebar-status=""]) {
+  background: #FF9EB0;
+  color: #000000;
+  border: 2px solid #B9A8FF;
+  border-radius: 4px;
+  box-shadow: 2px 2px 0 0 #B9A8FF;
+  padding: 0 6px;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  transform: rotate(-3deg);
+}
+/* Labels carry extra text such as "Working 43s", so match the start. */
+[data-sidebar-status^="Working"], [data-sidebar-status^="Goal"] { background: #7CFF8A; }
+[data-sidebar-status^="Waiting"] { background: #FFE14D; }
+/* The label and its spinner bring their own faint colours; stickers use ink. */
+[data-sidebar-status]:not([data-sidebar-status=""]) {
+  color: #000000 !important;
+}
+/* Only the children: the label itself must keep the hover rule that fades it. */
+[data-sidebar-status]:not([data-sidebar-status=""]) * {
+  color: #000000 !important;
+  opacity: 1;
+}
+
+/* Highlighter: a marker swipe behind inline code and the draft project name. */
+:not(pre) > code, [data-draft-project-trigger] > span {
+  background: linear-gradient(transparent 35%, #6C5CE7 35%, #6C5CE7 88%, transparent 88%);
+  border: 0;
+  padding: 0 2px;
+}
+[data-draft-project-trigger] { border-bottom: 0 !important; }
+
+/* Stamp: settled threads (the slim rows) get a tilted checkmark stamp. */
+[data-testid="sidebar-row-slim"]::after {
+  content: "\2713";
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  margin-top: -0.45rem;
+  background: var(--sidebar, #F1F2FF);
+  z-index: 20;
+  padding: 1px 3px;
+  border: 2px solid #A371F7;
+  border-radius: 3px;
+  color: #A371F7;
+  font: 900 0.8rem/1 var(--font-sans, sans-serif);
+  transform: rotate(-8deg);
+  opacity: 0.85;
+  pointer-events: none;
+}
+/* The stamp takes the project icon slot in settled rows. */
+[data-testid="sidebar-row-slim"] > span:nth-child(2) {
+  min-width: 20px;
+}
+[data-testid="sidebar-row-slim"] > span:nth-child(2) img {
+  visibility: hidden;
+}
+/* Stamp angles: CSS has no random, so five angles cycle by row position. */
+li:nth-child(5n+1) > [data-testid="sidebar-row-slim"]::after { transform: rotate(-8deg); }
+li:nth-child(5n+2) > [data-testid="sidebar-row-slim"]::after { transform: rotate(-3deg) translateY(1px); }
+li:nth-child(5n+3) > [data-testid="sidebar-row-slim"]::after { transform: rotate(-11deg) translateX(1px); }
+li:nth-child(5n+4) > [data-testid="sidebar-row-slim"]::after { transform: rotate(2deg); }
+li:nth-child(5n+5) > [data-testid="sidebar-row-slim"]::after { transform: rotate(-6deg) translateY(-1px); }
+/* Hover on a settled row: the stamp fades out and shows the project icon. */
+[data-testid="sidebar-row-slim"]::after { transition: opacity 120ms; }
+[data-testid="sidebar-row-slim"]:hover::after { opacity: 0; }
+[data-testid="sidebar-row-slim"]:hover > span:nth-child(2) img { visibility: visible; }
+/* Cards need room inside the sidebar list, which clips at its edges:
+   inset each row so the border and the hard shadow stay visible. */
+[data-thread-item] > [data-testid="sidebar-row-card"] {
+  margin-left: 4px;
+  width: calc(100% - 12px);
+}
+/* Muted text inside the selected card follows the card text colour. */
+[data-thread-item] [aria-current="page"] :is(.text-secondary-label, [class*="text-muted"], [class*="text-sidebar-muted"]) {
+  /* A colour mix, not opacity: opacity would override the hover rule that
+     hides the time label behind the row actions. */
+  color: color-mix(in srgb, currentColor 70%, transparent) !important;
+}
+
+/* One shadow per stack: a themed surface that wraps another themed surface
+   (a popup around the details card, for example) drops its own shadow, so
+   only the inner surface with the visible border casts one. */
+:root[data-theme-shadow] :is([data-slot="composer-host"], [data-slot$="-popup"], [data-slot="dialog-panel"], [data-thread-details-card]):has(:is([data-slot$="-popup"], [data-slot="dialog-panel"], [data-thread-details-card])) {
+  box-shadow: none !important;
+}
+/* Status sticker angles: five small angles cycle by row position, like the stamps. */
+li:nth-child(5n+1) [data-sidebar-status]:not([data-sidebar-status=""]) { transform: rotate(-4deg); }
+li:nth-child(5n+2) [data-sidebar-status]:not([data-sidebar-status=""]) { transform: rotate(2deg) translateY(1px); }
+li:nth-child(5n+3) [data-sidebar-status]:not([data-sidebar-status=""]) { transform: rotate(-1.5deg); }
+li:nth-child(5n+4) [data-sidebar-status]:not([data-sidebar-status=""]) { transform: rotate(3.5deg) translateY(-1px); }
+li:nth-child(5n+5) [data-sidebar-status]:not([data-sidebar-status=""]) { transform: rotate(-2.5deg); }
