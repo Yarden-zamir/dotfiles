@@ -5,8 +5,8 @@
 // Usage: t3-open-path <path>
 //
 // Known limits:
-// - The thread works in the project root (<repo>/main), not in the selected
-//   branch checkout: the request has no worktree field. Revisit if T3 adds one.
+// - The checkout field exists only in the Yarden-zamir/t3code fork. Upstream
+//   builds ignore it, and the thread then works in the project root.
 // - A container with no T3 project yet gets a new project titled "main" (T3
 //   names it after the folder). Import or rename it in T3 if that happens.
 // - Protocol version 1 is internal to T3. If requests fail with
@@ -18,7 +18,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { connect } from "node:net";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 const APP_NAME = "T3 Code (Nightly)";
 const STARTUP_TIMEOUT_MS = 30_000;
@@ -46,6 +46,23 @@ function projectRoot(path) {
     if (existsSync(join(dir, ".bare"))) return join(dir, "main");
   }
   return path;
+}
+
+// A path in a sibling worktree (<container>/feat-x) names that checkout, so
+// the new thread starts there. Paths in main or outside a container give null.
+function checkout(path) {
+  for (let dir = path; dir !== dirname(dir); dir = dirname(dir)) {
+    if (!existsSync(join(dirname(dir), ".bare"))) continue;
+    if (basename(dir) === "main") return null;
+    let branch = null;
+    try {
+      branch = execFileSync("git", ["-C", dir, "symbolic-ref", "--quiet", "--short", "HEAD"], {
+        encoding: "utf8",
+      }).trim() || null;
+    } catch {} // Detached HEAD: open the checkout without a branch name.
+    return { worktreePath: dir, branch };
+  }
+  return null;
 }
 
 // Mirrors resolveDesktopAppControlAddress in packages/shared/src/desktopAppControl.ts
@@ -101,12 +118,14 @@ if (!existsSync(workspaceRoot) || !statSync(workspaceRoot).isDirectory()) {
   fail(`project root is not a directory: ${workspaceRoot}`);
 }
 
+const checkoutTarget = checkout(path);
 const address = socketPath();
 const request = {
   version: 1,
   requestId: randomUUID(),
   type: "open-workspace",
   workspaceRoot,
+  ...(checkoutTarget === null ? {} : { checkout: checkoutTarget }),
   platform: "darwin",
 };
 
@@ -132,4 +151,4 @@ while (response === undefined) {
 
 if (response?.requestId !== request.requestId) fail("T3 Code reply does not match the request");
 if (response.ok !== true) fail(`${response.code}: ${response.message}`);
-console.log(`Opened ${workspaceRoot} in T3 Code.`);
+console.log(`Opened ${checkoutTarget?.worktreePath ?? workspaceRoot} in T3 Code.`);

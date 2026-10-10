@@ -46,8 +46,9 @@ check_one() {
 }
 
 fix_container() {
-    container=${1%/}
-    [ -d "$container/.bare" ] || { echo "wt-fix: $container has no .bare/" >&2; return 1; }
+    [ -d "${1%/}/.bare" ] || { echo "wt-fix: $1 has no .bare/" >&2; return 1; }
+    # git prints absolute worktree paths, so compare against an absolute container.
+    container=$(cd "$1" && pwd -P)
     worktrees "$container" | while IFS="$(printf '\t')" read -r path branch; do
         folder=${path##*/}
         # Worktrees that other tools keep elsewhere (Claude Code under
