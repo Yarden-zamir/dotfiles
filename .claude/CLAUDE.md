@@ -64,7 +64,9 @@ Commit and branch preferences:
         - each branch must reference a jira QCDI ticket in the format: "feat/yarden/qcdi-XXXX-description" etc
         - if no jira ticket is provided by user, suggest to search for one or to create one before proceeding.
 - Tickets
-    - When mentioning a ticket, do so with a link and name, never just id
+    - Never refer to a ticket, issue, PR, branch, workflow run or commit by its id alone. This applies in chat, docs, memories, commits and PR bodies.
+    - Give a link plus its title or a short description, for example [QCDI-9296](https://qlik-dev.atlassian.net/browse/QCDI-9296) "Systest: V2 OLH expected results".
+    - For a branch, say what work it holds and which ticket it belongs to.
     - Offer to update tickets/comment on tickets with new relevant information
 
 In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information. Do not sacrifice clarity for brevity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity
