@@ -25,16 +25,13 @@ A minimal map of how Yarden runs T3 Code. Secrets are not in this repo. They are
 
 ## Updates
 
-- The "Fork Release" GitHub workflow rebases the fork onto upstream every day. Then it publishes a release.
+- The "Fork Release" GitHub workflow rebases the fork onto upstream on each push to main and every day. Then it publishes a release.
 - The desktop app updates itself from the fork releases.
 - If a run fails, the workflow calls the webhook task "Fork release repair" on the VPS T3 server. That task starts a repair agent in the VPS project "t3code fork".
 - The webhook URL is in the repository secret `T3_AGENT_WEBHOOK_URL` and in `_shared/cloudflared/t3-vps-fork-repair-webhook.url`.
 - The agent prompt source is `_shared/tools/fork-repair-agent-prompt.md`.
-- The VPS server does not update itself yet. To rebuild it, run:
-
-```sh
-cd /opt/t3code && git pull && export PATH=/opt/node/bin:/opt/t3code/node_modules/.bin:$PATH && CI=1 pnpm install --frozen-lockfile && vp run --filter t3 build && systemctl restart t3-server
-```
+- Each push to fork main publishes a release. The Mac app takes it on its next update check.
+- The VPS deploys the newest release once a day, only when no agent runs. See "Deploy to the VPS" in `docs/fork.md` of the fork.
 
 ## VPS details
 
