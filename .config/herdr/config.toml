@@ -29,8 +29,8 @@ toggle_sidebar = "cmd+e"
 # Ghostty delivers cmd+1-9 as alt+digit and cmd+alt+1-9 as ctrl+alt+digit
 # (see ghostty config).
 [keys.indexed]
-tabs = "alt"
-workspaces = "ctrl+alt"
+tabs = "ctrl+alt"
+workspaces = "alt"
 
 # cmd+w archives instead of closing; cmd+shift+w (close_pane above) closes.
 [[keys.command]]
@@ -107,6 +107,13 @@ type = "shell"
 command = "\"$HERDR_BIN_PATH\" pane send-text \"$HERDR_ACTIVE_PANE_ID\" \"$(printf '\\033[1;10A')\""
 description = "zle: select to buffer start"
 
+# Open a URL, file or folder from the screen (plugin yarden.links).
+[[keys.command]]
+key = "cmd+shift+o"
+type = "plugin_action"
+command = "yarden.links.pick"
+description = "open from screen"
+
 [[keys.command]]
 key = "cmd+shift+down"
 type = "shell"
@@ -122,7 +129,7 @@ prompt_new_tab_name = false
 prompt_new_workspace_name = false
 
 show_agent_labels_on_pane_borders = false
-status_indicators = "dots"
+status_indicators = "symbols"
 
 # Space rows (plugin yarden.spaces): name (" container" when managed), then one
 # row per unique checkout in the space: "dir", or "dir | container" when the name

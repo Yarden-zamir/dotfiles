@@ -86,6 +86,14 @@ keybind=super+shift+arrow_right=unbind
 keybind=super+shift+arrow_up=unbind
 keybind=super+shift+arrow_down=unbind
 keybind=super+backspace=unbind
+# Ghostty defaults send raw ESC b / ESC f for option+arrows. That bypasses
+# the kitty encoding herdr asks for, and Claude Code then prints b or f.
+# Unbound, the key arrives as CSI 1;3D / 1;3C (alt+arrow), which ZLE,
+# Claude Code and nvim read as word left/right.
+# Limit: legacy apps without an alt+arrow binding (plain bash readline)
+# lose word jumps; if that matters there, bind \e[1;3D in that app.
+keybind=alt+arrow_left=unbind
+keybind=alt+arrow_right=unbind
 # Herdr has no forward-delete key name; send ^K (delete to line end) directly.
 keybind=super+delete=text:\x0b
 keybind=super+shift+c=copy_to_clipboard
