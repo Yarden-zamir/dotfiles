@@ -26,5 +26,10 @@
     "thinking": "show"
   },
   "animations": true,
-  "plugins": ["./herdr-opencode"]
+  "plugins": [
+    "./herdr-opencode"
+  ],
+  "tabs": {
+    "mode": "auto"
+  }
 }

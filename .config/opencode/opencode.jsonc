@@ -1,13 +1,15 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  // "system" paints no cell background, so Collie's light mode (which
-  // inverts the mirror) does not show black bars behind opencode text.
-  "theme": "system",
   "compaction": {
     "auto": false,
     "prune": true
   },
   "mcp": {
+    "cloudflare": {
+      "type": "remote",
+      "url": "https://mcp.cloudflare.com/mcp",
+      "enabled": true
+    },
     "jira": {
       "type": "remote",
       "url": "https://mcp.atlassian.com/v1/mcp",
