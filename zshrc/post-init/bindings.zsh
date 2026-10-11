@@ -31,7 +31,7 @@ type -p fzf &>/dev/null && {
     # bindkey '^a' browse_apps
     bindkey '^z' fzf-cd-widget
     bindkey '^f' fzf-file-widget
-    type - p rg &>/dev/null &&
+    type -p rg &>/dev/null &&
         bindkey '^[ ' ripgrep_search #alt+space
 }
 bindkey '^b' open-harness
