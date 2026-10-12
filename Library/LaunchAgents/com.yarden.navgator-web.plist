@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Keeps the navgator web app up on 127.0.0.1:4748 for the T3 "Navgator" global script.
+       Port 4747 stays free for navgator's own "Web preview" dev action.
+       The binary is the release build of the navgator checkout, because the Homebrew
+       build has no web UI. Revisit when the formula builds web/ui. -->
+  <key>Label</key>
+  <string>com.yarden.navgator-web</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/kcw/Github/navgator/main/target/release/navgator</string>
+    <string>web</string>
+    <string>--no-open</string>
+    <string>--port</string>
+    <string>4748</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>LimitLoadToSessionType</key>
+  <array>
+    <string>Aqua</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/kcw/Library/Logs/navgator-web.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/kcw/Library/Logs/navgator-web.log</string>
+</dict>
+</plist>
