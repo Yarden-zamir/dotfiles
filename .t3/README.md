@@ -8,7 +8,7 @@ A minimal map of how Yarden runs T3 Code. Secrets are not in this repo. They are
 | --- | --- | --- | --- |
 | Mac | desktop app, server code from `~/Github/t3code/live/current` | `https://t3-mac.yarden-zamir.com` | launchd job `com.yarden.cloudflared-t3-mac` |
 | VPS (`ssh yarden-zamir-vps-2`) | systemd `t3-server`, code in `/opt/t3code` (link to `/opt/t3code-a` or `-b`) | `https://t3-vps.yarden-zamir.com` | systemd `cloudflared-t3` |
-| Windows | not installed | `https://t3-win.yarden-zamir.com` | token only |
+| Windows | desktop app (client of Mac and VPS) | `https://t3-win.yarden-zamir.com` | token only, `cloudflared` not installed yet |
 
 - Each server listens on `127.0.0.1:3773`. Only the Cloudflare tunnel reaches it.
 - The Cloudflare Access app "T3 Code servers" protects all three hosts.
@@ -42,6 +42,9 @@ A minimal map of how Yarden runs T3 Code. Secrets are not in this repo. They are
 - Server settings: `~/.t3/userdata/settings.json`. The server applies an edit at once.
 - Desktop client settings: `~/.t3/userdata/client-settings.json`. Reload the window (Cmd+R) after an edit.
 - Back up a settings file as `<file>.bak-<date>-<topic>` before an edit.
+- Shared settings: `.t3/shared-settings.json` holds the client and server keys that mean the same on every machine (look, fonts, fork toggles, default theme). Paths, projects, providers and Mac-only keys stay local.
+- To apply them, run `bin/t3-settings pull` (Mac, VPS) or `powershell -ExecutionPolicy Bypass -File bin\t3-settings.ps1` (Windows). To publish this machine's values, run `bin/t3-settings push` and commit.
+- Published themes come from `.t3/userdata/themes`. Each machine links `~/.t3/userdata/themes` to it (a junction on Windows).
 
 ## VPS details
 

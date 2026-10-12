@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Sync the T3 Code settings that mean the same on every machine through
+# .t3/shared-settings.json in these dotfiles. Windows uses t3-settings.ps1.
+#
+#   t3-settings pull   apply the shared values to this machine
+#   t3-settings push   copy this machine's values of the shared keys into the file
+#
+# Only the keys in the file sync. To share another key, add it to the file once.
+# Each write backs up the target as <file>.bak-<date>-settings-sync first.
+set -euo pipefail
+
+dotfiles="$(cd "$(dirname "$0")/.." && pwd)"
+shared="$dotfiles/.t3/shared-settings.json"
+userdata="${T3CODE_HOME:-$HOME/.t3}/userdata"
+stamp="bak-$(date +%Y-%m-%d)-settings-sync"
+
+# Client settings exist only where a desktop app runs. Older files nest them under "settings".
+apply() { # <section> <file>
+  local section="$1" file="$2" tmp
+  [[ -f "$file" ]] || { echo "skip $section: no $file"; return; }
+  cp "$file" "$file.$stamp"
+  tmp="$(mktemp "$file.XXXX")"
+  jq --slurpfile shared "$shared" --arg section "$section" '
+    if (.settings | type) == "object" then .settings += $shared[0][$section]
+    else . + $shared[0][$section] end' "$file" >"$tmp"
+  mv "$tmp" "$file"
+  echo "applied $(jq --arg s "$section" '.[$s] | length' "$shared") $section keys to $file"
+}
+
+collect() { # <section> <file>: this machine's values of the keys the file already lists
+  jq --slurpfile local "$2" --arg section "$1" '
+    ($local[0] | if (.settings | type) == "object" then .settings else . end) as $values
+    | .[$section] |= with_entries(.key as $key | select($values | has($key)) | .value = $values[$key])' "$shared"
+}
+
+case "${1:-}" in
+  pull)
+    apply server "$userdata/settings.json"
+    apply client "$userdata/client-settings.json"
+    echo "Reload the app window (Cmd+R) to load the client settings."
+    ;;
+  push)
+    sections=(server)
+    [[ -f "$userdata/client-settings.json" ]] && sections+=(client)
+    for section in "${sections[@]}"; do
+      file="$userdata/settings.json"
+      [[ "$section" == client ]] && file="$userdata/client-settings.json"
+      tmp="$(mktemp "$shared.XXXX")"
+      trap 'rm -f "$tmp"' EXIT
+      collect "$section" "$file" >"$tmp"
+      mv "$tmp" "$shared"
+    done
+    git -C "$dotfiles" --no-pager diff --stat -- .t3/shared-settings.json
+    echo "Commit and push the dotfiles, then run 't3-settings pull' on the other machines."
+    ;;
+  *) echo "usage: t3-settings pull|push" >&2; exit 2 ;;
+esac
