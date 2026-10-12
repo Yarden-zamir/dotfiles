@@ -1,56 +1,51 @@
 # T3 Code setup
 
-A minimal map of how Yarden runs T3 Code. Secrets are not in this repo. They are in `~/Github/t3code/_shared/` on the Mac.
+How Yarden runs [T3 Code](https://github.com/Yarden-zamir/t3code) on three machines. Secrets are not in this repo.
 
 ## Machines
 
-| Machine | T3 server | Public URL | Tunnel |
+| Machine | T3 server | URL | Tunnel |
 | --- | --- | --- | --- |
-| Mac | desktop app, server code from `~/Github/t3code/live/current` | `https://t3-mac.yarden-zamir.com` | launchd job `com.yarden.cloudflared-t3-mac` |
-| VPS (`ssh yarden-zamir-vps-2`) | systemd `t3-server`, code in `/opt/t3code` (link to `/opt/t3code-a` or `-b`) | `https://t3-vps.yarden-zamir.com` | systemd `cloudflared-t3` |
-| Windows | desktop app | `https://t3-win.yarden-zamir.com` | Windows service `cloudflared` (token in `C:\ProgramData\cloudflared\token`) |
+| Mac | desktop app | `https://t3-mac.yarden-zamir.com` | launchd job `com.yarden.cloudflared-t3-mac` |
+| VPS | systemd `t3-server`, code in `/opt/t3code` | `https://t3-vps.yarden-zamir.com` | systemd `cloudflared-t3` |
+| Windows | desktop app | `https://t3-win.yarden-zamir.com` | Windows service `cloudflared` |
 
-- Each server listens on `127.0.0.1:3773`. Only the Cloudflare tunnel reaches it.
-- The Cloudflare Access app "T3 Code servers" protects all three hosts.
-- The login is the Access email code. The server trusts the `Cf-Access-Jwt-Assertion` header.
-- The desktop app reaches other machines with the service token "t3-desktop-mac" as request headers.
-- A browser page on one host pairs the other hosts automatically. The server setting `trustedBrowserOrigins` lists them.
-- A desktop app passes the Cloudflare Access values to its server only while tunnel pairing is on and all three values are set (Settings > Connections). Without them, the host URL asks for a pairing credential.
-- To add a host to a desktop app, mint a pairing link with the service token: `POST https://t3-<machine>.yarden-zamir.com/api/auth/cloudflare-access/pairing-credential`, then open `https://t3-<machine>.yarden-zamir.com/pair#token=<credential>`. The credential expires after 2 minutes.
+- Each server listens on `127.0.0.1:3773`. Only its Cloudflare tunnel reaches it.
+- One Cloudflare Access app protects the three URLs. The servers trust its login header.
+- Each desktop app sets tunnel pairing, trusted web origins and the Cloudflare Access values in Settings > Connections. The VPS sets them as `T3CODE_*` variables in its systemd unit.
+- A desktop app connects to the other machines with a Cloudflare service token, sent as request headers.
+- A browser page on one machine pairs the other machines by itself.
+
+To add a machine to a desktop app, request a pairing credential with the service token, then open the pairing link in the app. The credential expires after 2 minutes.
+
+```sh
+curl -X POST -H "CF-Access-Client-Id: <id>" -H "CF-Access-Client-Secret: <secret>" \
+  https://t3-<machine>.yarden-zamir.com/api/auth/cloudflare-access/pairing-credential
+# then open https://t3-<machine>.yarden-zamir.com/pair#token=<credential>
+```
 
 ## Code
 
-- The fork is [Yarden-zamir/t3code](https://github.com/Yarden-zamir/t3code). Its fork notes are in `docs/fork.md`.
-- Every fork behaviour is a setting, and each setting is off by default. A feature that Yarden asks for is turned on for Yarden.
-- Each change goes through a branch worktree and a PR on the fork, then a merge to main. Never open upstream PRs.
-- Fork main only moves forward. Nothing rebases or force-pushes it.
-- The top of the fork `README.md` lists the fork features and fixes. Each fork change updates its line there.
-- Checkouts use the worktree layout: `~/Github/t3code/{.bare,_shared,main}` on the Mac and `/root/Github/t3code/` on the VPS.
+- The fork is [Yarden-zamir/t3code](https://github.com/Yarden-zamir/t3code). Its own `README.md` lists the fork features, and `docs/fork.md` describes its build and release setup.
+- Checkouts use the worktree layout: `~/Github/t3code/{.bare,_shared,main}`.
 
 ## Updates
 
-- "Fork Sync" (GitHub workflow) merges upstream main into fork main every day, typechecks and pushes. The changelog has a "Start Fork Sync" button.
-- "Fork Release" builds the desktop apps when a push changes the app shell (`apps/desktop`, icons, build config, dependencies), and once a day.
-- Mac, server and web code: a launchd job (`com.t3code.fork-live-build`) builds each new main commit in about a minute into `~/Github/t3code/live/{a,b,c}`. The update button then offers it in blue as a server-only update: the server restarts, the app keeps running. Log: `~/Library/Logs/t3-live-build.log`.
-- Mac, app shell: a full app update through the same button, in the normal color.
-- The install dialog shows running agents and offers "Install when idle". After a restart, "Recover interrupted agents" sends "Recover and continue" to cut-off threads.
-- VPS: `t3-deploy.timer` follows fork main every minute and switches only when no agent runs. Log: `journalctl -u t3-deploy.service`.
-- If a sync or a release fails, the workflow calls the webhook task "Fork repair" on the VPS T3 server. It starts a repair agent in the VPS project "t3code fork", which fixes the fork through a PR.
-- The webhook URL is in the repository secret `T3_AGENT_WEBHOOK_URL` and in `_shared/cloudflared/t3-vps-fork-repair-webhook.url`. The agent prompt source is `_shared/tools/fork-repair-agent-prompt.md`.
-- Details: `docs/fork.md` in the fork.
+- The "Fork Sync" workflow merges upstream main into fork main every day.
+- The "Fork Release" workflow builds the desktop apps when the app shell changes, and once a day.
+- Mac: the launchd job `com.t3code.fork-live-build` builds each new fork main commit into `~/Github/t3code/live`. The update button offers it as a server-only update. Log: `~/Library/Logs/t3-live-build.log`.
+- VPS: `t3-deploy.timer` deploys fork main when no agent runs. Log: `journalctl -u t3-deploy.service`.
+- Windows: full app updates from the fork releases.
 
-## Settings
+## Settings and themes
 
-- Server settings: `~/.t3/userdata/settings.json`. The server applies an edit at once.
-- Desktop client settings: `~/.t3/userdata/client-settings.json`. Reload the window (Cmd+R) after an edit.
-- Back up a settings file as `<file>.bak-<date>-<topic>` before an edit.
-- Shared settings: `.t3/shared-settings.json` holds the client and server keys that mean the same on every machine (look, fonts, fork toggles, default theme). Paths, projects, providers and Mac-only keys stay local.
-- To apply them, run `bin/t3-settings pull` (Mac, VPS) or `powershell -ExecutionPolicy Bypass -File bin\t3-settings.ps1` (Windows). To publish this machine's values, run `bin/t3-settings push` and commit.
-- Published themes come from `.t3/userdata/themes`. Each machine links `~/.t3/userdata/themes` to it (a junction on Windows).
+- Each machine keeps server settings in `~/.t3/userdata/settings.json` and desktop settings in `~/.t3/userdata/client-settings.json`.
+- `shared-settings.json` holds the settings that are the same on every machine. Paths, projects, providers and Mac-only keys stay local.
+- To apply them, run `bin/t3-settings pull`, or `bin\t3-settings.ps1` on Windows. To publish this machine's values, run `bin/t3-settings push` and commit.
+- `userdata/themes` holds the published themes. On each machine, `~/.t3/userdata/themes` links to it (a junction on Windows).
 
-## VPS details
+## VPS
 
-- The drop-in `/etc/systemd/system/t3-server.service.d/shell.conf` sets `SHELL=/usr/bin/zsh`, so T3 terminals load these dotfiles.
-- Claude Code settings on the VPS are a copy of the Mac settings, with the VPS hooks kept.
-- `/etc/systemd/system/t3-server.service.d/claude-root.conf` and `/etc/zsh/zshenv` set `IS_SANDBOX=1`. Without it, Claude Code refuses full access as root.
-- To call T3 tools on the VPS without the MCP sign-in, run `cd /root/Github && /opt/node/bin/node /opt/t3code/apps/server/dist/bin.mjs tool call <tool> --input '<json>'`.
+- A drop-in sets `SHELL=/usr/bin/zsh` for `t3-server`, so terminals load these dotfiles.
+- T3 runs as root. Claude Code needs `IS_SANDBOX=1` for that, set in a `t3-server` drop-in and in `/etc/zsh/zshenv`.
+- To call T3 tools without the MCP sign-in, run `node /opt/t3code/apps/server/dist/bin.mjs tool call <tool> --input '<json>'` from `/root/Github`.
