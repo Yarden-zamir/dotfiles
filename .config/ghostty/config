@@ -103,8 +103,8 @@ keybind=super+shift+c=copy_to_clipboard
 # The bind consumes § system-wide (acceptable: never typed). If § stops
 # to work under a non-Latin input source, that is the known Ghostty
 # logical-trigger quirk; f17 is the fallback.
-keybind=global:f17=toggle_visibility
-keybind=global:§=toggle_visibility
+# keybind=global:f17=toggle_visibility
+# keybind=global:§=toggle_visibility
 
 copy-on-select=clipboard
 

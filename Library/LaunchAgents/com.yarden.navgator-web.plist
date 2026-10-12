@@ -4,14 +4,13 @@
 <dict>
   <!-- Keeps the navgator web app up on 127.0.0.1:4748 for the T3 "Navgator" global script.
        Port 4747 stays free for navgator's own "Web preview" dev action.
-       The binary is the release build of the navgator checkout, because the Homebrew
-       build has no web UI. Revisit when the formula builds web/ui. -->
+       The Homebrew binary embeds the web UI since navgator 0.9.0 (formula runs npm ci). -->
   <key>Label</key>
   <string>com.yarden.navgator-web</string>
 
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/kcw/Github/navgator/main/target/release/navgator</string>
+    <string>/opt/homebrew/bin/navgator</string>
     <string>web</string>
     <string>--no-open</string>
     <string>--port</string>
