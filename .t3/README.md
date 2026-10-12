@@ -6,8 +6,8 @@ A minimal map of how Yarden runs T3 Code. Secrets are not in this repo. They are
 
 | Machine | T3 server | Public URL | Tunnel |
 | --- | --- | --- | --- |
-| Mac | inside the desktop app | `https://t3-mac.yarden-zamir.com` | launchd job `com.yarden.cloudflared-t3-mac` |
-| VPS (`ssh yarden-zamir-vps-2`) | systemd `t3-server`, code in `/opt/t3code` | `https://t3-vps.yarden-zamir.com` | systemd `cloudflared-t3` |
+| Mac | desktop app, server code from `~/Github/t3code/live/current` | `https://t3-mac.yarden-zamir.com` | launchd job `com.yarden.cloudflared-t3-mac` |
+| VPS (`ssh yarden-zamir-vps-2`) | systemd `t3-server`, code in `/opt/t3code` (link to `/opt/t3code-a` or `-b`) | `https://t3-vps.yarden-zamir.com` | systemd `cloudflared-t3` |
 | Windows | not installed | `https://t3-win.yarden-zamir.com` | token only |
 
 - Each server listens on `127.0.0.1:3773`. Only the Cloudflare tunnel reaches it.
@@ -19,19 +19,28 @@ A minimal map of how Yarden runs T3 Code. Secrets are not in this repo. They are
 ## Code
 
 - The fork is [Yarden-zamir/t3code](https://github.com/Yarden-zamir/t3code). Its fork notes are in `docs/fork.md`.
-- Every fork behaviour is a setting, and each setting is off by default.
-- Put patches directly on fork main. Do not open upstream PRs.
+- Every fork behaviour is a setting, and each setting is off by default. A feature that Yarden asks for is turned on for Yarden.
+- Each change goes through a branch worktree and a PR on the fork, then a merge to main. Never open upstream PRs.
+- Fork main only moves forward. Nothing rebases or force-pushes it.
 - Checkouts use the worktree layout: `~/Github/t3code/{.bare,_shared,main}` on the Mac and `/root/Github/t3code/` on the VPS.
 
 ## Updates
 
-- The "Fork Release" GitHub workflow rebases the fork onto upstream on each push to main and every day. Then it publishes a release.
-- The desktop app updates itself from the fork releases.
-- If a run fails, the workflow calls the webhook task "Fork release repair" on the VPS T3 server. That task starts a repair agent in the VPS project "t3code fork".
-- The webhook URL is in the repository secret `T3_AGENT_WEBHOOK_URL` and in `_shared/cloudflared/t3-vps-fork-repair-webhook.url`.
-- The agent prompt source is `_shared/tools/fork-repair-agent-prompt.md`.
-- Each push to fork main publishes a release. The Mac app takes it on its next update check.
-- The VPS deploys the newest release once a day, only when no agent runs. See "Deploy to the VPS" in `docs/fork.md` of the fork.
+- "Fork Sync" (GitHub workflow) merges upstream main into fork main every day, typechecks and pushes. The changelog has a "Start Fork Sync" button.
+- "Fork Release" builds the desktop apps when a push changes the app shell (`apps/desktop`, icons, build config, dependencies), and once a day.
+- Mac, server and web code: a launchd job (`com.t3code.fork-live-build`) builds each new main commit in about a minute into `~/Github/t3code/live/{a,b,c}`. The update button then offers it in blue as a server-only update: the server restarts, the app keeps running. Log: `~/Library/Logs/t3-live-build.log`.
+- Mac, app shell: a full app update through the same button, in the normal color.
+- The install dialog shows running agents and offers "Install when idle". After a restart, "Recover interrupted agents" sends "Recover and continue" to cut-off threads.
+- VPS: `t3-deploy.timer` follows fork main every minute and switches only when no agent runs. Log: `journalctl -u t3-deploy.service`.
+- If a sync or a release fails, the workflow calls the webhook task "Fork repair" on the VPS T3 server. It starts a repair agent in the VPS project "t3code fork", which fixes the fork through a PR.
+- The webhook URL is in the repository secret `T3_AGENT_WEBHOOK_URL` and in `_shared/cloudflared/t3-vps-fork-repair-webhook.url`. The agent prompt source is `_shared/tools/fork-repair-agent-prompt.md`.
+- Details: `docs/fork.md` in the fork.
+
+## Settings
+
+- Server settings: `~/.t3/userdata/settings.json`. The server applies an edit at once.
+- Desktop client settings: `~/.t3/userdata/client-settings.json`. Reload the window (Cmd+R) after an edit.
+- Back up a settings file as `<file>.bak-<date>-<topic>` before an edit.
 
 ## VPS details
 
