@@ -8,13 +8,15 @@ A minimal map of how Yarden runs T3 Code. Secrets are not in this repo. They are
 | --- | --- | --- | --- |
 | Mac | desktop app, server code from `~/Github/t3code/live/current` | `https://t3-mac.yarden-zamir.com` | launchd job `com.yarden.cloudflared-t3-mac` |
 | VPS (`ssh yarden-zamir-vps-2`) | systemd `t3-server`, code in `/opt/t3code` (link to `/opt/t3code-a` or `-b`) | `https://t3-vps.yarden-zamir.com` | systemd `cloudflared-t3` |
-| Windows | desktop app (client of Mac and VPS) | `https://t3-win.yarden-zamir.com` | token only, `cloudflared` not installed yet |
+| Windows | desktop app | `https://t3-win.yarden-zamir.com` | Windows service `cloudflared` (token in `C:\ProgramData\cloudflared\token`) |
 
 - Each server listens on `127.0.0.1:3773`. Only the Cloudflare tunnel reaches it.
 - The Cloudflare Access app "T3 Code servers" protects all three hosts.
 - The login is the Access email code. The server trusts the `Cf-Access-Jwt-Assertion` header.
 - The desktop app reaches other machines with the service token "t3-desktop-mac" as request headers.
 - A browser page on one host pairs the other hosts automatically. The server setting `trustedBrowserOrigins` lists them.
+- A desktop app passes the Cloudflare Access values to its server only while tunnel pairing is on and all three values are set (Settings > Connections). Without them, the host URL asks for a pairing credential.
+- To add a host to a desktop app, mint a pairing link with the service token: `POST https://t3-<machine>.yarden-zamir.com/api/auth/cloudflare-access/pairing-credential`, then open `https://t3-<machine>.yarden-zamir.com/pair#token=<credential>`. The credential expires after 2 minutes.
 
 ## Code
 
