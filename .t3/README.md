@@ -22,6 +22,7 @@ A minimal map of how Yarden runs T3 Code. Secrets are not in this repo. They are
 - Every fork behaviour is a setting, and each setting is off by default. A feature that Yarden asks for is turned on for Yarden.
 - Each change goes through a branch worktree and a PR on the fork, then a merge to main. Never open upstream PRs.
 - Fork main only moves forward. Nothing rebases or force-pushes it.
+- The top of the fork `README.md` lists the fork features and fixes. Each fork change updates its line there.
 - Checkouts use the worktree layout: `~/Github/t3code/{.bare,_shared,main}` on the Mac and `/root/Github/t3code/` on the VPS.
 
 ## Updates

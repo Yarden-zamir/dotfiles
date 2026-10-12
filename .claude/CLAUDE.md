@@ -25,6 +25,8 @@ Apply defensive defaults in code. Null checks, type guards, boundary conditions.
 
 Before you write generated content to a remote system (PR body, issue, ticket, comment, API update), check that the generating command succeeded and that the content is not empty. A failed pipe can publish an empty write that replaces real content.
 
+Before a command discards or overwrites local work (checkout, restore, reset, stash, clean, rm, a file rewrite, etc.), look at what that work holds.
+
 When calling an existing function or API make sure to check it's definition first for type annotation (verify enums vs strings, optional vs required, etc), boundary conditions, and other requirements. Check other calls to the same function or API to establish a pattern before proceeding. Adhering to type rules is mandatory. The same holds for anything else that references existing code structure (routes, API endpoints, component names, configuration): read the relevant source and check the code for ground truth instead of assuming.
 
 When accessing dictionary/object keys from external sources (API responses, JWT payloads, database
