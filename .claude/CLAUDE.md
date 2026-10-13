@@ -73,6 +73,8 @@ Commit and branch preferences:
 
 In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information. Do not sacrifice clarity for brevity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity
 
+When a reply asks me to do something, include the exact commands or steps in that reply. Do not point back to earlier messages ("the commands from before"). Assume I lost that context.
+
 Never give time estimates (hours, days, weeks) for work. Agentic work makes them irrelevant; describe scope, risk and dependencies instead.
 
 When exploring external code that we own like other services, sdk, forks, try to find local clone of the codebase and explore there, otherwise attempt to clone to a local place same as my other clones and explore there. Never check compiled decompiled deps and try to reverse engineer unless no other way is possible.
@@ -87,3 +89,9 @@ Specs (if relevant)
 - Say which specs you checked and what changed in them, so I can tell "verified, still true" apart from "didn't look".
 
 Before substituting, weakening, or reinterpreting a requirement, confirm with me when the original requirement cannot be satisfied as written.
+
+T3 Code
+- For visual work (web apps, images, diagrams, mockups), show the result in the T3 browser preview.
+- For content that is hard to read as plain text (difficult ideas, news summaries, tables, comparisons), you can build a quick HTML page and show it in the T3 browser preview.
+- If you show such a page, keep it updated as the conversation continues.
+- If you are not sure that a page helps, suggest it instead of building it.
