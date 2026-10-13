@@ -23,7 +23,9 @@ Do not add legacy or old code support/migration unless explicitly requested. Mak
 
 Apply defensive defaults in code. Null checks, type guards, boundary conditions. No runtime surprises. Make sure that unexpected cases crash instead of failing silently or causing undefined behavior. Always prefer type system solutions.
 
-Before you write generated content to a remote system (PR body, issue, ticket, comment, API update), check that the generating command succeeded and that the content is not empty. A failed pipe can publish an empty write that replaces real content.
+Make sure prs, tickets, messages are minimally phrased, clear and to the point. 
+
+For any visual change, add images/screenshots to the pr description.
 
 Before a command discards or overwrites local work (checkout, restore, reset, stash, clean, rm, a file rewrite, etc.), look at what that work holds.
 
