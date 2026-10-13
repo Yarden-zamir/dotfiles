@@ -6,6 +6,8 @@
 #     -> <project>/<worktree>/zshenv/init/atuin.secret.zsh
 #
 # Idempotent: correct links are left alone, real files are never overwritten.
+# Each link also goes into the repository's local exclude file, so `git status`
+# and `git add -A` never pick up a local-only file.
 #
 # usage: git-shared-link [worktree-path]     (default: the current worktree)
 
@@ -58,6 +60,23 @@ shared="$project/_shared"
 sources=$(find "$shared" ! -type d) || fail "could not scan $shared"
 status=0
 
+# info/exclude lives in the common Git directory, so every worktree shares it.
+common=$(git -C "$worktree" rev-parse --git-common-dir 2>/dev/null) || fail "not a Git worktree: $worktree"
+case "$common" in
+  /*) exclude="$common/info/exclude" ;;
+  *) exclude="$worktree/$common/info/exclude" ;;
+esac
+mkdir -p "$(dirname "$exclude")" && touch "$exclude" || fail "could not open $exclude"
+exclude_header='# Local files linked from _shared by git-shared-link'
+
+# Adds "/<rel>" to the exclude file once. A backslash makes gitignore pattern characters literal.
+exclude_link() {
+  pattern="/$(printf '%s' "$1" | sed 's/[][*?\\]/\\&/g')"
+  grep -qxF -- "$pattern" "$exclude" && return 0
+  grep -qxF -- "$exclude_header" "$exclude" || printf '\n%s\n' "$exclude_header" >>"$exclude"
+  printf '%s\n' "$pattern" >>"$exclude" || warn "could not exclude $1 in $exclude"
+}
+
 while IFS= read -r source || [ -n "$source" ]; do
   [ -n "$source" ] || continue
 
@@ -84,6 +103,7 @@ while IFS= read -r source || [ -n "$source" ]; do
   link="${up}_shared/$rel"
 
   if [ -L "$target" ] && [ "$(readlink "$target")" = "$link" ]; then
+    exclude_link "$rel"
     continue
   fi
 
@@ -99,6 +119,7 @@ while IFS= read -r source || [ -n "$source" ]; do
   fi
 
   if ln -s "$link" "$target"; then
+    exclude_link "$rel"
     info "linked $rel -> $link"
   else
     warn "failed to link $rel -> $link"
