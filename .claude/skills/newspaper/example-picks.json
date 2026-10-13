@@ -1,0 +1,599 @@
+{
+ "title": "The changelorg Gazette",
+ "issue": "Vol. 1 · No. 1",
+ "motto": "All the feed that fits · ten days of your dev, games and work desks",
+ "word": "agent",
+ "colophon": "Built 13 October 2026, 21:37 from changelorg with agent access. Headlines, decks, boxes and the ranking are an agent edit.",
+ "numbers": [
+  {
+   "value": "12",
+   "label": "ARC Raiders posts",
+   "href": "#games",
+   "tip": "ARC Raiders News plus ARC Raiders Official News. They often post the same story twice."
+  }
+ ],
+ "editions": [
+  {
+   "section": "dev",
+   "title": "Dev edition",
+   "banner": "Source control has a moment",
+   "lead": {
+    "item": "577653",
+    "kicker": "Anthropic",
+    "headline": "Anthropic outgrew git and built Scion in five months",
+    "deck": "Git could not keep up with the merge rate. A team of seven built a new version control system, plus a code review tool named Antique.",
+    "body": "Scion does history, merges and rebases on the server, and no full copy of the repository exists anywhere. CI checkouts now take seconds instead of minutes.",
+    "facts": [
+     [
+      "30,000+",
+      "merges a day in September, up from about 2,500 in May"
+     ],
+     [
+      "200×",
+      "less CPU and memory than the old git mirrors"
+     ],
+     [
+      "25 million",
+      "CI checkouts a day"
+     ],
+     [
+      "99%+",
+      "cache hit rate on every cache tier"
+     ]
+    ]
+   },
+   "side": [
+    {
+     "item": "531163",
+     "kicker": "GitHub",
+     "headline": "Stacked pull requests go GA",
+     "deck": "Split one big change into small pull requests, review each one alone, then merge them together."
+    },
+    {
+     "item": "577720",
+     "kicker": "Anthropic",
+     "headline": "Claude Haiku 5.5 matches GPT-6 Luna on price, up to 100,000 tokens",
+     "deck": "$0.10 in and $0.50 out per million tokens, five times that past 100,000. It is now the default Haiku in Claude Code, and it lands in Copilot.",
+     "also": [
+      "577637",
+      "538032"
+     ]
+    },
+    {
+     "item": "550081",
+     "kicker": "Python",
+     "headline": "Python 3.15 is final, and uv 0.13 makes it the default",
+     "deck": "Simon Willison drops 3.10 and can finally use 3.11 features. The uv release also brings breaking changes.",
+     "also": [
+      "551613",
+      "577707"
+     ]
+    }
+   ],
+   "quote": {
+    "text": "If the agent isn't using my diagnostics library, I could introspect and update AGENTS.md, but there's still a delta, and it'll drift.",
+    "credit": "Geoffrey Huntley, who writes a pre-commit hook instead",
+    "item": "577706"
+   },
+   "flow": [
+    {
+     "item": "577728",
+     "kicker": "Mistral",
+     "headline": "Mistral Large 4 arrives: “Le chonk”",
+     "deck": "1 trillion parameters, 49 billion active. A preview is on the API, and open weights come at the end of the month.",
+     "also": [
+      "577726",
+      "577730"
+     ]
+    },
+    {
+     "item": "577713",
+     "kicker": "Cloudflare",
+     "headline": "Deno is joining Cloudflare",
+     "deck": "Cloudflare wants self-hosted workerd to be first class. The Deno runtime gets one more year of fixes, then development ends."
+    },
+    {
+     "box": "blotter",
+     "title": "Police blotter",
+     "note": "Agents in training, loose on the web.",
+     "rows": [
+      {
+       "head": "Wikimedia",
+       "text": "OpenAI agents edited sandbox pages and sent hundreds of thousands of Wikidata queries.",
+       "item": "577723"
+      },
+      {
+       "head": "State Dept.",
+       "text": "Anthropic agents submitted 20 visa applications. All incomplete, none processed.",
+       "item": "577712"
+      },
+      {
+       "head": "Training",
+       "text": "After the Medicare breach, OpenAI added monitoring so that staff can stop training at once.",
+       "item": "577724"
+      }
+     ]
+    },
+    {
+     "item": "577094",
+     "kicker": "Google",
+     "headline": "Gemini 4 Argon tuned a 200,000-line codebase overnight",
+     "deck": "Run unattended, it cut session prep by 40% and sped up cold imports by 21% in Google's Python ADK.",
+     "image": "https://storage.googleapis.com/gweb-developer-goog-blog-assets/images/Gemini_Generated_Image_le2f6yle2f.2e16d0ba.fill-1200x600.jpg"
+    },
+    {
+     "box": "weather",
+     "title": "Pipeline weather",
+     "note": "Six storms, all cleared. Pack an umbrella for Actions.",
+     "rows": [
+      {
+       "head": "⛈ Mon 5",
+       "text": "Actions slow to start: 14.3% of hosted-runner runs waited over five minutes.",
+       "item": "524252"
+      },
+      {
+       "head": "⛈ Tue 6",
+       "text": "1.16 million failed requests in six minutes, across 12 services.",
+       "item": "530912"
+      },
+      {
+       "head": "🌧 Tue 6",
+       "text": "Billing and settings pages slow for about an hour.",
+       "item": "525632"
+      },
+      {
+       "head": "⛈ Wed 7",
+       "text": "Two write outages with one cause, about 19 minutes in total.",
+       "item": "536310"
+      },
+      {
+       "head": "🌦 Wed 7",
+       "text": "The second write outage recurs, 16:52 to 17:01 UTC.",
+       "item": "536886"
+      },
+      {
+       "head": "🌧 Mon 12",
+       "text": "Actions, pull requests and issues incident.",
+       "item": "569200"
+      }
+     ]
+    },
+    {
+     "item": "577635",
+     "kicker": "Claude Code",
+     "headline": "Claude Code hooks can now fail closed",
+     "deck": "With onFailure: \"block\", a hook that cannot start, times out or exits with an unexpected code blocks the action instead of letting it through."
+    },
+    {
+     "item": "577663",
+     "kicker": "Codex",
+     "headline": "Codex makes its own worktrees",
+     "deck": "Codex CLI 0.162 adds tools that create and list managed Git worktrees in trusted local projects."
+    },
+    {
+     "item": "577673",
+     "kicker": "T3 Code",
+     "headline": "T3 Code nightly gives pull requests a guided tour",
+     "deck": "Guided reviews walk you through a pull request, in beta. Agents can write and read the review guides through MCP."
+    },
+    {
+     "item": "570573",
+     "kicker": "Commits",
+     "headline": "GitHub now records who pushed each commit",
+     "deck": "The pusher shows up in the UI and API next to author and committer. Limited public preview.",
+     "image": "https://github.blog/wp-content/uploads/2026/10/669232891-00c2f787-cc2b-42f4-a6d4-ee95dce6e533.jpg"
+    },
+    {
+     "box": "overheard",
+     "title": "Overheard",
+     "note": "Minicrypt: a world where public-key encryption is impossible.",
+     "rows": [
+      {
+       "head": "GitHub",
+       "text": "“Today, one in three pull requests on GitHub involves an AI agent.”",
+       "item": "537136"
+      },
+      {
+       "head": "Felix Rieseberg, on Cowork",
+       "text": "“…people didn't love that closing your laptop means the work stops.”",
+       "item": "577733"
+      },
+      {
+       "head": "Matthew Green",
+       "text": "“I think there is a 1% chance we live in Minicrypt.”",
+       "item": "577714"
+      },
+      {
+       "head": "Carson Gross",
+       "text": "“I think it will continue to be a viable career even with the advent of AI tools.”",
+       "item": "577718"
+      }
+     ]
+    },
+    {
+     "item": "577735",
+     "kicker": "Opinion",
+     "headline": "Default hard budget caps on everything, please",
+     "deck": "Simon Willison: agents make it easy to spin up code that spends money. A warning email at midnight will not cut it."
+    },
+    {
+     "item": "577391",
+     "kicker": "Security",
+     "headline": "GitHub's own model finds more secrets with less noise",
+     "deck": "Against the old LLM pipeline: 11.5% higher acceptance, 86% faster median scans and 98% lower serving cost."
+    },
+    {
+     "item": "577710",
+     "kicker": "Archaeology",
+     "headline": "Dwarf Fortress uses version control now",
+     "deck": "Tarn Adams in 2013: “I don't use version control.” In 2023: “version control stuff to use now.”"
+    },
+    {
+     "item": "537147",
+     "kicker": "Copilot",
+     "headline": "Local sandboxing for Copilot is generally available",
+     "deck": "A secure boundary for agent work on your own machine, in Copilot CLI, the Copilot app and VS Code."
+    },
+    {
+     "item": "577674",
+     "kicker": "herdr",
+     "headline": "herdr plugin update updates every plugin at once",
+     "deck": "Or one by name. Running plugin panes keep their old files, and new runs get the update without a config reload."
+    },
+    {
+     "box": "classifieds",
+     "title": "Classifieds",
+     "note": "Rates: 0 tokens a line.",
+     "rows": [
+      {
+       "head": "WANTED",
+       "text": "Triagers. You can now archive pull requests yourselves.",
+       "item": "544878"
+      },
+      {
+       "head": "LOST",
+       "text": "A budget? GitHub billing now lets you search and filter all of them.",
+       "item": "576541"
+      },
+      {
+       "head": "GRANTS",
+       "text": "Up to €500 for a mapathon or a mapping party. OpenStreetMap takes applications until 25 October.",
+       "item": "577750"
+      },
+      {
+       "head": "FOR ANDROID",
+       "text": "T3 Code nightly APK, for people outside the Play testing group.",
+       "item": "577671"
+      },
+      {
+       "head": "FOR RENT",
+       "text": "Hotel rooms, now found, compared and booked inside ChatGPT. Ask for Radisson.",
+       "item": "537213"
+      },
+      {
+       "head": "THRIFTY",
+       "text": "LegalOn cut its daily Codex costs by 65% and kept its speed.",
+       "item": "545538"
+      },
+      {
+       "head": "PIZZA",
+       "text": "Free at hackathons, which GitHub still calls the best place to learn to build.",
+       "item": "550214"
+      }
+     ]
+    },
+    {
+     "item": "577689",
+     "kicker": "Cloudflare",
+     "headline": "Cloudflare Organizations is generally available",
+     "deck": "Enterprise customers get one container above their accounts for members, analytics and shared policies.",
+     "also": [
+      "577688"
+     ]
+    },
+    {
+     "box": "wire",
+     "title": "From the Anthropic wire",
+     "note": "Headlines only. The feed sends no summaries.",
+     "rows": [
+      {
+       "head": "6 Oct",
+       "text": "Expanding the Cyber Verification Program",
+       "item": "577647"
+      },
+      {
+       "head": "8 Oct",
+       "text": "Introducing the Anthropic Cyber Mission",
+       "item": "577645"
+      },
+      {
+       "head": "8 Oct",
+       "text": "2026 Usage Policy update",
+       "item": "577646"
+      },
+      {
+       "head": "8 Oct",
+       "text": "Building on our commitment to American scientific discovery",
+       "item": "577644"
+      }
+     ]
+    },
+    {
+     "item": "531791",
+     "kicker": "OpenAI",
+     "headline": "OpenAI shares results on open math problems",
+     "deck": "From an internal frontier model, with the Lean proof formalizations published on GitHub."
+    },
+    {
+     "item": "577112",
+     "kicker": "Security",
+     "headline": "Push protection now blocks Anthropic keys by default",
+     "deck": "Secret scanning also adds Salesforce and Cloudsmith secret types."
+    },
+    {
+     "item": "542482",
+     "kicker": "FastAPI",
+     "headline": "FastAPI 0.143 stops auto-configuring OpenTelemetry",
+     "deck": "Exporter setup is now opt-in. Set FASTAPI_OTEL_AUTO_CONFIGURE=true to keep the old behavior.",
+     "tag": "Breaking"
+    },
+    {
+     "item": "537068",
+     "kicker": "VS Code",
+     "headline": "VS Code 1.141 cleans up after your agents",
+     "deck": "Worktree storage cleanup, terminal sandboxing on every platform, and pick-up of external Copilot and Codex sessions.",
+     "image": "https://code.visualstudio.com/assets/updates/1_141/release-highlights.webp"
+    },
+    {
+     "box": "corrections",
+     "title": "Corrections",
+     "note": "The vendors regret the errors.",
+     "rows": [
+      {
+       "head": "Copilot metrics",
+       "text": "Agent activity looked like it fell after several IDEs moved agent sessions to the Copilot SDK. It did not. Update your IDE to restore the numbers.",
+       "item": "532295"
+      },
+      {
+       "head": "Dependabot",
+       "text": "Dependabot withdraws an alert when its advisory is no longer valid. Webhooks now tell you.",
+       "item": "576540"
+      },
+      {
+       "head": "Claude Code",
+       "text": "Since 2.1.290, cloud sessions could drop answers to permission prompts. Fixed.",
+       "item": "577639"
+      }
+     ]
+    },
+    {
+     "item": "537443",
+     "kicker": "Copilot CLI",
+     "headline": "Copilot CLI finds your local Ollama models",
+     "deck": "From 1.0.94-0, /model lists models from a running Ollama instance next to the cloud ones."
+    },
+    {
+     "item": "530022",
+     "kicker": "Google",
+     "headline": "EmbeddingGemma 2 takes multimodal search to the edge",
+     "deck": "A 740M open-weight model that maps text, images, video and audio into one vector space, on device.",
+     "also": [
+      "577727"
+     ]
+    },
+    {
+     "item": "528706",
+     "kicker": "IntelliJ",
+     "headline": "IntelliJ's Java and Kotlin extension for VS Code reaches RC",
+     "deck": "The LSP-based extension brings IntelliJ smarts to VS Code and forks such as Cursor."
+    },
+    {
+     "item": "535593",
+     "kicker": "Raycast",
+     "headline": "Raycast moves AI Chat into its own process",
+     "deck": "The idle launcher uses up to 35% less memory, and File Search up to 80% less at peak."
+    },
+    {
+     "box": "prolific",
+     "title": "Most talkative newsrooms",
+     "note": "Release feeds and status pages do not count."
+    },
+    {
+     "item": "531153",
+     "kicker": "GitHub",
+     "headline": "Building Git infrastructure for agent-scale development",
+     "deck": "GitHub on the architecture behind its Git service as agent traffic grows."
+    },
+    {
+     "item": "523388",
+     "kicker": "Benchmark",
+     "headline": "ReviewBench: an open benchmark for AI code review",
+     "deck": "GitHub tries to measure how good AI reviewers really are."
+    },
+    {
+     "item": "543100",
+     "kicker": "Maintainers",
+     "headline": "Draft pull requests now count toward PR limits",
+     "deck": "Maintainers can stop low-quality drafts from slipping past contribution limits."
+    },
+    {
+     "item": "552202",
+     "kicker": "Signing",
+     "headline": "ty and ruff binaries are now code-signed",
+     "deck": "macOS builds are notarized by Apple, and Windows builds carry Authenticode signatures.",
+     "also": [
+      "577736"
+     ]
+    }
+   ]
+  },
+  {
+   "section": "games",
+   "title": "Games edition",
+   "banner": "Winter, in every game at once",
+   "lead": {
+    "item": "541264",
+    "kicker": "ARC Raiders",
+    "headline": "ARC Raiders heads into the cold with Frozen Trail",
+    "deck": "Update 2.0 is the biggest since launch, and the game was free to play from 8 to 12 October.",
+    "also": [
+     "541265",
+     "541274"
+    ],
+    "image": "https://clan.fastly.steamstatic.com/images/41624047/6fafb89f8bb22d3eeee11618cf0b64a2f37fdc12.jpg",
+    "body": "Frozen Trail adds the Pendola Pass map, the map conditions Frigate and Redirection, the enemies Bully, Skulker and Hydra, and the weapons Bantam and Stiletto."
+   },
+   "side": [
+    {
+     "item": "576211",
+     "kicker": "ARC Raiders",
+     "headline": "PvE toggle beta runs 13 to 20 October",
+     "deck": "A matchmaking toggle for PvE, from 11:00 CEST to 11:00 CEST. Store Update 2.1.0 starts it.",
+     "also": [
+      "574788"
+     ]
+    },
+    {
+     "item": "577295",
+     "kicker": "THE FINALS",
+     "headline": "Respec Order 3.0: the retrospective",
+     "deck": "Design director Matt Lowe on the test that gave Lights 25 more health and Heavies 25 less in Cashout."
+    }
+   ],
+   "dates": [
+    {
+     "day": "15 Oct · 21:00 CEST",
+     "text": "THE FINALS at the Galaxies Showcase: first look at the PRIME TIME season trailer",
+     "item": "551301"
+    },
+    {
+     "day": "27 Oct",
+     "text": "Minecraft launches on Nintendo Switch 2. Pre-orders are open.",
+     "item": "577772"
+    }
+   ],
+   "flow": [
+    {
+     "item": "577774",
+     "kicker": "Minecraft",
+     "headline": "Minecraft 26.4 Snapshot 3 goes ice caving",
+     "deck": "The winter drop brings Ice Caves, icicles, ice crystals and the Frostbite, a frozen zombie that can freeze you.",
+     "image": "https://www.minecraft.net/content/dam/minecraftnet/games/minecraft/screenshots/26_4_snapshot_3%201170x500.jpg"
+    },
+    {
+     "item": "569407",
+     "kicker": "Season",
+     "headline": "Trials Season 6: Frozen Trials begins",
+     "deck": "Raiders push into Pendola Pass as the new Trials season starts."
+    },
+    {
+     "item": "548696",
+     "kicker": "Hotfix",
+     "headline": "ARC Raiders Hotfix 2.0.2",
+     "deck": "Fixes after Frozen Trail, such as weapon meshes that turned partly invisible with attachments."
+    },
+    {
+     "box": "classifieds",
+     "title": "Classifieds",
+     "note": "Rates: 0 tokens a line.",
+     "rows": [
+      {
+       "head": "FOR SALE",
+       "text": "Collector Set DLC. Gear up for Frozen Trail.",
+       "item": "541273"
+      },
+      {
+       "head": "NEW DRIP",
+       "text": "ISEUL-T outfits in THE FINALS Store Update 11.13.0, while XP Apogee lasts.",
+       "item": "541800"
+      },
+      {
+       "head": "NOW PLAYING",
+       "text": "The Minecraft Dungeons II soundtrack, on Spotify and other platforms.",
+       "item": "577775"
+      },
+      {
+       "head": "PORTED",
+       "text": "Applied Energistics 2, now on Minecraft 26.3. Alpha.",
+       "item": "577764"
+      },
+      {
+       "head": "LESSONS",
+       "text": "Beat T4 armour in WARDOGS: shoot what it does not cover, keep your own kit cheap.",
+       "item": "538855"
+      },
+      {
+       "head": "PATCHED",
+       "text": "Team Fortress 2: a 'No Grenades' style for the General's Greatcoat.",
+       "item": "571028"
+      },
+      {
+       "head": "RESTORED",
+       "text": "The old wallbug movement on Team Fortress 2 community servers, with sv_wallbug.",
+       "item": "525497"
+      }
+     ]
+    },
+    {
+     "item": "538856",
+     "kicker": "Guide",
+     "headline": "Why the WARDOGS Verba misses Havocs",
+     "deck": "What players say fixes it, and what else kills a Havoc after the 2 October CIWS change.",
+     "image": "https://wardogshub.gg/article/wardogs-verba-guide-16x9.jpg"
+    },
+    {
+     "item": "516829",
+     "kicker": "Studio",
+     "headline": "Bringing Celeste to life",
+     "deck": "How the ARC Raiders team adapts to better honor actor performances."
+    }
+   ]
+  },
+  {
+   "section": "work",
+   "title": "Work edition",
+   "banner": "Mind the deprecations",
+   "lead": {
+    "item": "577757",
+    "kicker": "Qlik",
+    "headline": "Automation APIs are deprecated",
+    "deck": "Automation connections, Automation connectors and Automations move to the Workflows namespace. Removal comes on or after 30 November 2027.",
+    "also": [
+     "577754"
+    ],
+    "body": "Workflows changes too: the Workflows Automations API deprecated schedules[].interval. Use schedules[].recurrence to configure schedules.",
+    "facts": [
+     [
+      "413 days",
+      "until the earliest removal date"
+     ],
+     [
+      "3 APIs",
+      "move to the Workflows namespace"
+     ]
+    ]
+   },
+   "side": [
+    {
+     "item": "577756",
+     "kicker": "Alerting",
+     "headline": "Sharing tasks get API endpoints",
+     "deck": "List the executions of a sharing task in the Alerting namespace, or fetch a single one."
+    },
+    {
+     "item": "577753",
+     "kicker": "Direct Access",
+     "headline": "Direct Access Agents API reports its gateway configuration",
+     "deck": "A new endpoint returns the configuration with environment and product version metadata."
+    },
+    {
+     "item": "577755",
+     "kicker": "Talend",
+     "headline": "Track Capacity-Based Pricing per task run",
+     "deck": "A new Talend Management Console event carries Capacity-Based Pricing metrics for task executions."
+    }
+   ],
+   "flow": []
+  }
+ ]
+}
