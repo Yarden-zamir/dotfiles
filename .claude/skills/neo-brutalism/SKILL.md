@@ -87,6 +87,22 @@ The import loads the fonts on machines that do not have them. Installed fonts st
 - **Motion.** Use transitions of 80ms for presses and 120ms for fades. Do not use continuous animations: no spinners, pulses or shimmer. Show progress with text or a sticker colour.
 - **Dark mode.** Always support both modes through `prefers-color-scheme`. Change tokens only, not rules.
 
+## Differences from generic neo-brutalism
+
+tick3d adapts the generic prompt at https://www.designprompts.dev/neo-brutalism and adds a dark mode.
+If you know the generic style, use the tick3d value where the two differ.
+
+| Generic prompt | tick3d |
+| --- | --- |
+| Cream canvas `#FFFDF5` | Lilac canvas `#E4E7FF` with dots |
+| Red accent `#FF6B6B`, yellow and violet colour blocks | Purple accent `#6C5CE7`, yellow `#FFE14D` for selection |
+| Space Grotesk, weight 700 to 900, caps everywhere | Bricolage Grotesque 800 for headings, caps only on labels and stickers |
+| 4px borders, sharp corners | 2px borders, 0.25rem radius |
+| Shadows from 4px to 16px | 4px on cards, 3px on controls, 2px on stickers |
+| Pure black text, no grays | `--muted` for secondary text |
+| Marquees, spins, pulses, bounces | No continuous animations |
+| Light mode only | Light and dark mode |
+
 ## Starter
 
 ```css
