@@ -55,3 +55,4 @@ zshenv/init/sde.zsh
 /.config/herdr/*.log
 /.config/herdr/*.sock
 .claude/skills/sde
+/.claude/skills/synced
