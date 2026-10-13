@@ -45,6 +45,7 @@
     "persistComposerContextStrip": true,
     "planModeEnabled": false,
     "proactivePanelsEnabled": false,
+    "repositoryOwnerFilters": true,
     "sendShortcut": "enter",
     "showSkillsInSlashMenu": true,
     "sidebarProjectGroupingMode": "repository",
