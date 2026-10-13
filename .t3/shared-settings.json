@@ -70,6 +70,34 @@
     "removeAgentCreditsOnMerge": true,
     "reviewGuidesEnabled": true,
     "sidebarAutoSettleAfterDays": 5,
-    "snoozeLimitedThreads": true
+    "snoozeLimitedThreads": true,
+    "threadCardLayouts": {
+      "desktop": {
+        "rows": [
+          {
+            "start": [
+              "favicon",
+              "project",
+              "branch"
+            ],
+            "end": [
+              "terminal",
+              "status"
+            ]
+          },
+          {
+            "start": [
+              "title"
+            ],
+            "end": [
+              "machine",
+              "providers",
+              "pullRequest",
+              "pin"
+            ]
+          }
+        ]
+      }
+    }
   }
 }
