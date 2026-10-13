@@ -74,6 +74,7 @@ The import loads the fonts on machines that do not have them. Installed fonts st
 - **Selection.** Fill the selected item with `--select` and `--select-fg`: yellow in light mode, accent purple in dark mode. This covers tabs, segments, cells and rows.
 - **Selected list row.** Make it a flat `--select` block with a `--shadow-ink` border, an 8px left edge and no shadow.
 - **Accent.** Use `--accent` for focus rings, links and the main action.
+- **Size.** Use a big default size: 18px on `html`, body text at 1rem. Size labels, stickers and code in rem or em, so they scale with the default. Do not set small pixel sizes.
 - **Type.** Use `--sans`. Set headings and labels to weight 800 with `letter-spacing: -0.01em`. Set buttons to weight 700.
 - **Section labels.** Use uppercase, weight 800, 0.7rem, `letter-spacing: 0.06em` and `--muted`.
 - **Code and ids.** Use `--mono` for code, ids, hashes, revisions and tokens.
@@ -102,13 +103,15 @@ If you know the generic style, use the tick3d value where the two differ.
 | Pure black text, no grays | `--muted` for secondary text |
 | Marquees, spins, pulses, bounces | No continuous animations |
 | Light mode only | Light and dark mode |
+| No base size given | 18px base size, all other sizes in rem or em |
 
 ## Starter
 
 ```css
 * { box-sizing: border-box; }
+html { font-size: 18px; }
 body {
-  margin: 0; font: 14px/1.45 var(--sans); color: var(--ink);
+  margin: 0; font: 1rem/1.5 var(--sans); color: var(--ink);
   background-color: var(--canvas);
   background-image: radial-gradient(var(--dots) 1.2px, transparent 1.2px);
   background-size: 16px 16px;
