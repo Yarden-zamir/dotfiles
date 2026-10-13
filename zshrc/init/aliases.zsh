@@ -40,3 +40,5 @@ alias set_shell="chsh -s"
 
 alias root='cd $(git rev-parse --show-toplevel || echo ".")'
 alias .=root
+
+alias claude-work='CLAUDE_CONFIG_DIR=~/.claude-work claude'
