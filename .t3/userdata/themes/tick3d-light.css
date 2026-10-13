@@ -136,8 +136,10 @@ a[aria-label="Go to threads"], [data-environment-identification="pill"] {
   transform: rotate(-3deg);
 }
 /* Labels carry extra text such as "Working 43s", so match the start. */
-[data-sidebar-status^="Working"], [data-sidebar-status^="Goal"] { background: #7CFF8A; }
-[data-sidebar-status^="Waiting"] { background: #FFE14D; }
+/* The :not() matches the specificity of the pink base rule, so these colours win. */
+[data-sidebar-status^="Working"]:not([data-sidebar-status=""]),
+[data-sidebar-status^="Goal"]:not([data-sidebar-status=""]) { background: #7CFF8A; }
+[data-sidebar-status^="Waiting"]:not([data-sidebar-status=""]) { background: #FFE14D; }
 /* The label and its spinner bring their own faint colours; stickers use ink. */
 [data-sidebar-status]:not([data-sidebar-status=""]) {
   color: #000000 !important;
@@ -216,3 +218,74 @@ li:nth-child(5n+2) [data-sidebar-status]:not([data-sidebar-status=""]) { transfo
 li:nth-child(5n+3) [data-sidebar-status]:not([data-sidebar-status=""]) { transform: rotate(-1.5deg); }
 li:nth-child(5n+4) [data-sidebar-status]:not([data-sidebar-status=""]) { transform: rotate(3.5deg) translateY(-1px); }
 li:nth-child(5n+5) [data-sidebar-status]:not([data-sidebar-status=""]) { transform: rotate(-2.5deg); }
+
+/* Thread card elements: a custom card layout marks each element with
+   data-thread-card-element, so each one gets its own look. */
+[data-thread-card-element="terminal"] > * {
+  background: #7CFF8A;
+  color: #000000;
+  border: 1.5px solid #000000;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+[data-thread-card-element="terminal"] svg {
+  color: #000000;
+  animation: none;
+}
+[data-thread-card-element="pullRequest"] > * {
+  background: #D9D4FF;
+  color: #000000;
+  border: 1.5px solid #000000;
+  border-radius: 3px;
+  padding: 0 3px;
+  font-weight: 800;
+}
+[data-thread-card-element="pullRequest"] svg {
+  color: #000000;
+}
+[data-thread-card-element="diff"] > * {
+  font-weight: 800;
+}
+[data-thread-card-element="model"] > *,
+[data-thread-card-element="age"] > *,
+[data-thread-card-element="messageCount"] > * {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.65rem;
+  color: #000000;
+}
+[data-thread-card-element="goal"] > * {
+  background: linear-gradient(transparent 35%, #FFE14D 35%, #FFE14D 88%, transparent 88%);
+  color: #000000;
+  font-weight: 700;
+}
+[data-thread-card-element="limitReset"] > *,
+[data-thread-card-element="backgroundTasks"] > * {
+  background: #FFB347;
+  color: #000000;
+  border: 1.5px solid #000000;
+  border-radius: 3px;
+  padding: 0 3px;
+  font-weight: 800;
+}
+[data-thread-card-element="error"] > * {
+  color: #FF5277;
+  font-weight: 800;
+}
+/* Unread: a small ink-edged square instead of a soft dot. */
+[data-thread-card-element="unread"] > * {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: #FFE14D;
+  border: 1.5px solid #000000;
+}
+[data-thread-card-element="access"] svg,
+[data-thread-card-element="plan"] svg,
+[data-thread-card-element="lineage"] svg {
+  color: #000000;
+}
+
+/* Terminal drawer: a hard rule above it, like the chat header. */
+[data-terminal-owner="drawer"] {
+  border-top: 2px solid #000000 !important;
+}
