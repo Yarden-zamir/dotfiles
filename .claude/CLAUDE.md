@@ -95,5 +95,7 @@ Before substituting, weakening, or reinterpreting a requirement, confirm with me
 T3 Code
 - For visual work (web apps, images, diagrams, mockups), show the result in the T3 browser preview.
 - For content that is hard to read as plain text (difficult ideas, news summaries, tables, comparisons), you can build a quick HTML page and show it in the T3 browser preview.
+- "T3 browser preview" means the browser tab that `preview_open` opens. It does not mean an inline page from `html_render`.
+- For a local HTML, serve on localhost. Then open with `preview_open`.
 - If you show such a page, keep it updated as the conversation continues.
 - If you are not sure that a page helps, suggest it instead of building it.
