@@ -289,3 +289,84 @@ li:nth-child(5n+5) [data-sidebar-status]:not([data-sidebar-status=""]) { transfo
 [data-terminal-owner="drawer"] {
   border-top: 2px solid #B9A8FF !important;
 }
+
+/* Group tabs: index-card tabs with ink borders and hard shadows. The bar pads its edges, so the
+   shadows and the tilt of the open tab are not clipped. */
+[data-sidebar-group-tabs] {
+  gap: 7px;
+  padding: 3px 6px 6px 3px;
+}
+[data-sidebar-group-tab], [data-sidebar-group-more] {
+  height: 26px;
+  border: 2px solid #F3F0FF;
+  border-radius: 4px;
+  background: #262147;
+  color: #F3F0FF !important;
+  font-weight: 700;
+  box-shadow: 3px 3px 0 0 #B9A8FF !important;
+  transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+}
+[data-sidebar-group-tab]:hover, [data-sidebar-group-more]:hover {
+  background: #262147;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 #B9A8FF !important;
+}
+/* A press moves the tab into its shadow. */
+[data-sidebar-group-tab]:active, [data-sidebar-group-more]:active {
+  transform: translate(3px, 3px);
+  box-shadow: none !important;
+}
+/* The open tab: a selection card, tilted like the status stickers. */
+[data-sidebar-group-tab][data-selected] {
+  background: #6C5CE7;
+  color: #FFFFFF !important;
+  transform: rotate(-2deg);
+  box-shadow: 3px 3px 0 0 #B9A8FF !important;
+}
+/* A tab whose thread needs the user takes the colour of that status. */
+[data-sidebar-group-tab][data-status="approval"],
+[data-sidebar-group-tab][data-status="limited"],
+[data-sidebar-group-more][data-attention] { background: #FFB347; color: #000000 !important; }
+[data-sidebar-group-tab][data-status="input"] { background: #B9A8FF; color: #000000 !important; }
+[data-sidebar-group-tab][data-status="failed"] { background: #FF5277; color: #000000 !important; }
+/* The thread count as a small ink chip. */
+[data-sidebar-group-tab] .tabular-nums, [data-sidebar-group-more] .tabular-nums {
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: #F3F0FF;
+  color: #15122B !important;
+  font-size: 0.8em;
+  line-height: 1.5;
+  text-align: center;
+}
+/* Drop targets during a thread drag: a green card that leans towards the pointer. */
+[data-sidebar-group-tab][data-drop-target], [data-sidebar-group-more][data-drop-target],
+[data-sidebar-group-new][data-drop-target] {
+  background: #7CFF8A !important;
+  color: #000000 !important;
+  transform: rotate(2deg) scale(1.06);
+}
+[data-sidebar-group-new] {
+  border: 2px dashed #F3F0FF !important;
+  border-radius: 4px;
+  background: #262147;
+  color: #F3F0FF;
+}
+[data-sidebar-group-tab][data-dragging] { box-shadow: 5px 5px 0 0 #B9A8FF !important; }
+
+/* Icon pack: flat yellow bodies, ink outlines, hard shadows. */
+[data-app-icon] .nbf { fill: #FFE14D; }
+[data-app-icon] .nbs { fill: #B9A8FF; }
+[data-sidebar-group-tab][data-selected] [data-app-icon] .nbf { fill: #FFE14D; }
+/* Status icons keep ink outlines and take the colour of their status. */
+[data-app-icon^="status."] { color: #000000 !important; }
+[data-app-icon^="status."] .nbs { fill: #000000; }
+[data-app-icon="status.working"] .nbf, [data-app-icon="status.done"] .nbf { fill: #7CFF8A; }
+[data-app-icon="status.waiting"] .nbf { fill: #FFE14D; }
+[data-app-icon="status.approval"] .nbf, [data-app-icon="status.limited"] .nbf,
+[data-app-icon="status.woke"] .nbf { fill: #FFB347; }
+[data-app-icon="status.input"] .nbf { fill: #B9A8FF; }
+[data-app-icon="status.failed"] .nbf { fill: #FF5277; }
+/* On a tab that already has the colour of its status, the status icon turns white. */
+[data-sidebar-group-tab][data-attention] [data-app-icon^="status."] .nbf { fill: #FFFFFF; }

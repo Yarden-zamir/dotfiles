@@ -85,6 +85,7 @@ The import loads the fonts on machines that do not have them. Installed fonts st
 - **Canvas.** Put the dots pattern on `--canvas` behind the page. Put content in cards on top.
 - **Buttons.** On hover, lift the button 1px and show the shadow. On click, move it 3px down and right and remove the shadow. The button presses into its shadow.
 - **Gradients.** Do not use colour gradients. The one exception is the send button, or the one main action of a page. Gradients that draw hard patterns (dots, highlighter, hatching) are allowed.
+- **Icons.** Draw an icon as a flat `--select` body with an ink outline (2.25 on a 24 grid, square caps, miter joins) and a hard shadow, offset about 1.6, in `--shadow-ink`. Use plain shapes. The tick3d icon pack in the `t3-theme` skill is the reference.
 - **Motion.** Use transitions of 80ms for presses and 120ms for fades. Do not use continuous animations: no spinners, pulses or shimmer. Show progress with text or a sticker colour.
 - **Dark mode.** Always support both modes through `prefers-color-scheme`. Change tokens only, not rules.
 
