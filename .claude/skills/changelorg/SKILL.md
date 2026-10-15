@@ -25,6 +25,8 @@ Run the CLI as `uvx --from git+https://github.com/Yarden-zamir/changeLorg change
 - `/changes?saved=true&since=30d`: shelf items only.
 - `/sources`: the subscriptions, including disabled ones.
 - `/me`: the account.
+- `POST /shares` with `{"profile": "<name>"}`: create the share link of a profile, or get the existing one. The link is `https://changelorg.yarden-zamir.com/share/<token>`. Anyone with the link can see and import the enabled sources.
+- `DELETE /shares/<token>`: stop sharing. `/profiles` shows the `share_token` of each shared profile.
 
 `since` takes a duration such as `24h` or `10d`, or an ISO date. `until` sets the window end. Without `include_dismissed=true`, items that the user cleared stay hidden.
 Each change has `title`, `url`, `summary`, `content`, `published_at`, `source_name`, `source_profile`, `saved`, `dismissed`, and `note`.
