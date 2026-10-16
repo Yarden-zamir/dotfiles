@@ -56,12 +56,12 @@ If the repo has a `.kitshn.yaml`, the deployed app gets its values from GitHub s
 - [KitSHn README](https://github.com/Yarden-zamir/kitshn/blob/main/README.md), sections "Public HTTP Services" and "Secrets And Config".
 - [`specs/ci.md`](https://github.com/Yarden-zamir/kitshn/blob/main/specs/ci.md) for the `KITSHN_` prefix and the pull request lifecycle.
 - The `kitshn-deploy-service` skill (`kitshn skill show`).
-- A worked example of GitHub login on KitSHn: `kitshn.md` in the `Yarden-zamir/changeLorg` repo.
+- A worked example of GitHub login on KitSHn: `kitshn.md` in the `Yarden-zamir/riffle` repo.
 
 Steps that differ from the local flow:
 
 1. Get the production host from the `Caddyfile.j2` of the repo. The callback URL is `https://<host>` plus the callback path of the auth library.
-2. Create one app per environment. Do not add preview hosts (`pr.<N>.<domain>`) to the production app. Each pull request has a new host, and an app accepts only 10 callback URLs. Keep preview login off, or use a separate preview app, as `changeLorg` does.
+2. Create one app per environment. Do not add preview hosts (`pr.<N>.<domain>`) to the production app. Each pull request has a new host, and an app accepts only 10 callback URLs. Keep preview login off, or use a separate preview app, as `riffle` does.
 3. Set `ENV_FILE` in the skeleton to a path in the scratchpad. The local files are only a step on the way to GitHub.
 4. Send each value to a GitHub secret with the `KITSHN_` prefix, scoped to the environment. Pull request environments then never get production secrets. Send the value through stdin, so that it never shows in the output:
 
