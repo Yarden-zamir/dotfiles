@@ -6,7 +6,8 @@
 //   <worktree>   T3 Code checkout with node_modules. playwright-core loads from there.
 //   <dev-log>    output of `vp run dev` in that worktree. The script reads the pairing URL from it.
 //   <shots.json> [{ "name", "path"?, "viewport"?, "scheme"?, "localStorage"?, "waitFor"?, "css"?,
-//                   "click"?: [selector | { "selector", "button": "right" }], "settleMs"?,
+//                   "click"?: [selector | { "selector", "button"?: "right", "position"?: { x, y } }],
+//                   "settleMs"?,
 //                   "clip"?: selector, "clipRect"?: { x, y, width, height } }]
 //
 // Shots go to <dirname(shots.json)>/<name>.png. The browser session goes to
@@ -117,8 +118,10 @@ try {
     // `css` hides noise that is not part of the shot, such as a provider error banner.
     if (shot.css !== undefined) await page.addStyleTag({ content: shot.css });
     for (const step of shot.click ?? []) {
-      const { selector, button = "left" } = typeof step === "string" ? { selector: step } : step;
-      await page.locator(selector).first().click({ button });
+      const { selector, button = "left", position } =
+        typeof step === "string" ? { selector: step } : step;
+      // `position` is relative to the element's top left corner, for a click on empty space.
+      await page.locator(selector).first().click({ button, position });
       // Menus and popovers animate in.
       await page.waitForTimeout(400);
     }
