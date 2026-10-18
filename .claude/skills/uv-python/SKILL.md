@@ -17,6 +17,7 @@ Use uv for anything Python: envs, deps, scripts, tools, CI, publishing.
 - For third-party imports in ad-hoc scripts: `--with <pkg>` (one-off) or `uv add <pkg>` (persistent).
 - Any throwaway check beyond a trivial shell one-liner goes to `uv run -`, not bash. Parsing, JSON/CSV, HTTP, math, date handling, file munging: a heredoc you can read beats a jq/awk/sed chain you have to debug.
 - Validate with `uvx ruff check`. Type-check with `uvx ty`.
+- For checks in code and tests, use `assert condition, message`. Do not replace it with `raise AssertionError`, because nobody runs Python with `-O`.
 
 ## Modes
 
