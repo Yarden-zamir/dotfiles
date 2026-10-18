@@ -77,6 +77,8 @@ In all conversations, textual documents and specs, use simple but clear language
 
 When a reply asks me to do something, include the exact commands or steps in that reply. Do not point back to earlier messages ("the commands from before"). Assume I lost that context.
 
+Do not let a raised point disappear. A question, a blocker, a risk or a decision that you raise stays open until I address it or you verify that it is resolved. My silence does not resolve it. End each reply with a numbered "Open points" list of everything that is still open, until the list is empty.
+
 Never give time estimates (hours, days, weeks) for work. Agentic work makes them irrelevant; describe scope, risk and dependencies instead.
 
 When exploring external code that we own like other services, sdk, forks, try to find local clone of the codebase and explore there, otherwise attempt to clone to a local place same as my other clones and explore there. Never check compiled decompiled deps and try to reverse engineer unless no other way is possible.
