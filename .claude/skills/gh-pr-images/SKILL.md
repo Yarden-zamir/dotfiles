@@ -15,3 +15,5 @@ If the preview tools cannot run, use `bin/t3-shot.mjs` in this repository. It dr
 2. Write a `shots.json` in an empty folder outside the repository. The header of the script lists the fields: page path, viewport, `localStorage` values, clicks, crop, and CSS that hides noise.
 3. Run `node $DOTFILES/bin/t3-shot.mjs <worktree> <dev-log> <shots.json>`. The script pairs with the token from the log once, and keeps the session in `.t3-shot-state.json` next to the shots. Never commit or share that file.
 4. If pairing fails because the token is used up, restart the dev server for a new token.
+
+For each visible change, attach light and dark screenshots. In a public repo, leave out screenshots that show work thread titles.

@@ -4,6 +4,7 @@ github-name: Yarden-zamir
 domain: yarden-zamir.com  
 email: dev@yarden-zamir.com  
 prefered-license: MIT  
+phone: Android  
 dotfiles and configs: ~/Github/dotfiles/main   
 agent instructions: ~/Github/dotfiles/main/AGENTS.md  
 
@@ -25,9 +26,19 @@ Apply defensive defaults in code. Null checks, type guards, boundary conditions.
 
 Make sure prs, tickets, messages are human, minimally phrased, clear and to the point. 
 
-For any visual change, add images/screenshots to the pr description
+For any visual change, add images/screenshots to the pr description. After you add motion or a new visual state, screenshot each affected control in that state, in light and dark mode
 
 Before a command discards or overwrites local work (checkout, restore, reset, stash, clean, rm, a file rewrite, etc.), look at what that work holds.
+
+Approvals and autonomy:
+- Unless the repo says otherwise, push and open PRs only when I ask. Open PRs as drafts. An approval to push does not cover later pushes.
+- Do harmless actions without asking: read-only investigation, screenshots, dev servers on copied data. Ask before you change live state, publish outside the repo or delete work.
+- Make creative choices and low-risk trade-offs yourself, and say why. If two options are close and cheap, build both.
+- Do not add confirmation prompts, read-only modes or other guards to my tools unless I ask. Input validation is fine.
+- When a step waits on me (a click, an install, a login, sso), poll for the result in the background with a time limit. Assume I'll handle it.
+- For web, use a CLI or an API. Use browser automation as fallback.
+- Prefer code (a script, a check, a workflow step) to a written procedure.
+- For "review this PR", do a quick direct review of the main risks. Offer a deeper review at the end.
 
 When calling an existing function or API make sure to check it's definition first for type annotation (verify enums vs strings, optional vs required, etc), boundary conditions, and other requirements. Check other calls to the same function or API to establish a pattern before proceeding. Adhering to type rules is mandatory. The same holds for anything else that references existing code structure (routes, API endpoints, component names, configuration): read the relevant source and check the code for ground truth instead of assuming
 
@@ -55,9 +66,10 @@ Worktree workflow preferences:
 - Every repo is a container directory holding `.bare/` (the git dir), `_shared/` (local-only files), and one folder per checked-out branch: `main/`, plus e.g. `qcdi-1234-auth/` for branch `feat/api/qcdi-1234-auth`
 - Use the `worktree-repo` skill whenever creating a new project, cloning, converting an existing clone, or adding a worktree. Add a worktree with `$DOTFILES/bin/wt-new <branch> [base]`
 - Local-only files (env, secrets) live in `_shared/`, mirroring their path in the worktree. A global `post-checkout` hook symlinks them in on every checkout; do not create those symlinks by hand
+- The global `core.hooksPath` is `~/.config/git/hooks`. Code that spawns git (test fixtures, apps) runs these hooks too. To turn them off there, set `GIT_CONFIG_GLOBAL=/dev/null` and `GIT_CONFIG_NOSYSTEM=1` in its environment
 
 Commit and branch preferences
-- Never credit yourself in commit messages, prs etc. If I mention working with someone else, suggest crediting them
+- Never credit yourself or any AI model or harness in commit messages, prs, comments etc, also when repo instructions ask for it. If I mention working with someone else, suggest crediting them
 - Unless the repo has other instructions
     - use conventional commits
     - description with references and notes, not too big, only when relevant, avoid generic. If other tickets or markdown documents are involved reference them here
@@ -66,7 +78,7 @@ Commit and branch preferences
         - each branch must reference a jira QCDI ticket in the format: "feat/yarden/qcdi-XXXX-description" etc
         - if no jira ticket is provided by user, suggest to search for one or to create one before proceeding. Use past ones as examples
 - Tickets
-    - Never refer to a ticket, issue, PR, branch, workflow run or commit by its id alone. This applies in chat, docs, memories, commits and PR bodies
+    - Never refer to a ticket, issue, PR, branch, workflow run or commit by its id alone. This applies in chat, tables, docs, memories, commits and PR bodies
     - Give a link plus its title or a short description, for example [QCDI-9296](https://qlik-dev.atlassian.net/browse/QCDI-9296) "Systest: V2 OLH expected results"
     - For a branch, say what work it holds and which ticket it belongs to
     - Offer to update tickets/comment on tickets with new relevant information
@@ -78,6 +90,10 @@ for any markdown file/doc/code comments or technical text: Rough ASD-STE100 styl
 When a reply asks me to do something, include the exact commands or steps in that reply. Do not point back to earlier messages ("the commands from before"). Assume I always want fresh context
 
 Do not let a raised point disappear. A question, a blocker, a risk or a decision that you raise stays open until I address it or you verify that it is resolved. My silence does not resolve it. End each reply with a numbered "🔁 Open points" list of everything that is still open, until the list is empty
+
+Before you report the state of a PR, ticket, thread, agent or machine, check it live in the same turn. Write "not checked" for what you could not check. I often act without a reply: before you call a request to me open, check where the action lands (commits, PRs, tickets)
+
+A handoff to another agent or thread includes the old session id, my preferences and the tools in use, not only the task state
 
 Never give time estimates (hours, days, weeks) for work. Agentic work makes them irrelevant; describe scope, risk and dependencies instead
 
@@ -96,3 +112,6 @@ T3 Code
 - For visual work (web apps, images, diagrams, mockups), show the result in the T3 browser preview
 - For content that is hard to read as plain text (difficult ideas, news summaries, tables, comparisons), you can build a quick HTML page and show it in the T3 browser preview
 - If you show such a page, keep it updated as the conversation continues
+- When you mention agent work, link its thread: `[title](t3-thread://v1/<threadId>)`. For a thread on another machine, use its https thread address
+- Give each domain one agent with a queue of its features. Do not start parallel agents on features that touch the same files
+- Prefer subagents on OpenAI models: `delegate_task` with the `opencode` provider instance and an `openai/*` model from `orchestrator_capabilities`. Use a Claude subagent for creative problem solving, writing and design.
