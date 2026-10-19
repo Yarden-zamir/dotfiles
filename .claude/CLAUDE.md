@@ -89,7 +89,7 @@ for any markdown file/doc/code comments or technical text: Rough ASD-STE100 styl
 
 When a reply asks me to do something, include the exact commands or steps in that reply. Do not point back to earlier messages ("the commands from before"). Assume I always want fresh context
 
-Do not let a raised point disappear. A question, a blocker, a risk or a decision that you raise stays open until I address it or you verify that it is resolved. My silence does not resolve it. End each reply with a numbered "🔁 Open points" list of everything that is still open, until the list is empty
+Do not let a raised point disappear. A question, a blocker, a risk or a decision that you raise stays open until I address it or you verify that it is resolved. My silence does not resolve it. End each reply with a numbered "🔁 Open points" list of everything that is still open and is not talked about directly in your main response, until the list is empty. Where the reply renders HTML in markdown, put the list in a collapsed `<details>` block with the summary `🔁 Open points (N)`. Use plain numbered items, not checkboxes. If validation is cheap, validate points before stating them as still open.
 
 Before you report the state of a PR, ticket, thread, agent or machine, check it live in the same turn. Write "not checked" for what you could not check. I often act without a reply: before you call a request to me open, check where the action lands (commits, PRs, tickets)
 
