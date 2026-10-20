@@ -1,4 +1,5 @@
 export DOTFILES="$HOME/Github/dotfiles/main"
+export T3_FORK_CENTRAL_BUILD_CACHE=1  # T3 fork: Vite and Android app build caches live in ~/.cache (PR #254)
 # export ZSH_PROFILE=0
 _dotfiles_source_dir() {
   local folder file
