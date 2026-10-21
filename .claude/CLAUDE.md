@@ -43,23 +43,18 @@ Approvals and autonomy:
 
 When calling an existing function or API make sure to check it's definition first for type annotation (verify enums vs strings, optional vs required, etc), boundary conditions, and other requirements. Check other calls to the same function or API to establish a pattern before proceeding. Adhering to type rules is mandatory. The same holds for anything else that references existing code structure (routes, API endpoints, component names, configuration): read the relevant source and check the code for ground truth instead of assuming
 
-When accessing dictionary/object keys from external sources (API responses, JWT payloads, database
-results, function returns), never assume key names
-1. Check the source definition (schema, type annotation, docs, or where the dict is constructed)
-2. Or print/log the keys if uncertain
-
-Use emoji only as structural markers or to signal important meta-information:
+Use emoji as structural markers or to signal important meta-information:
 🟢 for primary answers or recommended path
 ⚪ for neutral alternatives or variants
-🟠 when pointing out that the requested approach is more complex than a simpler viable alternative (and briefly state the simpler option before continuing with the requested one). Use this often, because the user may be wrong and would like to learn of alternatives
+🟠 when pointing out that the requested approach is more complex than a simpler viable alternative (and briefly state the simpler option before continuing with the requested one). Use this often, because the user may be wrong and would like to learn of alternatives. Very important
 🔴 only when describing hard blockers, breaking changes, or critical risks
 🧪 for repetitive mistakes that require a change to (this) base prompt or the project's base prompt. Use this when a user corrects you harshly or you find a bad mistake you've made. The user will decide how to act on it. Suggest a generic edit.
 
-always double check when refactoring that you refactor all usages and calls, all cases and all code paths related to the current change. The same applies to bug fixes: a report names one symptom, so before editing, check every caller of the function you are about to touch
+always double check when refactoring that you refactor all usages and calls, all cases and all code paths related to the current change including things relating to behavior not cought by the typesystem/compiler. The same applies to bug fixes: a report names one symptom, so before editing, check every caller of the function you are about to touch
 
 Do not use regex unless absolutely necessary. Always check if a simpler string method or existing utility function can achieve the same result before resorting to regex, which can be complex and error-prone
 
-Tests should be contract-focused and source-of-truth focused. They should verify stable behavior that can break silently, not mirror identical copy, formatting, layout, or implementation details. Exact-output assertions should live only where that output is produced. Callers should assert behavior, shape, or key fields unless exact output is their contract. No useless tests. No slow tests unless absolutely necessary
+Tests should be contract-focused and source-of-truth focused. They should verify stable behavior that can break silently, not mirror identical copy, formatting, layout, or implementation details. Exact-output assertions should live only where that output is produced. Callers should assert behavior, shape, or key fields unless exact output is their contract. No useless tests. No slow tests unless absolutely necessary. Prefer no tests to bad slow tests always
 
 Make sure to parallelize tasks and runs where task dependencies allow it
 
@@ -75,8 +70,8 @@ Commit and branch preferences
     - use conventional commits
     - description with references and notes, not too big, only when relevant, avoid generic. If other tickets or markdown documents are involved reference them here
     - if in a qlik-trial repo
-        - each commit must reference a jira QCDI ticket in the format: "QCDI-XXXX | conventional commit message". If not the case before merge, suggest rebase
-        - each branch must reference a jira QCDI ticket in the format: "feat/yarden/qcdi-XXXX-description" etc
+        - each commit must reference a jira ticket in the format: "QCDI-XXXX | conventional commit message". If not the case before merge, suggest rebase
+        - each branch must reference a jira ticket in the format: "feat/yarden/qcdi-XXXX-description" etc
         - if no jira ticket is provided by user, suggest to search for one or to create one before proceeding. Use past ones as examples
 - Tickets
     - Never refer to a ticket, issue, PR, branch, workflow run or commit by its id alone. This applies in chat, tables, docs, memories, commits and PR bodies
@@ -84,11 +79,13 @@ Commit and branch preferences
     - For a branch, say what work it holds and which ticket it belongs to
     - Offer to update tickets/comment on tickets with new relevant information
 
+when referencing anything, always use proper links and context
+
 In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information and context. Do not sacrifice clarity for brevity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity
 
-for any markdown file/doc/code comments or technical text: Rough ASD-STE100 style. Max 20 words per sentence in instructions, 25 in descriptions. Imperative for steps, one instruction per sentence, condition before command. Simple tenses only — no present perfect, no -ing verbs, no should/would/may/might. Active voice. One word per meaning — no synonym rotation. No contractions, keep articles and "that". Delete filler: simply, robust, seamlessly, leverage. Code and identifiers stay exact.
+for any markdown file/doc/code comments or technical text: Rough ASD-STE100 style. Max (roughly) 20 words per sentence in instructions, 25 in descriptions. Imperative for steps, one instruction per sentence, condition before command. Simple tenses only - no present perfect, no -ing verbs, no should/would/may/might. Active voice. One word per meaning - no synonym rotation. No contractions, keep articles and "that". Delete filler: simply, robust, seamlessly, leverage. Code and identifiers stay exact.
 
-When a reply asks me to do something, include the exact commands or steps in that reply. Do not point back to earlier messages ("the commands from before"). Assume I always want fresh context
+When a reply asks me to do something, include the exact steps in that reply. Do not point back to earlier messages ("the commands from before"). Assume I always want fresh context
 
 Do not let a raised point disappear. A question, a blocker, a risk or a decision that you raise stays open until I address it or you verify that it is resolved. End each reply with a numbered "🔁 Open points" list of everything that is still open and is not talked about directly in your main response, until the list is empty. Where the reply renders HTML in markdown, put the list in a collapsed `<details>` block with the summary `🔁 Open points (N)`. Use plain numbered items, not checkboxes. If validation is cheap, validate points before stating them as still open. If you mention something in your message, it does not need to be listed under open points. Reserved for important things, don't flood me. Don't add trivial points like "The local preview server still runs..."
 
