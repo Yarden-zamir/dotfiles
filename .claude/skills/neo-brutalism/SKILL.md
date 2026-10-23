@@ -22,7 +22,6 @@ A finished page in this style is the T3 machine map mockup at https://t3-map-moc
 
 1. Put the font import and the tokens at the top of the page style.
 2. Add the starter block. Build the page from cards on the dots canvas.
-3. Check the page in light mode and in dark mode before you hand it over. For the dark check, emulate `prefers-color-scheme: dark`.
 
 ## Tokens
 
@@ -90,7 +89,6 @@ The import loads the fonts on machines that do not have them. Installed fonts st
 
 ## Differences from generic neo-brutalism
 
-tick3d adapts the generic prompt at https://www.designprompts.dev/neo-brutalism and adds a dark mode.
 If you know the generic style, use the tick3d value where the two differ.
 
 | Generic prompt | tick3d |
