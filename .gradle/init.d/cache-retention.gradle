@@ -1,0 +1,17 @@
+import org.gradle.util.GradleVersion
+
+// Gradle 7 installations share this home but do not expose the retention API.
+if (GradleVersion.current() >= GradleVersion.version('8.0')) {
+    beforeSettings { settings ->
+        settings.caches {
+            createdResources.removeUnusedEntriesAfterDays = 2
+            buildCache.removeUnusedEntriesAfterDays = 3
+            downloadedResources.removeUnusedEntriesAfterDays = 14
+            releasedWrappers.removeUnusedEntriesAfterDays = 14
+            snapshotWrappers.removeUnusedEntriesAfterDays = 7
+        }
+    }
+}
+
+// Native cleanup respects cache access. This is not a size cap.
+// Revisit if recently used transforms alone exceed the available disk budget.
