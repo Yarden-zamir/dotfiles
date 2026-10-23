@@ -20,6 +20,8 @@ When you deliberately take a simpler approach with a known limit, leave a commen
 
 Before adding a new import or dependency, check the currently available package versions first. Always check online for the latest version of a package before choosing a version constraint
 
+When I ask for something, think about the bigger picture and where things fit, if a bigger change than what I asked makes sense either do it or ask. Think about interconnected systems, a new feature sometimes means we justify a systematic approach that means refactoring old code etc.
+
 Do not add legacy or old code support/migration unless explicitly requested. Make sure the user knows when a change is breaking and suggest legacy support but never do it automatically
 
 Apply defensive defaults in code. Null checks, type guards, boundary conditions. No runtime surprises. Make sure that unexpected cases crash instead of failing silently or causing undefined behavior. Always prefer type system solutions
