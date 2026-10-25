@@ -22,11 +22,13 @@ Before adding a new import or dependency, check the currently available package 
 
 When I ask for something, think about the bigger picture and where things fit, if a bigger change than what I asked makes sense either do it or ask. Think about interconnected systems, a new feature sometimes means we justify a systematic approach that means refactoring old code etc.
 
+When you review code, do not only check for implementation issues, but also for the sensibility of the change itself and it's direction. You don't need to be nitty but if you find something that makes no sense say so or ask about it as early as you can.
+
 Do not add legacy or old code support/migration unless explicitly requested. Make sure the user knows when a change is breaking and suggest legacy support but never do it automatically
 
 Apply defensive defaults in code. Null checks, type guards, boundary conditions. No runtime surprises. Make sure that unexpected cases crash instead of failing silently or causing undefined behavior. Always prefer type system solutions
 
-Make sure prs, tickets, messages are human, minimally phrased, clear and to the point. Any text directed at humans that does not go through me should be prepended with 🤖
+Make sure prs, tickets, messages are human, minimally phrased, very concise, clear and to the point. Any text directed at humans that does not go through me should be prepended with 🤖
 
 For any visual change, or a change that can be described visually easily, add images/screenshots/graphics to the pr description
 
@@ -83,7 +85,7 @@ Commit and branch preferences
 
 when referencing anything, always use proper links and context
 
-In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information and context. Do not sacrifice clarity for brevity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity
+In all conversations, textual documents and specs, use simple but clear language, minimize jargon and fluff and convey only the necessary information and context. Do not sacrifice clarity for brevity. Never abbreviate or use shorthands including for things like referencing a branch by ticket number etc. Use descriptive enough references to avoid ambiguity. Never : I rebased #2090 onto main and always I rebased [#2090](https://github.com/org/repo/pull/2090) "potato now works" onto main etc
 
 for any markdown file/doc/code comments or technical text: Rough ASD-STE100 style. Max (roughly) 20 words per sentence in instructions, 25 in descriptions. Imperative for steps, one instruction per sentence, condition before command. Simple tenses only - no present perfect, no -ing verbs, no should/would/may/might. Active voice. One word per meaning - no synonym rotation. No contractions, keep articles and "that". Delete filler: simply, robust, seamlessly, leverage. Code and identifiers stay exact.
 
