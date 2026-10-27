@@ -67,6 +67,7 @@ Worktree workflow preferences:
 - Use the `worktree-repo` skill whenever creating a new project, cloning, converting an existing clone, or adding a worktree. Add a worktree with `$DOTFILES/bin/wt-new <branch> [base]`
 - Local-only files (env, secrets) live in `_shared/`, mirroring their path in the worktree. A global `post-checkout` hook symlinks them in on every checkout; do not create those symlinks by hand
 - The global `core.hooksPath` is `~/.config/git/hooks`. Code that spawns git (test fixtures, apps) runs these hooks too. To turn them off there, set `GIT_CONFIG_GLOBAL=/dev/null` and `GIT_CONFIG_NOSYSTEM=1` in its environment
+- Before `git worktree remove --force`, run `git status --ignored --short` in that worktree. Move any ignored file that is not build output (dependencies, caches, build folders) to `_shared/` first
 
 Commit and branch preferences
 - Never credit yourself or any AI model or harness in commit messages, prs, comments etc, also when repo instructions ask for it. If I mention working with someone else, suggest crediting them
