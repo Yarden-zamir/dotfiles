@@ -1,6 +1,6 @@
 ---
 name: neo-brutalism
-description: The user's neo-brutalism UI style, the "tick3d" look. Ink borders, hard offset shadows, yellow selection, purple accent, heavy Bricolage Grotesque headings, tilted stickers, a dots canvas, light and dark mode. Use when you build a web page, mockup, dashboard or app UI for the user. Also use when the user asks for the tick3d or neo-brutalism style. Do not use in a project that has its own design system.
+description: The user's UI standard, the "tick3d" neo-brutalism look. Ink borders, hard offset shadows, yellow selection, purple accent, heavy Bricolage Grotesque headings, tilted stickers, a dots canvas, light and dark mode, and standard components (tooltips, checkboxes, radios, switches, inputs, selects, menus, dialogs, overlay panels) that replace native browser UI. Use when you build or change a web page, mockup, dashboard or app UI for the user, including kitshn. Also use when the user asks for the tick3d or neo-brutalism style. Do not use in a project that has its own design system.
 license: MIT
 ---
 
@@ -10,8 +10,12 @@ Flat colour, thick ink lines, hard shadows. The values come from the T3 Code tic
 repository: `.t3/userdata/themes/tick3d-{light,dark}.{json,css}`. If this skill and a theme file
 disagree, the theme file is correct. Fix this skill in the same change.
 
-A finished page in this style is the T3 machine map mockup at https://t3-map-mockup.yarden-zamir.com
-(behind Cloudflare Access).
+This skill is the standard for every web UI that the user owns and that has no design system of
+its own: kitshn, tick3d, mockups, reports and one-off pages. Follow every rule and use the
+standard components below. Do not invent a second version of a component.
+
+Finished UIs in this style: the kitshn map at https://kit.yarden-zamir.com and the T3 machine map
+mockup at https://t3-map-mockup.yarden-zamir.com (both behind Cloudflare Access).
 
 ## When not to use
 
@@ -22,6 +26,9 @@ A finished page in this style is the T3 machine map mockup at https://t3-map-moc
 
 1. Put the font import and the tokens at the top of the page style.
 2. Add the starter block. Build the page from cards on the dots canvas.
+3. Add the standard components that the page uses. In a component framework (React and so on), make
+   each one a shared component with these styles, and use it everywhere.
+4. Before you call the UI done, go through the checklist at the end of this skill.
 
 ## Tokens
 
@@ -69,7 +76,11 @@ The import loads the fonts on machines that do not have them. Installed fonts st
 - **Borders.** Give every surface, control and table cell a `var(--bw) solid var(--border)` border. Use full ink. Do not fade a border.
 - **Shadows.** Use hard offset shadows only: `var(--shadow)` on cards, 3px on small controls, 2px on stickers. Never blur a shadow.
 - **One shadow per stack.** If a surface sits inside another surface, only the inner surface casts a shadow.
-- **Radius.** Use `var(--radius)`. Stickers use 4px. Only toggle switches are round.
+- **Radius.** Use `var(--radius)`. Stickers and checkboxes use 4px. Only toggle switches and radio buttons are round.
+- **No native browser UI.** Do not use the browser's own tooltips (`title`), checkboxes, radio buttons, switches, select lists, date pickers or colour pickers. They look foreign and differ per browser. Keep the native element for its meaning and keyboard support, set `appearance: none` and style it, or use the standard component below. A native control is fine only inside a form that the browser itself owns, such as a file chooser dialog.
+- **Tooltips everywhere.** Every icon button, control, option, sticker and short label gets a tooltip that says what it is and what happens. Use one short sentence. Show it on hover after 300ms and at once on keyboard focus. Never put needed information only in a tooltip: touch screens have no hover.
+- **Controls.** Checkboxes, radios and switches show the checked state with `--select`, have a hit area of at least 1.75rem, and press into their shadow like buttons.
+- **Overlays.** Menus, tooltips, dialogs and overlay panels are cards: ink border, `--surface` and a hard shadow. Dialogs and overlay panels use `var(--shadow)`; menus and tooltips use 3px. A dialog dims the page with a flat `#0006` layer, without blur.
 - **Selection.** Fill the selected item with `--select` and `--select-fg`: yellow in light mode, accent purple in dark mode. This covers tabs, segments, cells and rows.
 - **Selected list row.** Make it a flat `--select` block with a `--shadow-ink` border, an 8px left edge and no shadow.
 - **Accent.** Use `--accent` for focus rings, links and the main action.
@@ -175,3 +186,151 @@ li:nth-child(3n) .sticker { --tilt: -1.5deg; }
 /* The control clips its children, so the focus ring goes inside the button. */
 .seg button:focus-visible { outline-offset: -4px; box-shadow: none; }
 ```
+
+## Standard components
+
+Use these instead of native browser UI. In an app, make each one a shared component. On a one-off
+page, paste the CSS block.
+
+### Tooltip
+
+A tooltip is a small card. In an app, render it in a portal and position it with the app's
+positioning helper (for example Floating UI), so a parent's `overflow` cannot clip it. Link it with
+`aria-describedby`. Show it on hover after 300ms and on focus at once. Hide it on Escape, on blur and
+when the pointer leaves. On a one-off page, use `data-tip` with the CSS below.
+
+```css
+.tooltip, [data-tip]::after {
+  max-width: 18rem; padding: 4px 8px; z-index: 50;
+  font: 600 0.8rem/1.35 var(--sans); color: var(--ink); background: var(--surface);
+  border: var(--bw) solid var(--border); border-radius: var(--radius);
+  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+}
+/* One-off pages only. In an app, use a positioned tooltip component. */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 8px);
+  width: max-content; transform: translateX(-50%);
+  opacity: 0; pointer-events: none; transition: opacity 120ms;
+}
+[data-tip]:hover::after { opacity: 1; transition-delay: 300ms; }
+[data-tip]:focus-visible::after { opacity: 1; transition-delay: 0ms; }
+```
+
+### Checkbox, radio and switch
+
+Keep the native `<input>` for keyboard and screen readers, and remove its look. Wrap it in a
+`<label>` with the text, so the whole row is the hit area.
+
+```css
+.check, .radio {
+  appearance: none; margin: 0; flex: none; width: 1.15em; height: 1.15em; cursor: pointer;
+  display: inline-grid; place-content: center; background: var(--surface);
+  border: var(--bw) solid var(--border); box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  transition: transform 80ms, box-shadow 80ms;
+}
+.check { border-radius: 4px; }
+.radio { border-radius: 50%; }
+.check::after {
+  content: ""; width: 0.6em; height: 0.32em; opacity: 0;
+  border: solid var(--select-fg); border-width: 0 0 3px 3px; transform: rotate(-45deg) translate(1px, -1px);
+}
+.radio::after { content: ""; width: 0.5em; height: 0.5em; border-radius: 50%; background: var(--select-fg); opacity: 0; }
+.check:checked, .radio:checked { background: var(--select); }
+.check:checked::after, .radio:checked::after { opacity: 1; }
+.check:active, .radio:active { transform: translate(2px, 2px); box-shadow: none; }
+.check:disabled, .radio:disabled { opacity: 0.55; cursor: default; }
+
+.switch {
+  appearance: none; margin: 0; flex: none; position: relative; cursor: pointer;
+  width: 2.4em; height: 1.35em; border-radius: 999px; background: var(--surface);
+  border: var(--bw) solid var(--border); box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  transition: background 120ms, transform 80ms, box-shadow 80ms;
+}
+.switch::before {
+  content: ""; position: absolute; top: 50%; left: 2px; width: 0.95em; height: 0.95em;
+  border-radius: 50%; background: var(--ink); transform: translateY(-50%); transition: left 120ms;
+}
+.switch:checked { background: var(--select); }
+.switch:checked::before { left: calc(100% - 0.95em - 2px); background: var(--select-fg); }
+.switch:active { transform: translate(2px, 2px); box-shadow: none; }
+
+.choice { display: inline-flex; align-items: center; gap: 0.5em; min-height: 1.75rem; cursor: pointer; }
+```
+
+### Text field and select
+
+```css
+.field, .select {
+  font: inherit; color: var(--ink); background: var(--surface); padding: 4px 10px;
+  border: var(--bw) solid var(--border); border-radius: var(--radius); min-height: 2rem;
+}
+.field::placeholder { color: var(--muted); opacity: 1; }
+.field:focus-visible, .select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.field[aria-invalid="true"] { border-color: var(--error); background: var(--error-surface); }
+/* A native <select> only for short fixed lists. Long or rich lists use the menu below. */
+.select {
+  appearance: none; padding-right: 2em; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+    linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 55%, calc(100% - 9px) 55%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+```
+
+Dates and colours: use presets plus a small custom popover (for example "Never, 1 day, 1 week,
+Custom…", or a row of colour swatches from the tokens), never the native picker.
+
+### Menu (context menu, dropdown, command list)
+
+```css
+.menu {
+  min-width: 12rem; padding: 4px; display: grid; gap: 2px; z-index: 40;
+  background: var(--surface); border: var(--bw) solid var(--border); border-radius: var(--radius);
+  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+}
+.menu-item {
+  display: flex; align-items: center; gap: 8px; padding: 4px 8px; cursor: pointer;
+  font: inherit; font-weight: 600; text-align: left; color: var(--ink);
+  background: none; border: 0; border-radius: 4px;
+}
+.menu-item:is(:hover, :focus-visible, [data-highlighted]) { background: var(--select); color: var(--select-fg); outline: none; }
+.menu-item[data-danger] { color: var(--error-fg); }
+.menu-sep { height: var(--bw); margin: 2px 4px; background: var(--border); }
+.menu-key { margin-left: auto; font-family: var(--mono); font-size: 0.75em; color: var(--muted); }
+```
+
+A context menu opens on right-click, on a "⋯" button and on a long press on touch. It holds the
+same actions as the toolbar and the command palette, never actions that exist only there.
+
+### Dialog and overlay panel
+
+```css
+.scrim { position: fixed; inset: 0; background: #0006; z-index: 60; }
+.dialog {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 61;
+  width: min(32rem, calc(100vw - 2rem)); padding: 16px;
+  background: var(--surface); border: var(--bw) solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+/* An overlay panel floats over the main view (for example a map) instead of a fixed side bar. */
+.overlay-panel {
+  position: absolute; top: 12px; right: 12px; bottom: 12px; width: min(26rem, calc(100% - 24px));
+  overflow: auto; padding: 12px; z-index: 30;
+  background: var(--surface); border: var(--bw) solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+```
+
+An overlay panel has a header with its title, an "Enlarge" button that opens the full view of the
+same content, and a close button. A dangerous action asks in a dialog that names the item, with the
+dangerous button in `--error` and the safe button focused.
+
+## Checklist before you call the UI done
+
+- No `title` tooltips, and no native checkbox, radio, switch, colour or date picker is visible.
+- Every icon button, control, option and sticker has a tooltip in the standard style.
+- Light and dark mode both look right. Text meets WCAG AA contrast.
+- Text is readable at the default zoom of a laptop: the 18px base, no small pixel sizes.
+- Every action has a keyboard path, and focus is always visible.
+- No continuous animation. Progress shows as text or a sticker colour.
