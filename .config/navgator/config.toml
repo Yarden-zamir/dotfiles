@@ -144,3 +144,6 @@ label = "Base branch"
 type = "text"
 default = "main"
 required = true
+
+[web]
+font_size = 24
