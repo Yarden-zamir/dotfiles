@@ -65,13 +65,13 @@ Put each secret in with a pipe, for example `pbpaste | npx wrangler secret put G
 
 ## Tap site
 
-- Worker: `homebrew-tap-site`, static assets only. No code runs on a request.
-- Source: `site/build.mjs`, `site/page.html` and `site/wrangler.jsonc` in [Yarden-zamir/homebrew-tap](https://github.com/Yarden-zamir/homebrew-tap).
-- Deploy: the `site.yml` workflow. It runs on each push to `main` that changes `Formula/**` or `site/**`. You can also start it by hand.
+- Host: kitshn 2 serves it as a static site (recipe `kitshn.config.ts`). Never run `wrangler deploy` for it.
+- Source: `site/build.mjs` and `site/page.html` in [Yarden-zamir/homebrew-tap](https://github.com/Yarden-zamir/homebrew-tap).
+- Deploy: the `site.yml` workflow. It runs on each push to `main` that changes `Formula/**`, `site/**` or the recipe. You can also start it by hand. A pull request gets a preview.
 
 ```
 project release ──► formula sync pull request ──► automerge (merges with TOKEN) ──► push to main
-                                                                                    └─► site.yml: node site/build.mjs ──► wrangler deploy
+                                                                                    └─► site.yml: node site/build.mjs ──► kitshn 2 deploy
 ```
 
 `build.mjs` reads three sources:
@@ -86,8 +86,6 @@ It writes `site/dist/index.html` and `site/dist/formulae.json`.
 
 | Name | Kind | Use |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | Secret | wrangler deploy: Workers Scripts edit, Workers Routes edit, Account Settings read |
-| `CLOUDFLARE_ACCOUNT_ID` | Variable | wrangler deploy target |
 | `TOKEN` | Secret | automerge. A push with `GITHUB_TOKEN` does not start other workflows, so `site.yml` would not run. |
 
 ## Polling that remains
