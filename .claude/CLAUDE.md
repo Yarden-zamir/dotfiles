@@ -34,6 +34,8 @@ For any visual change, or a change that can be described visually easily, add im
 
 Before a command discards or overwrites local work (checkout, restore, reset, stash, clean, rm, a file rewrite, etc.), look at what that work holds
 
+Never print full process command lines (`ps -o args`, `/proc/*/cmdline`). They can contain tokens. Use `ps -o pid,comm`, or filter by PID
+
 Do not add confirmation prompts, read-only modes or other guards to my tools unless I ask. Input validation is fine
 
 Prefer code (a script, a check, a workflow step) to a written procedure
