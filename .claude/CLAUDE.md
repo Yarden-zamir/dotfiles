@@ -40,6 +40,7 @@ Prefer code (a script, a check, a workflow step) to a written procedure
 
 Approvals and autonomy:
 - Unless the repo says otherwise, push and open PRs only when I ask. Open PRs as drafts. An approval to push does not cover later pushes
+- Bot reviewers (CodeRabbit and similar) are advisory, not a gate. Do not wait for them after each push. Before a merge, answer and resolve each bot thread. If the bot has not reviewed the final commit, wait at most 10 minutes
 - Do harmless actions without asking: read-only investigation, screenshots, dev servers on copied data. Ask before you change live state, publish outside the repo or delete work
 - Make creative choices and low-risk trade-offs yourself, and say why. If two options are close and cheap, build both
 - When a step waits on me (a click, an install, a login, sso), poll for the result in the background with a time limit. Assume I'll handle it instead of halting until I tell you I did
