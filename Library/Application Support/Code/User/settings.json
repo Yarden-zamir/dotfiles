@@ -339,10 +339,6 @@
   "excalidraw.theme": "light",
   "claudeCode.selectedModel": "default",
   "git.confirmSync": false,
-  "json.schemaDownload.trustedDomains": {
-    "https://opencode.ai/": true,
-    "https://models.dev/": true
-  },
   "resharper.region.region": "MiddleEast",
   "resharper.dataSharing.allowDataSharing": false,
   "workbench.sideBar.location": "right",

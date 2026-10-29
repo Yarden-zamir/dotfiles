@@ -120,6 +120,5 @@ T3 Code
 - If you show such a page, keep it updated as the conversation continues
 - When you mention agent work, link its thread: `[title](t3-thread://v1/<threadId>)`. For a thread on another machine, use its https thread address
 - Give each domain one agent with a queue of its features. Do not start parallel agents on features that touch the same files
-- Prefer subagents on OpenAI models: `delegate_task` with the `opencode` provider instance and an `openai/*` model from `orchestrator_capabilities`. Use a Claude subagent for creative problem solving, writing and design.
-- An opencode subagent moves a long command (a CI wait, a test run) to the background and ends its turn. Its task then shows a terminal state with an interim summary. When the command ends, the subagent resumes, and its final result arrives as a new task. Before you act on a delegated result, read the child thread (`t3_thread_read`). Do not start another round on the same branch while a background command of the earlier round runs
+- Subagents: use `delegate_task` with a Claude Code, Codex or Copilot provider instance from `orchestrator_capabilities`. Use Claude for creative problem solving, writing and design.
 - In each delegation brief, tell the subagent to start only its last message with `FINAL REPORT`. Treat any other result as interim

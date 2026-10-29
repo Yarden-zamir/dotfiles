@@ -1,4 +1,4 @@
-OPEN_HARNESS_PROGRAMS=(opencode claude codex copilot)
+OPEN_HARNESS_PROGRAMS=(claude codex copilot)
 open-harness() {
     # open current folder with a program selected with fzf
     local program

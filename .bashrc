@@ -1,6 +1,6 @@
 # Bash for coding agents. Interactive use stays in zsh.
 # BASH_ENV loads this file for every bash script, so skip it outside agents.
-[[ $- == *i* || -n ${CLAUDECODE-}${OPENCODE-}${COPILOT_CLI-} ]] || return 0
+[[ $- == *i* || -n ${CLAUDECODE-}${COPILOT_CLI-} ]] || return 0
 
 export DOTFILES="$HOME/Github/dotfiles/main"
 

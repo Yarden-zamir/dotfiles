@@ -11,7 +11,7 @@ here.
 Ghostty  runs herdr as its command; relays a few keys, owns the global toggle
   └─ herdr  workspaces (spaces), tabs, panes, agents; config.toml + plugins
        └─ zsh  phase-loaded config; ZLE editor with VS Code-like keys
-            └─ claude / opencode / codex / navgator / sessiongator in panes
+            └─ claude / codex / copilot / navgator / sessiongator in panes
 ```
 
 - [`.config/ghostty/config`](.config/ghostty/config): runs `~/.local/bin/herdr`,
@@ -129,8 +129,7 @@ herdr sockets and logs) out of git. Secrets live in `_shared/` and match
 - [`.claude/`](.claude): [`CLAUDE.md`](.claude/CLAUDE.md) instructions (the
   same text as [`AGENTS.md`](AGENTS.md)), [skills](.claude/skills) and
   settings for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
-- [`.config/opencode`](.config/opencode) ([OpenCode](https://opencode.ai)),
-  [`.config/codex`](.config/codex)
+- [`.config/codex`](.config/codex)
   ([Codex](https://developers.openai.com/codex)),
   [`.config/navgator`](.config/navgator),
   [`.config/sessiongator`](.config/sessiongator): agent and tool configs.

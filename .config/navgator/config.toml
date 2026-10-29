@@ -26,7 +26,6 @@ picker = [
     "open-intellij",
     "open-rider",
     "open-claude-session",
-    "open-opencode-session",
     "navigate-to",
     "open-finder",
     "open-repo-online",
@@ -63,7 +62,7 @@ command = "open"
 args = ["-na", "Rider", "--args", "{path}"]
 
 # herdr actions: focus the space that works in the path or create one.
-# The claude/opencode variants open a tab in that space and run the tool.
+# The claude variant opens a tab in that space and run the tool.
 [[actions.items]]
 id = "open-herdr"
 label = "Open in herdr"
@@ -79,14 +78,6 @@ icon = "󰚩"
 type = "command"
 command = "/Users/kcw/Github/dotfiles/main/bin/herdr-open-path"
 args = ["{path}", "claude"]
-
-[[actions.items]]
-id = "open-opencode-herdr"
-label = "Open OpenCode in herdr"
-icon = "󰘦"
-type = "command"
-command = "/Users/kcw/Github/dotfiles/main/bin/herdr-open-path"
-args = ["{path}", "opencode"]
 
 # include_defaults stays false: the built-in "New branch + worktree" would
 # otherwise sit next to the override below with the same label. "New
