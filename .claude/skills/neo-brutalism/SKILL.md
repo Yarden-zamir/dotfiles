@@ -323,10 +323,7 @@ same actions as the toolbar and the command palette, never actions that exist on
 ```
 
 An overlay panel has a header with its title, an "Enlarge" button that opens the full view of the
-same content, and a close button. A dangerous action does not ask first. It runs at once and shows a
-toast with "Undo". Its menu item uses `data-danger`. When an action cannot be undone, keep it a separate,
-explicit action whose label names what goes (for example "Delete volume"). Do not add a confirm dialog
-unless the user asks for one.
+same content, and a close button.
 
 ## Checklist before you call the UI done
 
