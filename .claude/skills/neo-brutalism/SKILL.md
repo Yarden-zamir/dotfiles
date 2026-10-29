@@ -17,6 +17,13 @@ standard components below. Do not invent a second version of a component.
 Finished UIs in this style: the kitshn map at https://kit.yarden-zamir.com and the T3 machine map
 mockup at https://t3-map-mockup.yarden-zamir.com (both behind Cloudflare Access).
 
+The kitshn style guide at https://kit.yarden-zamir.com/neo-brutalism shows every kitshn primitive,
+drawn by its real component: toast, card, circle with head, stack, tray card, badge, Access row,
+the big red button, the pause banner, notification and Inbox rows. When a page needs one of these,
+copy its look from that page and its component in `packages/edge/src/ui` of Yarden-zamir/kitshn.
+The page also lists where kitshn still differs from this skill. Its sibling page,
+https://kit.yarden-zamir.com/concepts, explains kitshn's ideas (cards, circles, shares, members and the rest).
+
 ## When not to use
 
 - The project has its own design system, component library theme or brand. Use that.
@@ -145,7 +152,7 @@ pre {
 
 .sticker {
   display: inline-block; padding: 0 6px; line-height: 1.5; white-space: nowrap;
-  font-size: 0.65rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
   color: #000000; background: var(--pink);
   border: var(--bw) solid var(--shadow-ink); border-radius: 4px;
   box-shadow: 2px 2px 0 0 var(--shadow-ink);
@@ -158,12 +165,12 @@ li:nth-child(3n+2) .sticker { --tilt: 2deg; }
 li:nth-child(3n) .sticker { --tilt: -1.5deg; }
 
 .btn {
-  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; cursor: pointer;
-  font: inherit; font-weight: 700; color: var(--ink); background: var(--surface);
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; cursor: pointer;
+  font: inherit; font-size: 0.9rem; font-weight: 700; color: var(--ink); background: var(--surface);
   border: var(--bw) solid var(--border); border-radius: var(--radius);
   transition: transform 80ms, box-shadow 80ms;
 }
-.btn:not(:disabled):hover { transform: translate(-1px, -1px); box-shadow: var(--shadow); }
+.btn:not(:disabled):hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 0 var(--shadow-ink); }
 .btn:not(:disabled):active { transform: translate(3px, 3px); box-shadow: none; }
 .btn:disabled { opacity: 0.55; cursor: default; }
 .btn.primary { background: var(--accent); color: var(--accent-fg); }
@@ -268,7 +275,8 @@ Keep the native `<input>` for keyboard and screen readers, and remove its look. 
 .field::placeholder { color: var(--muted); opacity: 1; }
 .field:focus-visible, .select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .field[aria-invalid="true"] { border-color: var(--error); background: var(--error-surface); }
-/* A native <select> only for short fixed lists. Long or rich lists use the menu below. */
+/* Optional: a native <select> only for short fixed lists. Long or rich lists use the menu below.
+   kitshn has no select at all (its K-517 test forbids it); prefer a segmented control or the menu. */
 .select {
   appearance: none; padding-right: 2em; cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
