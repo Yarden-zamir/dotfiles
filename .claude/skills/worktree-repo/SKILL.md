@@ -35,7 +35,9 @@ It refuses to migrate a dirty tree, a detached HEAD, a bare repo, or a repo that
 
 ## Adding a worktree
 
-Plain git is correct — the `post-checkout` hook links `_shared/` automatically:
+From inside the repo, run `$DOTFILES/bin/wt-new <branch> [base]`. It puts the worktree next to `main/` and names it after the branch.
+
+Plain git is also correct — the `post-checkout` hook links `_shared/` automatically:
 
 ```sh
 git --git-dir ~/Github/<project>/.bare worktree add ~/Github/<project>/qcdi-1234-auth -b feat/api/qcdi-1234-auth
@@ -53,3 +55,7 @@ _shared/zshenv/init/atuin.secret.zsh
 `$DOTFILES/bin/git-shared-link [worktree]` creates these links. The global `post-checkout` hook (`$DOTFILES/.config/git/hooks/post-checkout`, wired up by `core.hooksPath`) runs it on every branch checkout, clone, and `worktree add`. It is idempotent and never overwrites a real file, so **do not create these symlinks by hand** — put the file in `_shared/` and check out the branch.
 
 Anything in `_shared/` must also be ignored by git, or it will show up as untracked in every worktree.
+
+## Removing a worktree
+
+Before `git worktree remove --force`, run `git status --ignored --short` in that worktree. Move any ignored file that is not build output (dependencies, caches, build folders) to `_shared/` first.
