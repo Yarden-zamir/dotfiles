@@ -7,8 +7,8 @@
 // Known limits:
 // - The checkout field exists only in the Yarden-zamir/t3code fork. Upstream
 //   builds ignore it, and the thread then works in the project root.
-// - A container with no T3 project yet gets a new project titled "main" (T3
-//   names it after the folder). Import or rename it in T3 if that happens.
+// - A container with no T3 project yet gets a new project named after its
+//   primary checkout folder. Import or rename it in T3 if that happens.
 // - Protocol version 1 is internal to T3. If requests fail with
 //   "invalid-request" after a T3 update, re-read the files named above.
 // The shebang is absolute: the Raycast launcher runs under launchd, whose
@@ -18,7 +18,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { connect } from "node:net";
 import { homedir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { dirname, join } from "node:path";
 
 const APP_NAME = "T3 Code (Nightly)";
 const STARTUP_TIMEOUT_MS = 30_000;
@@ -39,30 +39,52 @@ function fail(message) {
   process.exit(1);
 }
 
-// A bare+container repo is one T3 project rooted at <container>/main, so any
-// path inside the container maps to that root. Other paths are their own root.
-function projectRoot(path) {
-  for (let dir = path; dir !== dirname(dir); dir = dirname(dir)) {
-    if (existsSync(join(dir, ".bare"))) return join(dir, "main");
-  }
-  return path;
+function git(args) {
+  return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 }
 
-// A path in a sibling worktree (<container>/feat-x) names that checkout, so
-// the new thread starts there. Paths in main or outside a container give null.
-function checkout(path) {
+// The bare+container folder (it holds .bare/) that contains path, or null.
+function container(path) {
   for (let dir = path; dir !== dirname(dir); dir = dirname(dir)) {
-    if (!existsSync(join(dirname(dir), ".bare"))) continue;
-    if (basename(dir) === "main") return null;
-    let branch = null;
-    try {
-      branch = execFileSync("git", ["-C", dir, "symbolic-ref", "--quiet", "--short", "HEAD"], {
-        encoding: "utf8",
-      }).trim() || null;
-    } catch {} // Detached HEAD: open the checkout without a branch name.
-    return { worktreePath: dir, branch };
+    if (existsSync(join(dir, ".bare"))) return dir;
   }
   return null;
+}
+
+// A container is one T3 project, rooted at its primary checkout: the worktree
+// that holds the HEAD branch of .bare. That is <container>/main in most repos,
+// but kitshn, for example, has no main/ folder. Without such a worktree
+// (detached or unchecked-out HEAD), the root is <container>/main.
+function primaryCheckout(dir) {
+  const bare = join(dir, ".bare");
+  try {
+    const head = git(["--git-dir", bare, "symbolic-ref", "--quiet", "HEAD"]);
+    let worktree = null;
+    for (const line of git(["--git-dir", bare, "worktree", "list", "--porcelain"]).split("\n")) {
+      if (line.startsWith("worktree ")) worktree = line.slice("worktree ".length);
+      else if (line === `branch ${head}` && worktree !== null) return worktree;
+    }
+  } catch {} // Detached HEAD: use the main/ fallback.
+  return join(dir, "main");
+}
+
+// A path in another worktree of the container names that checkout, so the new
+// thread starts there. Git gives the worktree top level, also for nested
+// folders. Paths in the primary checkout or outside a worktree give null.
+function checkout(path, root) {
+  const dir = statSync(path).isDirectory() ? path : dirname(path);
+  let top;
+  try {
+    top = realpathSync(git(["-C", dir, "rev-parse", "--show-toplevel"]));
+  } catch {
+    return null; // Not inside a worktree, for example .bare itself.
+  }
+  if (top === root) return null;
+  let branch = null;
+  try {
+    branch = git(["-C", top, "symbolic-ref", "--quiet", "--short", "HEAD"]) || null;
+  } catch {} // Detached HEAD: open the checkout without a branch name.
+  return { worktreePath: top, branch };
 }
 
 // Mirrors resolveDesktopAppControlAddress in packages/shared/src/desktopAppControl.ts
@@ -113,12 +135,14 @@ try {
 } catch {
   fail(`no such path: ${target}`);
 }
-const workspaceRoot = projectRoot(path);
+const repoContainer = container(path);
+const workspaceRoot = repoContainer === null ? path : primaryCheckout(repoContainer);
 if (!existsSync(workspaceRoot) || !statSync(workspaceRoot).isDirectory()) {
   fail(`project root is not a directory: ${workspaceRoot}`);
 }
 
-const checkoutTarget = checkout(path);
+const checkoutTarget =
+  repoContainer === null ? null : checkout(path, realpathSync(workspaceRoot));
 const address = socketPath();
 const request = {
   version: 1,
