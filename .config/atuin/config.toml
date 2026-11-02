@@ -1,4 +1,13 @@
 auto_sync = true
+## Self-hosted sync server, deployed from github.com/Yarden-zamir/atuin-sync behind Cloudflare Access.
+## Each machine has its own kitshn device token. Its id and secret come from
+## zshenv/init/atuin.secret.zsh, which git ignores (fork setting).
+sync_address = "https://atuin.yarden-zamir.com"
+extra_headers_env = { "CF-Access-Client-Id" = "ATUIN_CF_ACCESS_CLIENT_ID", "CF-Access-Client-Secret" = "ATUIN_CF_ACCESS_CLIENT_SECRET" }
+## Sync agent threads to every machine, but keep shell history on the machine that ran it (fork setting).
+sync_skip_stores = ["history"]
+## One sync page of agent threads can be several MB, which takes over the default 30 s on a slow uplink.
+network_timeout = 300
 update_check = false
 workspaces = true
 # filter_mode = "directory"
@@ -20,3 +29,12 @@ records = true
 
 [ai]
 enabled = true
+
+[threads]
+## Carry the whole conversation when a thread continues in another agent (fork setting).
+continue_max_bytes = 0
+capture = true
+
+[daemon]
+enabled = true
+autostart = true
