@@ -1,6 +1,6 @@
 ---
 name: gh-pr-images
-description: Add screenshots, images or videos to a GitHub pull request, issue or comment from the command line.
+description: Add screenshots, images or videos to a GitHub pull request, issue or comment from the command line. Use when you open or edit a PR, issue or comment for a visual change (UI, chart, diagram, terminal or CLI output), or when the user asks for screenshots in a PR. Every visual change needs images in its PR description.
 ---
 
 Run `gh pr edit|create|comment <n> --body-file body.md --attach './shot.png#alt text'` from the image folder; `gh` uploads each file and swaps `![alt](./shot.png)` in the body for its URL.
