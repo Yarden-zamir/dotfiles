@@ -16,6 +16,8 @@ Use the modern type system of the active language to describe behavior and state
 
 Before writing new code, stop at the first of these that already solves it: something already in this codebase (look for the existing helper before writing a second one), the standard library, a native feature, a database constraint instead of application code, an already-installed dependency. Only after all of those fail, write new code, and write the least of it that works for the desired outcome
 
+Never hardcode a list or mapping that the source data can produce (a spec, a schema, the code itself). Before you write one, test a derivation rule against all of the data. If no rule exists, say so before you write the list. This applies to briefs for sub-agents too
+
 When you deliberately take a simpler approach with a known limit, leave a comment naming both the limit and the condition that would mean it needs revisiting
 
 Before adding a new import or dependency, check the currently available package versions first. Always check online for the latest version of a package before choosing a version constraint
@@ -30,7 +32,7 @@ Apply defensive defaults in code. Null checks, type guards, boundary conditions.
 
 Make sure prs, tickets, messages are human, minimally phrased, very concise, clear and to the point. Any text directed at humans that does not go through me should be prepended with 🤖
 
-For any visual change, or a change that can be described visually easily, add images/screenshots/graphics to the pr description
+For any visual change, or a change that can be described visually easily, add images/screenshots/graphics to the pr description. Use the `gh-pr-images` skill
 
 Before a command discards or overwrites local work (checkout, restore, reset, stash, clean, rm, a file rewrite, etc.), look at what that work holds
 
@@ -45,6 +47,7 @@ Approvals and autonomy:
 - Bot reviewers (CodeRabbit and similar) are advisory, not a gate. Do not wait for them after each push. Before a merge, answer and resolve each bot thread. If the bot has not reviewed the final commit, wait at most 10 minutes
 - Do harmless actions without asking: read-only investigation, screenshots, dev servers on copied data. Ask before you change live state, publish outside the repo or delete work
 - Make creative choices and low-risk trade-offs yourself, and say why. If two options are close and cheap, build both
+- Before you change shared state (environments, branches, worktrees, tickets), check who owns it. Coordinate with that thread or person first. If you change it anyway, tell them what changed and how to restore it
 - When a step waits on me (a click, an install, a login, sso), poll for the result in the background with a time limit. Assume I'll handle it instead of halting until I tell you I did
 - For web, use a CLI, mcp or an API. Use browser automation as fallback
 
@@ -66,21 +69,15 @@ Tests should be contract-focused and source-of-truth focused. They should verify
 Make sure to parallelize tasks and runs where task dependencies allow it
 
 Worktree workflow preferences:
-- Every repo is a container directory holding `.bare/` (the git dir), `_shared/` (local-only files), and one folder per checked-out branch: `main/`, plus e.g. `qcdi-1234-auth/` for branch `feat/api/qcdi-1234-auth`
-- Use the `worktree-repo` skill whenever creating a new project, cloning, converting an existing clone, or adding a worktree. Add a worktree with `$DOTFILES/bin/wt-new <branch> [base]`
-- Local-only files (env, secrets) live in `_shared/`, mirroring their path in the worktree. A global `post-checkout` hook symlinks them in on every checkout; do not create those symlinks by hand
+- Repos use a bare + worktree layout (`.bare/`, `_shared/`, one folder per branch). Use the `worktree-repo` skill for any clone, new project, worktree or `_shared/` file
 - The global `core.hooksPath` is `~/.config/git/hooks`. Code that spawns git (test fixtures, apps) runs these hooks too. To turn them off there, set `GIT_CONFIG_GLOBAL=/dev/null` and `GIT_CONFIG_NOSYSTEM=1` in its environment
-- Before `git worktree remove --force`, run `git status --ignored --short` in that worktree. Move any ignored file that is not build output (dependencies, caches, build folders) to `_shared/` first
 
 Commit and branch preferences
 - Never credit yourself or any AI model or harness in commit messages, prs, comments etc, also when repo instructions ask for it. If I mention working with someone else, suggest crediting them
 - Unless the repo has other instructions
     - use conventional commits
     - description with references and notes, not too big, only when relevant, avoid generic. If other tickets or markdown documents are involved reference them here
-    - if in a qlik-trial repo
-        - each commit must reference a jira ticket in the format: "QCDI-XXXX | conventional commit message". If not the case before merge, suggest rebase
-        - each branch must reference a jira ticket in the format: "feat/yarden/qcdi-XXXX-description" etc
-        - if no jira ticket is provided by user, suggest to search for one or to create one before proceeding. Use past ones as examples
+    - in a qlik-trial repo, use the `qlik-trial-conventions` skill (Jira ticket in every commit and branch)
 - Tickets
     - Never refer to a ticket, issue, PR, branch, workflow run or commit by its id alone. This applies in chat, tables, docs, memories, commits and PR bodies
     - Give a link plus its title or a short description, for example [QCDI-9296](https://qlik-dev.atlassian.net/browse/QCDI-9296) "Systest: V2 OLH expected results"
@@ -120,6 +117,5 @@ T3 Code
 - If you show such a page, keep it updated as the conversation continues
 - When you mention agent work, link its thread: `[title](t3-thread://v1/<threadId>)`. For a thread on another machine, use its https thread address
 - Give each domain one agent with a queue of its features. Do not start parallel agents on features that touch the same files
-- Prefer subagents on OpenAI models: `delegate_task` with the `opencode` provider instance and an `openai/*` model from `orchestrator_capabilities`. Use a Claude subagent for creative problem solving, writing and design.
-- An opencode subagent moves a long command (a CI wait, a test run) to the background and ends its turn. Its task then shows a terminal state with an interim summary. When the command ends, the subagent resumes, and its final result arrives as a new task. Before you act on a delegated result, read the child thread (`t3_thread_read`). Do not start another round on the same branch while a background command of the earlier round runs
+- Subagents: use `delegate_task` with a Claude Code, Codex or Copilot provider instance from `orchestrator_capabilities`. Use Claude for creative problem solving, writing and design.
 - In each delegation brief, tell the subagent to start only its last message with `FINAL REPORT`. Treat any other result as interim
