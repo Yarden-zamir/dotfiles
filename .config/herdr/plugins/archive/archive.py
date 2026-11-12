@@ -13,7 +13,7 @@ back to its origin workspace, or recreates that workspace when the archive
 move closed it (moving the last pane out of a workspace closes it).
 
 With exit_agents_on_archive, archive first quits an idle agent (claude,
-opencode, codex, copilot) with ctrl+c and saves its session id. Restore
+codex, copilot) with ctrl+c and saves its session id. Restore
 then runs the resume command in the pane.
 
 Stack entries key on the archive pane id (e.g. w49:p3). herdr keeps pane
@@ -190,11 +190,10 @@ def age_text(archived_at: float) -> str:
 # --- agents ---------------------------------------------------------------
 
 # Resume commands per agent, a copy of herdr src/agent_resume.rs plan().
-# Limit: only these four agents. Replace this table when herdr exposes the
+# Limit: only these three agents. Replace this table when herdr exposes the
 # resume argv on agent_session.
 RESUME_ARGV = {
     "claude": lambda sid: ["claude", "--resume", sid],
-    "opencode": lambda sid: ["opencode", "--session", sid],
     "codex": lambda sid: ["codex", "resume", sid],
     "copilot": lambda sid: ["copilot", f"--resume={sid}"],
 }
@@ -228,7 +227,7 @@ def quit_agent(pane: dict) -> bool:
     """Quit the idle agent in the pane with ctrl+c. True when the shell is back.
 
     The first ctrl+c clears a draft; claude, codex and copilot quit on a
-    second ctrl+c; opencode quits on the first. A ctrl+c that reaches the
+    second ctrl+c. A ctrl+c that reaches the
     shell does nothing. On timeout the agent stays alive (no kill).
     """
     pane_id = pane["pane_id"]

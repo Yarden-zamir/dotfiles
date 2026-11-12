@@ -1618,7 +1618,7 @@ Respond with one or more commands. Do not include any explanation or additional 
 			<key>Columns</key>
 			<integer>120</integer>
 			<key>Command</key>
-			<string>/usr/bin/env OPENCODE_ITERM_AUTO_RESTORE=1 /bin/zsh -l</string>
+			<string>/bin/zsh -l</string>
 			<key>Cursor Blink Fade In Duration</key>
 			<real>0.20000000000000001</real>
 			<key>Cursor Blink Visible Dwell</key>
@@ -3863,7 +3863,7 @@ Respond with one or more commands. Do not include any explanation or additional 
 			<key>Columns</key>
 			<integer>120</integer>
 			<key>Command</key>
-			<string>/usr/bin/env OPENCODE_ITERM_AUTO_RESTORE=1 /bin/zsh -l</string>
+			<string>/bin/zsh -l</string>
 			<key>Cursor Blink Fade In Duration</key>
 			<real>0.20000000000000001</real>
 			<key>Cursor Blink Visible Dwell</key>

@@ -11,7 +11,7 @@ here.
 Ghostty  runs herdr as its command; relays a few keys, owns the global toggle
   └─ herdr  workspaces (spaces), tabs, panes, agents; config.toml + plugins
        └─ zsh  phase-loaded config; ZLE editor with VS Code-like keys
-            └─ claude / opencode / codex / navgator / sessiongator in panes
+            └─ claude / codex / copilot / navgator / sessiongator in panes
 ```
 
 - [`.config/ghostty/config`](.config/ghostty/config): runs `~/.local/bin/herdr`,
@@ -124,13 +124,32 @@ the `main/` checkout into `$HOME`;
 herdr sockets and logs) out of git. Secrets live in `_shared/` and match
 `*secret*`, so they never enter git.
 
+## Windows
+
+Use PowerShell 7 and Git for Windows. Keep the same `.bare/`, `_shared/`, and `main/` layout.
+
+```powershell
+pwsh -NoProfile -File "$HOME\Github\dotfiles\main\windows\install.ps1"
+```
+
+The installer applies Claude instructions, skills, keybindings, and available shared settings without replacing credentials or runtime directories.
+It uses the same Codex model preferences and instructions as the Mac, but preserves Windows plugins and runtime configuration.
+Codex uses the native Windows `$HOME\.codex` directory. Mac application paths do not transfer.
+The installer skips external skill links that depend on other Mac repositories.
+Git receives portable settings, the shared ignore file, and a Windows checkout hook in `$HOME/.config/git/hooks`.
+The hook reuses the shared linker and converts Git drive paths for Git Bash.
+The PowerShell profile adds `g`, `github`, a Git branch prompt, and the Claude Git Bash path.
+Developer Mode enables symlinks. Otherwise, the installer copies files and preserves replaced files with timestamped `.backup-*` names.
+Run the installer again after dotfiles updates. Existing credentials, unrelated skills, and local settings remain in place.
+The installer does not install tools, change security settings, or port zsh.
+Run `pwsh -NoProfile -File windows/test-install.ps1` to check settings preservation, repeat installs, and the profile in temporary directories.
+
 ## Also here
 
 - [`.claude/`](.claude): [`CLAUDE.md`](.claude/CLAUDE.md) instructions (the
   same text as [`AGENTS.md`](AGENTS.md)), [skills](.claude/skills) and
   settings for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
-- [`.config/opencode`](.config/opencode) ([OpenCode](https://opencode.ai)),
-  [`.config/codex`](.config/codex)
+- [`.config/codex`](.config/codex)
   ([Codex](https://developers.openai.com/codex)),
   [`.config/navgator`](.config/navgator),
   [`.config/sessiongator`](.config/sessiongator): agent and tool configs.

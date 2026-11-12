@@ -20,7 +20,7 @@ description: Find large disposable files on this Mac. Use for disk cleanup, low 
    - `~/Library/Containers/com.docker.docker/Data/vms/0/data/Docker.raw`: Docker disk.
    - `~/.gradle`, `~/.android/avd`, `~/Library/Developer`: Android and Xcode outputs.
    - `~/Library/pnpm`, `~/.cache`, `~/.cargo`, `~/.npm`: dependency caches and test browsers.
-   - `~/.local/share/opencode`, `~/.t3`: databases, backups, snapshots, and worktrees.
+   - `~/.t3`: databases, backups, snapshots, and worktrees.
    - `~/Github/*/*/target` and `node_modules`: per-worktree build outputs and dependencies.
 3. Skip protected paths. Avoid a full-home scan unless targeted checks fail.
 4. Inspect contents, dates, installed versions, and open files before you classify a target.
@@ -32,6 +32,7 @@ description: Find large disposable files on this Mac. Use for disk cleanup, low 
 - Treat inactivity as evidence, not proof that the user does not need data.
 - Distinguish installer archives from personal ZIP files. Inspect archive entry names first.
 - Preserve current software, settings, local history, secrets, databases, and Docker data volumes.
+- Preserve `~/.local/share/opencode` and `~/.local/state/opencode`: old OpenCode session history.
 - Preserve `_shared/` and repositories with uncommitted work. Do not stop processes or VMs without approval.
 - Recheck current state before deletion. Past approval does not authorize a later cleanup.
 - Prefer tool cleanup commands. Preview Homebrew cleanup with `brew cleanup --dry-run --prune=all`.

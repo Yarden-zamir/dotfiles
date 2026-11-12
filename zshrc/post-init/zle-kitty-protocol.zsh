@@ -133,7 +133,7 @@ _zle_kitty_tui_widget() {
 local _zk_widget
 for _zk_widget in navigate navgator-create ai-sessions jq-complete \
     fzf-cd-widget fzf-file-widget ripgrep_search open-harness \
-    ask_atuin_ai ask_opencode fzf-tab-complete fzf-completion \
+    ask_atuin_ai fzf-tab-complete fzf-completion \
     fzf-history-widget fzf-file-or-folder-to-editor \
     atuin-search atuin-search-viins atuin-search-vicmd \
     atuin-up-search atuin-up-search-viins atuin-up-search-vicmd \

@@ -1,0 +1,36 @@
+#!/bin/sh
+set -u
+
+if [ "$(command git config --global --bool dotfiles.windowsSymlinks)" = true ]; then
+  export MSYS="${MSYS:+$MSYS }winsymlinks:nativestrict"
+fi
+
+git() {
+  case " $* " in
+    *" --git-common-dir "*|*" --show-toplevel "*)
+      result=$(command git "$@") || return $?
+      cygpath -u "$result"
+      ;;
+    *) command git "$@" ;;
+  esac
+}
+
+if [ "${3:-1}" = 1 ]; then
+  worktree=$(git rev-parse --show-toplevel 2>/dev/null) || worktree=
+  if [ -n "$worktree" ]; then
+    project=$(dirname "$worktree")
+    dotfiles_root=$(command git config --global --get dotfiles.root) || dotfiles_root="${DOTFILES:-$HOME/Github/dotfiles/main}"
+    dotfiles=$(cygpath -u "$dotfiles_root")
+    linker="$dotfiles/bin/git-shared-link"
+    if [ -d "$project/.bare" ] && [ -d "$project/_shared" ] && [ -f "$linker" ]; then
+      (set -- "$worktree"; . "$linker") || true
+    fi
+  fi
+fi
+
+common=$(git rev-parse --git-common-dir 2>/dev/null) || exit 0
+repo_hook="$common/hooks/post-checkout"
+if [ -x "$repo_hook" ] && [ "$repo_hook" != "$0" ]; then
+  exec "$repo_hook" "$@"
+fi
+exit 0

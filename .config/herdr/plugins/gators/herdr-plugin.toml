@@ -14,7 +14,7 @@ platforms = ["macos", "linux"]
 [[actions]]
 id = "projects"
 title = "Open project in herdr (navgator)"
-description = "Pick a project with navgator, then open it as a space, or open Claude or OpenCode in a tab there"
+description = "Pick a project with navgator, then open it as a space, or open Claude in a tab there"
 contexts = ["workspace", "tab", "pane"]
 command = ["sh", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin yarden.gators --entrypoint projects"]
 
@@ -48,7 +48,7 @@ platforms = ["macos", "linux"]
 placement = "popup"
 width = "70%"
 height = "60%"
-command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec \"$HOME/Github/navgator/main/target/release/navgator\" --config-entry 'actions.picker=[\"open-herdr\",\"open-t3\",\"open-claude-herdr\",\"open-opencode-herdr\",\"open-vs-code\",\"open-intellij\",\"open-rider\",\"open-github-desktop\",\"open-repo-online\",\"open-finder\"]' --config-entry 'keybindings.navigator.enter=\"actions\"'"]
+command = ["sh", "-c", "PATH=\"$HOME/.local/bin:/opt/homebrew/bin:$PATH\" exec \"$HOME/Github/navgator/main/target/release/navgator\" --config-entry 'actions.picker=[\"open-herdr\",\"open-t3\",\"open-claude-herdr\",\"open-vs-code\",\"open-intellij\",\"open-rider\",\"open-github-desktop\",\"open-repo-online\",\"open-finder\"]' --config-entry 'keybindings.navigator.enter=\"actions\"'"]
 
 [[panes]]
 id = "sessions"

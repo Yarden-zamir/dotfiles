@@ -5,9 +5,7 @@ gh_source --loaded zsh-users/zsh-history-substring-search && {
     bindkey '^[[B' history-substring-search-down
 }
 
-# gh_source --loaded andreacasarin/zsh-ask-opencode && {
-    bindkey '^o' ask_atuin_ai
-# }
+bindkey '^o' ask_atuin_ai
 
 if (( ${+widgets[navigate]} )); then
     bindkey '^@' navigate #ctrl+space / ctrl+@

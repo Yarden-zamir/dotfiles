@@ -2,7 +2,7 @@
 # Stow's job: keep repo-internal, non-dotfile paths out of the stow target.
 #
 # Runtime/secret state is git's concern (see .gitignore), NOT stow's: dirs like
-# .claude, .agents and .config/opencode are stowed as a single folded symlink,
+# .claude and .agents are stowed as a single folded symlink,
 # so stow never descends into their runtime subdirs — enumerating them here
 # would be inert. That is why this list is short and does not mirror .gitignore.
 #
